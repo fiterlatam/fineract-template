@@ -22,6 +22,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import java.math.BigDecimal;
+import java.nio.charset.Charset;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoField;
@@ -34,6 +35,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import javax.persistence.PersistenceException;
+import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -46,9 +48,12 @@ import org.apache.fineract.infrastructure.accountnumberformat.domain.AccountNumb
 import org.apache.fineract.infrastructure.accountnumberformat.domain.EntityAccountType;
 import org.apache.fineract.infrastructure.codes.domain.CodeValue;
 import org.apache.fineract.infrastructure.codes.domain.CodeValueRepositoryWrapper;
+import org.apache.fineract.infrastructure.configuration.data.ExternalServicesPropertiesData;
 import org.apache.fineract.infrastructure.configuration.domain.ConfigurationDomainService;
 import org.apache.fineract.infrastructure.configuration.domain.GlobalConfigurationProperty;
 import org.apache.fineract.infrastructure.configuration.domain.GlobalConfigurationRepositoryWrapper;
+import org.apache.fineract.infrastructure.configuration.service.ExternalServicesConstants;
+import org.apache.fineract.infrastructure.configuration.service.ExternalServicesPropertiesReadPlatformService;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.api.JsonQuery;
 import org.apache.fineract.infrastructure.core.data.ApiParameterError;
@@ -186,11 +191,18 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
+import org.springframework.web.client.ResourceAccessException;
+import org.springframework.web.client.RestTemplate;
 
 @Service
 public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements LoanApplicationWritePlatformService {
@@ -254,6 +266,8 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
     private final PrequalificationReadPlatformService prequalificationReadPlatformService;
     private final DocumentWritePlatformService documentWritePlatformService;
     private final LoanApplicationDraftWritePlatformService loanApplicationDraftWritePlatformService;
+    private final ExternalServicesPropertiesReadPlatformService externalServicePropertiesReadPlatformService;
+    private final RestTemplate restTemplate = new RestTemplate();
 
     @Autowired
     public LoanApplicationWritePlatformServiceJpaRepositoryImpl(final PlatformSecurityContext context, final FromJsonHelper fromJsonHelper,
@@ -289,6 +303,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
             final GroupLoanAdditionalsRepository groupLoanAdditionalsRepository,
             PrequalificationReadPlatformService prequalificationReadPlatformService,
             final DocumentWritePlatformService documentWritePlatformService,
+            ExternalServicesPropertiesReadPlatformService externalServicePropertiesReadPlatformService,
             final LoanApplicationDraftWritePlatformService loanApplicationDraftWritePlatformService) {
         this.context = context;
         this.fromJsonHelper = fromJsonHelper;
@@ -343,6 +358,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
         this.prequalificationReadPlatformService = prequalificationReadPlatformService;
         this.documentWritePlatformService = documentWritePlatformService;
         this.loanApplicationDraftWritePlatformService = loanApplicationDraftWritePlatformService;
+        this.externalServicePropertiesReadPlatformService = externalServicePropertiesReadPlatformService;
     }
 
     private LoanLifecycleStateMachine defaultLoanLifecycleStateMachine() {
@@ -816,6 +832,8 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                     newLoanApplication.productId());
 
             businessEventNotifierService.notifyPostBusinessEvent(new LoanCreatedBusinessEvent(newLoanApplication));
+            LoanAdditionalData loanAdditionalData = this.fromJsonCommand(command);
+            sendToCommCareAsync(command.json(), loanAdditionalData);
 
             return new CommandProcessingResultBuilder() //
                     .withCommandId(command.commandId()) //
@@ -824,6 +842,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                     .withClientId(newLoanApplication.getClientId()) //
                     .withGroupId(newLoanApplication.getGroupId()) //
                     .withLoanId(newLoanApplication.getId()).withGlimId(newLoanApplication.getGlimId()).build();
+
         } catch (final JpaSystemException | DataIntegrityViolationException dve) {
             handleDataIntegrityIssues(command, dve.getMostSpecificCause(), dve);
             return CommandProcessingResult.empty();
@@ -832,6 +851,68 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
             handleDataIntegrityIssues(command, throwable, dve);
             return CommandProcessingResult.empty();
         }
+    }
+
+    /**
+     * Send loan application data to CommCare API asynchronously This method runs in a separate thread to avoid blocking
+     * the loan application process
+     *
+     * @param commandJson
+     *            the JSON command containing the loan application data
+     */
+    private void sendToCommCareAsync(final String commandJson, LoanAdditionalData loanAdditionalData) {
+        final String caseId = loanAdditionalData.getCaseId();
+        if (StringUtils.isBlank(caseId)) {
+            LOG.warn("Case ID is null, skipping sending data to CommCare API");
+            return;
+        }
+        Thread commCareThread = new Thread(() -> {
+            try {
+                // Create the JSON payload to send to CommCare
+                JsonObject payload = new JsonObject();
+                payload.addProperty("command", commandJson);
+
+                // Create Basic Auth header
+                final Collection<ExternalServicesPropertiesData> externalServicesPropertiesDatas = this.externalServicePropertiesReadPlatformService
+                        .retrieveOne(ExternalServicesConstants.COMMCARE_INTEGRATION_SERVICE_NAME);
+                String commcareApiUsername = null;
+                String commcareApiPassword = null;
+                String commcareApiHost = null;
+                for (final ExternalServicesPropertiesData externalServicesPropertiesData : externalServicesPropertiesDatas) {
+                    if ("commcareApiHost".equalsIgnoreCase(externalServicesPropertiesData.getName())) {
+                        commcareApiHost = externalServicesPropertiesData.getValue();
+                    } else if ("commcareApiUsername".equalsIgnoreCase(externalServicesPropertiesData.getName())) {
+                        commcareApiUsername = externalServicesPropertiesData.getValue();
+                    } else if ("commcareApiPassword".equalsIgnoreCase(externalServicesPropertiesData.getName())) {
+                        commcareApiPassword = externalServicesPropertiesData.getValue();
+                    }
+                }
+                final String credentials = commcareApiUsername + ":" + commcareApiPassword;
+                final String basicAuth = new String(Base64.encodeBase64(credentials.getBytes(Charset.defaultCharset())),
+                        Charset.defaultCharset());
+                final HttpHeaders httpHeaders = new HttpHeaders();
+                httpHeaders.setContentType(MediaType.APPLICATION_JSON);
+                httpHeaders.setAccept(List.of(MediaType.ALL));
+                httpHeaders.add("Authorization", "Basic " + basicAuth);
+                final String url = commcareApiHost + "?caseid=" + caseId;
+                ResponseEntity<String> responseEntity = null;
+                try {
+                    responseEntity = restTemplate.exchange(url, HttpMethod.POST, new HttpEntity<>(httpHeaders), String.class);
+                } catch (ResourceAccessException ex) {
+                    LOG.debug("DPI Buro Check Provider {} not available", url, ex);
+                }
+            } catch (Exception e) {
+                // Log the error without blocking the main thread
+                LOG.error("Error sending loan application data to CommCare API", e);
+            }
+        });
+
+        // Set as daemon thread so it doesn't prevent application shutdown
+        commCareThread.setDaemon(true);
+        commCareThread.setName("CommCare-LoanSubmission-" + System.currentTimeMillis());
+
+        // Start the thread
+        commCareThread.start();
     }
 
     private void addExternalLoans(GroupLoanAdditionals groupLoanAdditionals, JsonCommand command) {

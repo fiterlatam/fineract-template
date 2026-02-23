@@ -196,4 +196,5 @@
     <include file="parts/PUE_12_02_26_update_limit_amount_pae_settings.xml" relativeToChangelogFile="true"/>
     <include file="parts/PUE_12_02_2026_add_columns_to_p_garante.xml" relativeToChangelogFile="true"/>
     <include file="parts/PUE_17_02_26_add_promissory_note_permissions.xml" relativeToChangelogFile="true"/>
+    <include file="parts/PUE_2026_02_23_ADD_COMCARE_INTEGRATION_CONFIGURATIONS.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>
