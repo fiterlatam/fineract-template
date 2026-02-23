@@ -250,7 +250,6 @@ public final class UserDataValidator {
                 }
             }
         }
-        
 
         throwExceptionIfValidationWarningsExist(dataValidationErrors);
     }
