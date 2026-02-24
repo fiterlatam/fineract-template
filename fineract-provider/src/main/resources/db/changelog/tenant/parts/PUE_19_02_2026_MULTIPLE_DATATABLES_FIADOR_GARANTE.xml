@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements. See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership. The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License. You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied. See the License for the
+    specific language governing permissions and limitations
+    under the License.
+
+-->
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.1.xsd">
+
+
+    <changeSet author="aocampo" id="006-create-p_fiador-datatable">
+
+        <dropTable tableName="p_fiador" cascadeConstraints="true"/>
+
+        <createTable tableName="p_fiador">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+            <column name="loan_id" type="bigint"/>
+            <column name="guarantorType_cd_tipo_fiador_tercero" type="integer"/>
+            <column name="professionGuarantor_cd_profesion_fiador" type="integer"/>
+            <column name="primer_nombre" type="varchar(100)"/>
+            <column name="segundo_nombre" type="varchar(100)"/>
+            <column name="otros_nombres" type="varchar(100)"/>
+            <column name="primer_apellido" type="varchar(100)"/>
+            <column name="segundo_apellido" type="varchar(100)"/>
+            <column name="apellido_casada" type="varchar(100)"/>
+            <column name="DPI_fiador_tercero" type="integer"/>
+            <column name="fecha_vencimiento_DPI" type="DATE"/>
+            <column name="direccion_notificaciones" type="TEXT"/>
+            <column name="fecha_nacimiento" type="DATE"/>
+            <column name="edad" type="smallint"/>
+            <column name="nacionalidad_cd_nacionalidad" type="integer"/>
+            <column name="numero_telefonico" type="varchar(255)"/>
+            <column name="readWrite_cd_puede_leer_escribir" type="integer"/>
+            <column name="classificationOptions_cd_actividad_economica" type="integer"/>
+            <column name="nombre_empresa" type="varchar(255)"/>
+            <column name="yearsOperating_cd_years_operando" type="integer"/>
+            <column name="YesNo_cd_dispuesto_firmar_solicitud_titulo" type="integer"/>
+            <column name="YesNo_cd_conoce_ingresos" type="integer"/>
+            <column name="YesNo_cd_conoce_precios_venta_compra" type="integer"/>
+            <column name="YesNo_cd_conoce_frecuencia_compra_inventario" type="integer"/>
+            <column name="YesNo_cd_conoce_proveedores_costos_lugar" type="integer"/>
+            <column name="YesNo_cd_maneja_negocio" type="integer"/>
+            <column name="YesNo_cd_negocio_inscrito_RTU" type="integer"/>
+            <column name="YesNo_cd_patente_comercio_nombre_cliente" type="integer"/>
+            <column name="YesNo_cd_facturas_recibos_de_compra_cliente" type="integer"/>
+            <column name="YesNo_cd_tarjeta_salud_cliente" type="integer"/>
+            <column name="monto_ventas_mensuales" type="DECIMAL(19,6)"/>
+            <column name="costo_ventas_totales" type="DECIMAL(19,6)"/>
+            <column name="total_gastos_negocio" type="DECIMAL(19,6)"/>
+            <column name="total_gastos_familiares" type="DECIMAL(19,6)"/>
+            <column name="cuotas_prestamos_externos" type="DECIMAL(19,6)"/>
+            <column name="diferencia_ingresos_gastos" type="DECIMAL(19,6)"/>
+            <column name="disponible_pagar_cuota" type="DECIMAL(19,6)"/>
+            <column name="couta_nuevo_credito_pae" type="DECIMAL(19,6)"/>
+            <column name="fecha_ingreso_empleo_actual" type="DATE"/>
+            <column name="ingresos" type="DECIMAL(19,6)"/>
+            <column name="cuotas_prestamos" type="DECIMAL(19,6)"/>
+            <column name="disponible" type="DECIMAL(19,6)"/>
+            <column name="created_at" type="DATETIME"/>
+            <column name="updated_at" type="DATETIME"/>
+        </createTable>
+
+        <createIndex indexName="idx_p_fiador_loan_id" tableName="p_fiador">
+            <column name="loan_id"/>
+        </createIndex>
+
+        <addForeignKeyConstraint constraintName="fk_p_fiador_loan_id"
+                                 baseTableName="p_fiador"
+                                 baseColumnNames="loan_id"
+                                 referencedTableName="m_loan"
+                                 referencedColumnNames="id"
+                                 onDelete="NO ACTION"
+                                 onUpdate="NO ACTION"/>
+
+    </changeSet>
+
+    <changeSet author="aocampo" id="001-fix-p_garante-primary-key">
+
+        <dropTable tableName="p_garante" cascadeConstraints="true"/>
+
+        <createTable tableName="p_garante">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+            <column name="loan_id" type="bigint"/>
+            <column name="guarantee_cd_tipo_garantia" type="integer"/>
+            <column name="valor_garantia" type="DECIMAL(19,6)"/>
+            <column name="creditRecordPDAOptions_cd_antiguedad_negocio" type="integer"/>
+            <column name="fecha_avaluo" type="DATE"/>
+            <column name="YesNo_cd_is_real_estate_owned_by_a_third_party" type="integer"/>
+            <column name="YesNo_cd_is_registered_real_estate" type="integer"/>
+            <column name="created_at" type="DATETIME"/>
+            <column name="updated_at" type="DATETIME"/>
+        </createTable>
+
+        <createIndex indexName="idx_p_garante_loan_id" tableName="p_garante">
+            <column name="loan_id"/>
+        </createIndex>
+
+        <addForeignKeyConstraint constraintName="fk_p_garante_loan_id"
+                                 baseTableName="p_garante"
+                                 baseColumnNames="loan_id"
+                                 referencedTableName="m_loan"
+                                 referencedColumnNames="id"
+                                 onDelete="NO ACTION"
+                                 onUpdate="NO ACTION"/>
+
+    </changeSet>
+
+</databaseChangeLog>
