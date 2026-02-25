@@ -215,7 +215,7 @@ public class EntityDatatableChecksWritePlatformServiceImpl implements EntityData
     @Transactional
     @Override
     public boolean saveDatatables(final Long status, final String entity, final Long entityId, final Long productId,
-                                  final JsonArray datatableDatas) {
+            final JsonArray datatableDatas) {
 
         final AppUser user = this.context.authenticatedUser();
         boolean isMakerCheckerEnabled = false;
@@ -226,8 +226,7 @@ public class EntityDatatableChecksWritePlatformServiceImpl implements EntityData
 
                 final JsonObject jsonObject = element.getAsJsonObject();
 
-                final String datatableName =
-                        this.fromApiJsonHelper.extractStringNamed("registeredTableName", element);
+                final String datatableName = this.fromApiJsonHelper.extractStringNamed("registeredTableName", element);
 
                 final JsonElement dataElement = jsonObject.get("data");
 
@@ -256,25 +255,18 @@ public class EntityDatatableChecksWritePlatformServiceImpl implements EntityData
                         JsonArray dataArray = dataElement.getAsJsonArray();
 
                         for (JsonElement row : dataArray) {
-                            this.readWriteNonCoreDataService.createNewDatatableEntry(
-                                    datatableName,
-                                    entityId,
-                                    row.getAsJsonObject().toString()
-                            );
+                            this.readWriteNonCoreDataService.createNewDatatableEntry(datatableName, entityId,
+                                    row.getAsJsonObject().toString());
                         }
 
                     }
-                    
+
                     else if (dataElement.isJsonObject()) {
 
-                        this.readWriteNonCoreDataService.createNewDatatableEntry(
-                                datatableName,
-                                entityId,
-                                dataElement.getAsJsonObject().toString()
-                        );
+                        this.readWriteNonCoreDataService.createNewDatatableEntry(datatableName, entityId,
+                                dataElement.getAsJsonObject().toString());
 
-                    }
-                    else {
+                    } else {
                         throw new IllegalStateException("Data must be JsonObject or JsonArray");
                     }
 
