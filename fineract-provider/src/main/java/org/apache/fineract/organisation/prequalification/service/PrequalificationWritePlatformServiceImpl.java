@@ -897,7 +897,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
          * Monto > 250.000 → Comité A prequalificationGroup.updateStatus(
          * PrequalificationStatus.PRE_COMMITTEE_A_PENDING_APPROVAL ); } }
          */
-        if (action.equals("approvepreviouscommitee") || action.equals("approveRenegotiation")) {
+        if ((action.equals("approvepreviouscommitee") || action.equals("approveRenegotiation")) && !nextPhase) {
 
             PrequalificationStatus lastStatus = PrequalificationStatus
                     .fromInt(prequalificationData.getLastPrequalificationStatus().getId().intValue());
@@ -909,6 +909,12 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
                 prequalificationGroup.updateStatus(withExceptions ? PrequalificationStatus.PRE_COMMITTEE_D_PENDING_APPROVAL_WITH_EXCEPTIONS
                         : PrequalificationStatus.PRE_COMMITTEE_D_PENDING_APPROVAL);
             } else {
+                if(PrequalificationStatus.fromInt(prequalificationGroup.getStatus()).equals(PrequalificationStatus.RENEGOTIATION_AGENCY_LEAD)){
+                    PrequalificationStatus lastStatus = PrequalificationStatus
+                            .fromInt(prequalificationData.getLastPrequalificationStatus().getId().intValue());
+
+                    prequalificationGroup.updateStatus(lastStatus);
+                }
                 PrequalificationStatus currentStatus = PrequalificationStatus.fromInt(prequalificationGroup.getStatus());
 
                 if (currentStatus == PrequalificationStatus.PRE_COMMITTEE_D_PENDING_APPROVAL
@@ -979,6 +985,16 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
                 .withResourceIdAsString(loan != null ? loan.getId().toString() : "").withEntityId(prequalificationGroup.getId()).build();
     }
 
+    private int getCommitteeLevel(PrequalificationStatus status) {
+        switch (status) {
+            case PRE_COMMITTEE_D_PENDING_APPROVAL: return 1;
+            case PRE_COMMITTEE_C_PENDING_APPROVAL: return 2;
+            case PRE_COMMITTEE_B_PENDING_APPROVAL: return 3;
+            case PRE_COMMITTEE_A_PENDING_APPROVAL: return 4;
+            default: return 0;
+        }
+    }
+
     @Override
     @Transactional
     public CommandProcessingResult processAnalysisRequest(Long entityId, JsonCommand command) {
@@ -1015,7 +1031,32 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         } // send to renegotiation
         if (action.equals("approveRenegotiation")) {
             approveRenegotiation(prequalificationGroup, addedBy, command);
-            return sendToFirstPhaseApproveCommitteeD(entityId, command, false, false);
+            GroupPrequalificationData prequalificationData = prequalificationReadPlatformService.retrieveOne(prequalificationGroup.getId());
+
+            PrequalificationStatus lastStatus = PrequalificationStatus
+                    .fromInt(prequalificationData.getLastPrequalificationStatus().getId().intValue());
+
+            BigDecimal amount = prequalificationData.getTotalRequestedAmount();
+            PrequalificationStatus targetCommittee = null;
+
+            if (amount.compareTo(new BigDecimal("20000")) < 0) {
+                targetCommittee = PrequalificationStatus.PRE_COMMITTEE_D_PENDING_APPROVAL;
+            } else if (amount.compareTo(new BigDecimal("80000")) < 0) {
+                targetCommittee = PrequalificationStatus.PRE_COMMITTEE_C_PENDING_APPROVAL;
+            } else if (amount.compareTo(new BigDecimal("250000")) <= 0) {
+                targetCommittee = PrequalificationStatus.PRE_COMMITTEE_B_PENDING_APPROVAL;
+            } else {
+                targetCommittee = PrequalificationStatus.PRE_COMMITTEE_A_PENDING_APPROVAL;
+            }
+
+            int lastLevel = getCommitteeLevel(lastStatus);
+            int targetLevel = getCommitteeLevel(targetCommittee);
+
+            if (lastLevel == targetLevel || lastLevel == targetLevel - 1) {
+                action = "approveCommittee";
+            } else {
+                return sendToFirstPhaseApproveCommitteeD(entityId, command, false, true);
+            }
         }
         if (action.equals("rejectRenegotiation")) {
             return rejectRenegotiation(prequalificationGroup, addedBy, command);

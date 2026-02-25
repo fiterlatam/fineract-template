@@ -833,7 +833,9 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
 
             businessEventNotifierService.notifyPostBusinessEvent(new LoanCreatedBusinessEvent(newLoanApplication));
             LoanAdditionalData loanAdditionalData = this.fromJsonCommand(command);
-            sendToCommCareAsync(command.json(), loanAdditionalData);
+            if(loanAdditionalData != null) {
+                sendToCommCareAsync(command.json(), loanAdditionalData);
+            }
 
             return new CommandProcessingResultBuilder() //
                     .withCommandId(command.commandId()) //
@@ -1773,8 +1775,11 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
         final Locale dateLocal = JsonParserHelper.localeFromString(localeAsString);
         final Locale locale = JsonParserHelper.localeFromString("en");
 
-        this.fromApiJsonDeserializer.validateLoanAdditionalData(jsonCommand);
+        //this.fromApiJsonDeserializer.validateLoanAdditionalData(jsonCommand);
         final JsonElement jsonElement = jsonCommand.jsonElement(LoanApiConstants.LOAN_ADDITIONAL_DATA);
+        if (jsonElement == null || jsonElement.isJsonNull()) {
+            return null;
+        }
         final String caseId = this.fromJsonHelper.extractStringNamed("caseId", jsonElement);
         loanAdditionalData.setCaseId(caseId);
 
