@@ -28,7 +28,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
 import javax.net.ssl.HttpsURLConnection;
-
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.infrastructure.configuration.data.ExternalServicesPropertiesData;
@@ -215,8 +214,8 @@ public class BureauValidationWritePlatformServiceImpl implements BureauValidatio
                 .retrieveOne(ExternalServicesConstants.LOAN_ADDITIONAL_PROPERTIES_SERVICE_NAME);
         final LoanProduct loanProduct = this.loanProductRepository.findById(productId)
                 .orElseThrow(() -> new LoanProductNotFoundException(productId));
-        if (loanProduct.getOwnerType().equals(LoanProductOwnerType.PAE.getValue())){
-            return retrievePaeAdditionalProperties(loanProduct,clientId,caseId,locale);
+        if (loanProduct.getOwnerType().equals(LoanProductOwnerType.PAE.getValue())) {
+            return retrievePaeAdditionalProperties(loanProduct, clientId, caseId, locale);
         }
         String loanAdditionalsApiUsername = null;
         String loanAdditionalsApiPassword = null;
@@ -274,74 +273,72 @@ public class BureauValidationWritePlatformServiceImpl implements BureauValidatio
 
     private LoanAdditionalData retrievePaeAdditionalProperties(LoanProduct loanProduct, Long clientId, String caseId, String locale) {
 
-                try {
+        try {
 
-                    // Create Basic Auth header
-                    final Collection<ExternalServicesPropertiesData> externalServicesPropertiesDatas = this.externalServicePropertiesReadPlatformService
-                            .retrieveOne(ExternalServicesConstants.COMMCARE_INTEGRATION_SERVICE_NAME);
-                    String commcareApiUsername = null;
-                    String commcareApiPassword = null;
-                    String commcareApiHost = null;
-                    for (final ExternalServicesPropertiesData externalServicesPropertiesData : externalServicesPropertiesDatas) {
-                        if ("commcareApiHost".equalsIgnoreCase(externalServicesPropertiesData.getName())) {
-                            commcareApiHost = externalServicesPropertiesData.getValue();
-                        } else if ("commcareApiUsername".equalsIgnoreCase(externalServicesPropertiesData.getName())) {
-                            commcareApiUsername = externalServicesPropertiesData.getValue();
-                        } else if ("commcareApiPassword".equalsIgnoreCase(externalServicesPropertiesData.getName())) {
-                            commcareApiPassword = externalServicesPropertiesData.getValue();
-                        }
-                    }
-                    final String credentials = commcareApiUsername + ":" + commcareApiPassword;
-                    final String basicAuth = new String(Base64.encodeBase64(credentials.getBytes(Charset.defaultCharset())),
-                            Charset.defaultCharset());
-                    final HttpHeaders httpHeaders = new HttpHeaders();
-                    httpHeaders.setContentType(MediaType.APPLICATION_JSON);
-                    httpHeaders.setAccept(List.of(MediaType.ALL));
-                    httpHeaders.add("Authorization", "Basic " + basicAuth);
-                    final String url = commcareApiHost + "?caseid=" + caseId;
-                    ResponseEntity<String> responseEntity = null;
-                    try {
-                        HttpsURLConnection.setDefaultHostnameVerifier(NoopHostnameVerifier.INSTANCE);
-                        responseEntity = restTemplate.exchange(url, HttpMethod.POST, new HttpEntity<>(httpHeaders), String.class);
-                    } catch (ResourceAccessException ex) {
-                        LOG.debug("COMMCARE API Request {} not available", url, ex);
-                    }
-                    if (responseEntity == null || !responseEntity.getStatusCode().equals(HttpStatus.OK)) {
-                        throw new PlatformDataIntegrityException("error.msg.external.service.provider.not.available",
-                                "Loan additional properties API Provider is not available");
-                    }
-                    LoanAdditionalData loanAdditionalData = null;
-                    if (responseEntity.hasBody()) {
-                        final JsonElement jsonElement = this.fromApiJsonHelper.parse(responseEntity.getBody());
-                        if (jsonElement.isJsonObject()) {
-                            final String error = this.fromApiJsonHelper.extractStringNamed("Error", jsonElement);
-                            if (error != null) {
-                                throw new PlatformDataIntegrityException("error.msg.external.service.provider.error.occurred",
-                                        error + " Case ID == " + caseId);
-                            }
-                            loanAdditionalData = this.mapFromJson(jsonElement, locale);
-                        }
-                    }
-                    if (loanAdditionalData == null) {
-                        throw new PlatformDataIntegrityException("error.msg.loan.additional.not.found",
-                                "Loan additional properties Not Found for Case ID " + caseId);
-                    }
-                    if (!(loanProduct.getName().equalsIgnoreCase(loanAdditionalData.getProducto())
-                          || loanProduct.getName().equalsIgnoreCase(loanAdditionalData.getPrograma()))) {
-                        throw new PlatformDataIntegrityException("error.msg.selected.loan.product.not.same.with.the.case.id",
-                                "Loan additional properties Not Found for Case ID " + caseId);
-                    }
-                    return loanAdditionalData;
-
-
-                } catch (Exception e) {
-                    // Log the error without blocking the main thread
-                    LOG.error("Error sending loan application data to CommCare API", e);
-                    throw new PlatformDataIntegrityException("error.msg.loan.additional.not.found",
-                            "Loan additional properties Not Found for Case ID " + caseId);
+            // Create Basic Auth header
+            final Collection<ExternalServicesPropertiesData> externalServicesPropertiesDatas = this.externalServicePropertiesReadPlatformService
+                    .retrieveOne(ExternalServicesConstants.COMMCARE_INTEGRATION_SERVICE_NAME);
+            String commcareApiUsername = null;
+            String commcareApiPassword = null;
+            String commcareApiHost = null;
+            for (final ExternalServicesPropertiesData externalServicesPropertiesData : externalServicesPropertiesDatas) {
+                if ("commcareApiHost".equalsIgnoreCase(externalServicesPropertiesData.getName())) {
+                    commcareApiHost = externalServicesPropertiesData.getValue();
+                } else if ("commcareApiUsername".equalsIgnoreCase(externalServicesPropertiesData.getName())) {
+                    commcareApiUsername = externalServicesPropertiesData.getValue();
+                } else if ("commcareApiPassword".equalsIgnoreCase(externalServicesPropertiesData.getName())) {
+                    commcareApiPassword = externalServicesPropertiesData.getValue();
                 }
             }
+            final String credentials = commcareApiUsername + ":" + commcareApiPassword;
+            final String basicAuth = new String(Base64.encodeBase64(credentials.getBytes(Charset.defaultCharset())),
+                    Charset.defaultCharset());
+            final HttpHeaders httpHeaders = new HttpHeaders();
+            httpHeaders.setContentType(MediaType.APPLICATION_JSON);
+            httpHeaders.setAccept(List.of(MediaType.ALL));
+            httpHeaders.add("Authorization", "Basic " + basicAuth);
+            final String url = commcareApiHost + "?caseid=" + caseId;
+            ResponseEntity<String> responseEntity = null;
+            try {
+                HttpsURLConnection.setDefaultHostnameVerifier(NoopHostnameVerifier.INSTANCE);
+                responseEntity = restTemplate.exchange(url, HttpMethod.POST, new HttpEntity<>(httpHeaders), String.class);
+            } catch (ResourceAccessException ex) {
+                LOG.debug("COMMCARE API Request {} not available", url, ex);
+            }
+            if (responseEntity == null || !responseEntity.getStatusCode().equals(HttpStatus.OK)) {
+                throw new PlatformDataIntegrityException("error.msg.external.service.provider.not.available",
+                        "Loan additional properties API Provider is not available");
+            }
+            LoanAdditionalData loanAdditionalData = null;
+            if (responseEntity.hasBody()) {
+                final JsonElement jsonElement = this.fromApiJsonHelper.parse(responseEntity.getBody());
+                if (jsonElement.isJsonObject()) {
+                    final String error = this.fromApiJsonHelper.extractStringNamed("Error", jsonElement);
+                    if (error != null) {
+                        throw new PlatformDataIntegrityException("error.msg.external.service.provider.error.occurred",
+                                error + " Case ID == " + caseId);
+                    }
+                    loanAdditionalData = this.mapFromJson(jsonElement, locale);
+                }
+            }
+            if (loanAdditionalData == null) {
+                throw new PlatformDataIntegrityException("error.msg.loan.additional.not.found",
+                        "Loan additional properties Not Found for Case ID " + caseId);
+            }
+            if (!(loanProduct.getName().equalsIgnoreCase(loanAdditionalData.getProducto())
+                    || loanProduct.getName().equalsIgnoreCase(loanAdditionalData.getPrograma()))) {
+                throw new PlatformDataIntegrityException("error.msg.selected.loan.product.not.same.with.the.case.id",
+                        "Loan additional properties Not Found for Case ID " + caseId);
+            }
+            return loanAdditionalData;
 
+        } catch (Exception e) {
+            // Log the error without blocking the main thread
+            LOG.error("Error sending loan application data to CommCare API", e);
+            throw new PlatformDataIntegrityException("error.msg.loan.additional.not.found",
+                    "Loan additional properties Not Found for Case ID " + caseId);
+        }
+    }
 
     public LoanAdditionalData mapFromJson(final JsonElement jsonElement, String dateLocaleString) {
         final LoanAdditionalData loanAdditionalData = new LoanAdditionalData();
