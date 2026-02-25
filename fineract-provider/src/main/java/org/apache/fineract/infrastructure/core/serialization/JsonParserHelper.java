@@ -89,7 +89,7 @@ public class JsonParserHelper {
 
     public String extractStringNamed(final String parameterName, final JsonElement element, final Set<String> parametersPassedInRequest) {
         String stringValue = null;
-        if (element.isJsonObject()) {
+        if (element != null && element.isJsonObject()) {
             final JsonObject object = element.getAsJsonObject();
             if (object.has(parameterName) && object.get(parameterName).isJsonPrimitive()) {
                 parametersPassedInRequest.add(parameterName);
