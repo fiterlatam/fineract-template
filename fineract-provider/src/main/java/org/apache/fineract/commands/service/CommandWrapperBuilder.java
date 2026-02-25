@@ -18,6 +18,7 @@
  */
 package org.apache.fineract.commands.service;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.commands.domain.CommandWrapper;
 import org.apache.fineract.infrastructure.accountnumberformat.service.AccountNumberFormatConstants;
 import org.apache.fineract.organisation.bankcheque.api.BankChequeApiConstants;
@@ -3946,8 +3947,8 @@ public class CommandWrapperBuilder {
         return this;
     }
 
-    public CommandWrapperBuilder processAnalysisRequest(Long prequalificationId) {
-        this.actionName = "PROCESSANALYSIS";
+    public CommandWrapperBuilder processAnalysisRequest(Long prequalificationId, String action) {
+        this.actionName = StringUtils.upperCase(action);
         this.entityName = "PREQUALIFICATIONS";
         this.entityId = prequalificationId;
         this.href = "/prequalification/checklist/" + prequalificationId;
