@@ -444,4 +444,5 @@
     <include file="parts/20260209000300_EA_658_vw_creditos_activos.xml" relativeToChangelogFile="true"/>
     <include file="parts/20260209000400_EA_658_vw_facturacion_manual.xml" relativeToChangelogFile="true"/>
     <include file="parts/20260209000500_EA_658_vw_report_client_general.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20260226000100_EA_666_AddOriginalNrOfInstallmentsToTransactionTable.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>
