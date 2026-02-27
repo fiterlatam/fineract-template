@@ -51,15 +51,15 @@ public class LoanApplicationDraftReadPlatformServiceImpl implements LoanApplicat
     }
 
     @Override
-    public List<LoanApplicationDraftData> retrieveAllActive() {
+    public List<LoanApplicationDraftData> retrieveAllActive(Long clientId) {
         final LoanApplicationDraftMapper rm = new LoanApplicationDraftMapper(sqlGenerator);
 
         final StringBuilder sqlBuilder = new StringBuilder();
         sqlBuilder.append("select ");
         sqlBuilder.append(rm.loanSchema());
-        sqlBuilder.append(" where lad.status_enum not in (?)");
+        sqlBuilder.append(" where lad.status_enum not in (?) and lad.client_id = ?");
 
-        return this.jdbcTemplate.query(sqlBuilder.toString(), rm, LoanApplicationDraftStatus.DELETED.getValue());
+        return this.jdbcTemplate.query(sqlBuilder.toString(), rm, LoanApplicationDraftStatus.DELETED.getValue(), clientId);
     }
 
     @Override

@@ -93,7 +93,7 @@ public class AccountDetailsReadPlatformServiceJpaRepositoryImpl implements Accou
         final List<ShareAccountSummaryData> shareAccounts = retrieveShareAccountDetails(clientId);
         final List<GuarantorAccountSummaryData> guarantorloanAccounts = retrieveGuarantorLoanAccountDetails(guarantorWhereClause,
                 new Object[] { clientId });
-        final List<LoanApplicationDraftData> loanApplicationDrafts = loanApplicationDraftReadPlatformService.retrieveAllActive();
+        final List<LoanApplicationDraftData> loanApplicationDrafts = loanApplicationDraftReadPlatformService.retrieveAllActive(clientId);
         return new AccountSummaryCollectionData(loanAccounts, glimAccounts, savingsAccounts, shareAccounts, guarantorloanAccounts,
                 loanApplicationDrafts);
     }
