@@ -148,6 +148,11 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
     @Column(name = "installment_number")
     private Integer installmentNumber;
 
+    @Setter
+    @Getter
+    @Column(name = "actual_nr_of_repayments")
+    private Integer actualNumberOfRepayments;
+
     @Column(name = "occurred_on_suspended_account", nullable = false)
     private boolean occurredOnSuspendedAccount;
 

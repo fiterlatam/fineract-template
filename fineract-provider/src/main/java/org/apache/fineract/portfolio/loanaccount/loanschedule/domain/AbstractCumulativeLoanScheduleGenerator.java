@@ -3665,9 +3665,31 @@ public abstract class AbstractCumulativeLoanScheduleGenerator implements LoanSch
                         loanApplicationTerms.setFixedPrincipalAmount(null);
 
                         // This snippet is to reduce principal Do not touch on the nr of installments.
+                        // We can apply this only for repayments. when undoing transaction, we need to restore original
+                        // nr of installments
                         if (Objects.nonNull(loanApplicationTerms.getLoan()) && loanApplicationTerms.getLoan().isPresent()) {
                             Loan l = loanApplicationTerms.getLoan().get();
-                            loanApplicationTerms.setActualNumberOfRepayments(l.getRepaymentScheduleInstallments().size());
+
+                            Optional<LoanTransaction> ltOpt = l.getLoanTransactions().stream()
+                                    .filter(rep -> rep.getTypeOf().equals(LoanTransactionType.REPAYMENT))
+                                    .max(Comparator.comparing(LoanTransaction::getLastModifiedDateTime));
+
+                            if (ltOpt.isPresent()) {
+                                LoanTransaction lastRepaymentTransaction = ltOpt.get();
+                                if (lastRepaymentTransaction.isReversed()) {
+
+                                    Optional<LoanTransaction> ltOpt2 = l.getLoanTransactions().stream()
+                                            .filter(rep -> rep.getTypeOf().equals(LoanTransactionType.REPAYMENT))
+                                            .filter(rev -> !rev.isReversed())
+                                            .max(Comparator.comparing(LoanTransaction::getCreatedDateTime));
+
+                                    if (ltOpt2.isPresent()) {
+                                        loanApplicationTerms.setActualNumberOfRepayments(ltOpt2.get().getActualNumberOfRepayments());
+                                    }
+                                } else {
+                                    loanApplicationTerms.setActualNumberOfRepayments(l.getRepaymentScheduleInstallments().size());
+                                }
+                            }
                         }
 
                         updateAmortization(mc, loanApplicationTerms, periodNumber, outstandingBalance);

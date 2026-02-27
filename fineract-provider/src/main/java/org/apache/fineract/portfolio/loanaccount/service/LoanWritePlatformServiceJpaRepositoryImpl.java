@@ -1408,6 +1408,9 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 holidayDetailDto, isHolidayValidationDone);
         loan = loanTransaction.getLoan();
 
+        // How many installments do we have after applying this payment. This is for undoing principal adv pmt issue
+        loanTransaction.setActualNumberOfRepayments(loan.getRepaymentScheduleInstallments().size());
+
         // Update loan transaction on repayment.
         if (AccountType.fromInt(loan.getLoanType()).isIndividualAccount()) {
             Set<LoanCollateralManagement> loanCollateralManagements = loan.getLoanCollateralManagements();
@@ -1690,6 +1693,17 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
         checkClientOrGroupActive(loan);
 
         checkIfProductAllowsCancelationOrReversal(loan);
+
+        // Check if this is the latest treansaction to undo. If no, throw an exception as we only allow adjusting the
+        // latest ones
+        loan.getLoanTransactions().stream()
+                .filter(transactionsAfter -> transactionsAfter.getCreatedDateTime().isAfter(transactionToAdjust.getCreatedDateTime()))
+                .filter(notReversed -> notReversed.isNotReversed()).filter(typeOf -> typeOf.isRepayment() || typeOf.isDisbursement())
+                .findAny().ifPresent(any -> {
+                    final String defaultUserMessage = "Only latest transaction can be adjusted. Transaction with id: " + any.getId()
+                            + " is newer than transaction to adjust with id: " + transactionId;
+                    throw new InvalidLoanTransactionTypeException("transaction", "update.not.allowed", defaultUserMessage);
+                });
 
         // Check if loan transaction typeOf == 1 (disbursal)
         if (LoanTransactionType.DISBURSEMENT.equals(transactionToAdjust.getTypeOf())) {

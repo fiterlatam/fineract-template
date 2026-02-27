@@ -1,6 +1,6 @@
 {
   "info": {
-    "_postman_id": "8a8344b5-0da6-45ae-bf61-66474614ef1a",
+    "_postman_id": "47fcf2e1-a48f-4991-8131-dc7f3192a646",
     "name": "EA Loans Disbursement Undo Multi Disbursal",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
     "_exporter_id": "26949565"
@@ -449,23 +449,23 @@
       "response": []
     },
     {
-      "name": "Undo 1st fail",
+      "name": "Undo 1st fail - Not latest",
       "event": [
         {
           "listen": "test",
           "script": {
             "exec": [
-              "pm.test( \"Undo 1st disbursement fail\", function(){\r",
-              "    pm.response.to.have.status(403);\r",
-              "    pm.expect(pm.response.text()).to.not.equals( null );\r",
-              "    var jsonData = JSON.parse(pm.response.text());\r",
+              "pm.test(\"Status code is 403\", function () {\r",
+              "    pm.expect(pm.response.code).to.equal(403);\r",
+              "});\r",
               "\r",
-              "\r",
-              "\r",
-              "    pm.expect(jsonData.errors[0].developerMessage).to.be.equal(\"error.msg.loan.undo.disbursement.using.menu\");\r",
-              "\r",
-              "\r",
-              "} );"
+              "pm.test(\"Default user message is correct\", function () {\r",
+              "    const response = pm.response.json();\r",
+              " \r",
+              "    const actualMessage = response.errors[0].defaultUserMessage;\r",
+              "    \r",
+              "    pm.expect(actualMessage).to.contain(\"Only latest transaction can be adjusted.\");\r",
+              "});"
             ],
             "type": "text/javascript",
             "packages": {},
@@ -716,6 +716,78 @@
             {
               "key": "command",
               "value": "undodisbursal"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Undo 1st fail",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test( \"Undo 1st disbursement fail\", function(){\r",
+              "    pm.response.to.have.status(403);\r",
+              "    pm.expect(pm.response.text()).to.not.equals( null );\r",
+              "    var jsonData = JSON.parse(pm.response.text());\r",
+              "\r",
+              "\r",
+              "\r",
+              "    pm.expect(jsonData.errors[0].developerMessage).to.be.equal(\"Only (non-reversed) transactions of type repayment, waiver, credit balance refund, or disbursement can be adjusted.\");\r",
+              "\r",
+              "\r",
+              "} );"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "{{authorization_token}}",
+            "type": "text"
+          },
+          {
+            "key": "Fineract-Platform-TenantId",
+            "value": "default",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"transactionDate\": \"11/09/2025\",\r\n    \"transactionAmount\": 0,\r\n    \"dateFormat\": \"dd/MM/yyyy\",\r\n    \"locale\": \"en\",\r\n    \"paymentTypeId\": 1,\r\n    \"channelName\": \"03 - Oficina BCS\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{fineract-backend-server}}/fineract-provider/api/v1/loans/{{loanId}}/transactions/{{1stDisbursementTrxId}}?command=undo",
+          "host": [
+            "{{fineract-backend-server}}"
+          ],
+          "path": [
+            "fineract-provider",
+            "api",
+            "v1",
+            "loans",
+            "{{loanId}}",
+            "transactions",
+            "{{1stDisbursementTrxId}}"
+          ],
+          "query": [
+            {
+              "key": "command",
+              "value": "undo"
             }
           ]
         }
