@@ -106,7 +106,7 @@ public interface LoanRepository extends JpaRepository<Loan, Long>, JpaSpecificat
                     AND p1.id = p2.max_id
             ) pl ON pl.prequalification_id = lo.prequalification_id
             LEFT JOIN p_fiador pf ON lo.id = pf.loan_id
-            WHERE lo.id = ?
+            WHERE lo.id = ? LIMIT 1
             """;
 
     String GUARANTOR_DATA = "SELECT" + "    TRIM(" + "        CONCAT(" + "            COALESCE(primer_nombre, ''), " + "            ' ', "
