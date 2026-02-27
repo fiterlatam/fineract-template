@@ -25,7 +25,7 @@ public interface LoanApplicationDraftReadPlatformService {
 
     List<LoanApplicationDraftData> retrieveAll();
 
-    List<LoanApplicationDraftData> retrieveAllActive();
+    List<LoanApplicationDraftData> retrieveAllActive(Long clientId);
 
     LoanApplicationDraftData retrieveById(Long id);
 

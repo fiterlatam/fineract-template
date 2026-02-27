@@ -28,6 +28,7 @@ import com.lowagie.text.Font;
 import com.lowagie.text.FontFactory;
 import com.lowagie.text.Image;
 import com.lowagie.text.PageSize;
+import com.lowagie.text.Paragraph;
 import com.lowagie.text.Phrase;
 import com.lowagie.text.Rectangle;
 import com.lowagie.text.pdf.PdfPCell;
@@ -36,6 +37,7 @@ import com.lowagie.text.pdf.PdfWriter;
 import java.awt.Color;
 import java.io.ByteArrayOutputStream;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.net.URL;
 import java.util.List;
 import java.util.Map;
@@ -57,7 +59,7 @@ public class ResolutionCommiteeReport {
     private final LoanRepository loanRepository;
     private final JdbcTemplate jdbcTemplate;
 
-    private static final Color PURPLE = new Color(230, 0, 230);
+    private static final Color PURPLE = new Color(92, 6, 140);
     private static final Color LIGHT_GRAY = new Color(240, 240, 240);
     private static final Color VALUE_YELLOW = new Color(255, 247, 204);
     private static final Color VALUE_GRAY = new Color(232, 232, 232);
@@ -83,6 +85,7 @@ public class ResolutionCommiteeReport {
             document.open();
 
             Font titleFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 12);
+            titleFont.setColor(LIGHT_GRAY);
             Font labelFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 9);
             Font valueFont = FontFactory.getFont(FontFactory.HELVETICA, 9);
 
@@ -194,7 +197,15 @@ public class ResolutionCommiteeReport {
             addStyledCell(mainTable, data.get(0).get("collateralType"), valueFont, VALUE_YELLOW, 1);
 
             addStyledCell(mainTable, columNames.get("collateral"), labelFont, VALUE_WHITE, 1);
-            addStyledCell(mainTable, data.get(0).get("collateral"), valueFont, VALUE_YELLOW, 1);
+            Object collateralObj = data.get(0).get("collateral");
+
+            String collateralFormatted = "0.00";
+
+            if (collateralObj instanceof BigDecimal bd) {
+                collateralFormatted = bd.setScale(2, RoundingMode.HALF_UP).toPlainString();
+            }
+
+            addStyledCell(mainTable, collateralFormatted, valueFont, VALUE_YELLOW, 1);
             addStyledCell(mainTable, columNames.get("collateralCoverage"), labelFont, VALUE_WHITE, 1);
             addStyledCell(mainTable, data.get(0).get("collateralCoverage"), valueFont, VALUE_YELLOW, 1);
 
@@ -206,10 +217,10 @@ public class ResolutionCommiteeReport {
             addStyledCell(mainTable, columNames.get("program"), labelFont, VALUE_WHITE, 1);
             addStyledCell(mainTable, data.get(0).get("program"), valueFont, LIGHT_GRAY, 1);
             addStyledCell(mainTable, columNames.get("sector"), labelFont, VALUE_WHITE, 1);
-            addStyledCell(mainTable, data.get(0).get("collateralType"), valueFont, VALUE_YELLOW, 1);
+            addStyledCell(mainTable, data.get(0).get("sector"), valueFont, VALUE_YELLOW, 1);
 
             addStyledCell(mainTable, columNames.get("formalizationDocument"), labelFont, VALUE_WHITE, 1);
-            addStyledCell(mainTable, "", valueFont, LIGHT_GRAY, 3);
+            addStyledCell(mainTable, data.get(0).get("formalizationDocument"), valueFont, VALUE_YELLOW, 1);
 
             addStyledCell(mainTable, columNames.get("approvalDate"), labelFont, VALUE_WHITE, 1);
             addStyledCell(mainTable, data.get(0).get("approvalDate"), valueFont, VALUE_YELLOW, 1);
@@ -238,7 +249,16 @@ public class ResolutionCommiteeReport {
             document.add(titleTableTwo);
             document.add(Chunk.NEWLINE);
 
-            PdfPCell titleCellThree = new PdfPCell(new Phrase(columNames.get("analysisInformation"), valueFont));
+            String label = columNames.get("analysisInformation");
+            String value = data.get(0).get("analysisInformation") != null
+                    ? data.get(0).get("analysisInformation").toString()
+                    : "N/A";
+
+            Paragraph paragraph = new Paragraph();
+            paragraph.add(new Chunk(label + "\n", labelFont));
+            paragraph.add(new Chunk(value, valueFont));
+
+            PdfPCell titleCellThree = new PdfPCell(paragraph);
             titleCellThree.setBackgroundColor(VALUE_WHITE);
             titleCellThree.setHorizontalAlignment(Element.ALIGN_LEFT);
             titleCellThree.setPadding(8);
@@ -303,64 +323,152 @@ public class ResolutionCommiteeReport {
     private List<Map<String, Object>> retrieveData(Long loanId, Long prequalificationId) {
         String sql = """
                 SELECT mc.display_name as clientName,
-                ml.principal_amount as loanAmount,
-                agency.name as agencyName,
-                mc.dpi as clientCode,
-                (CASE
-                WHEN psl.to_status =1006 then 'COMMITTEE A'
-                WHEN psl.to_status =1005 then 'COMMITTEE B'
-                WHEN psl.to_status =1004 then 'COMMITTEE C'
-                WHEN psl.to_status =1003 then 'COMMITTEE D'
-                ELSE 'INVÁLIDO' END) as commiteeLevel,
-                COALESCE(((mpl.required_guarantee_percent/100)* pgm.approved_amount),'N/A') as collateral,
-                COALESCE((pgm.approved_amount/((mpl.required_guarantee_percent/100)* pgm.approved_amount)),'N/A') as collateralCoverage,
-                'N/A' as registeredMortgage,
-                'PUENTE al Éxito' as program,
-                (select date_created from m_prequalification_status_log where prequalification_id=? and to_status=900 ) as approvalDate,
-                lrs.equivalentAnnualRate,lrs.equivalentMonthlyRate,lrs.installmentAmount,
-                (CASE
-                WHEN ml.repayment_period_frequency_enum =0 then concat(ml.repay_every,' ', (CASE WHEN ml.repay_every>1 then 'DÍAS' ELSE 'DÍA' END))
-                WHEN ml.repayment_period_frequency_enum =1 then concat(ml.repay_every,' ',(CASE WHEN ml.repay_every>1 then 'SEMANAS' ELSE 'SEMANA' END))
-                WHEN ml.repayment_period_frequency_enum =2 then concat(ml.repay_every,' ', (CASE WHEN ml.repay_every>1 then 'MESES' ELSE 'MES' END))
-                WHEN ml.repayment_period_frequency_enum =3 then concat(ml.repay_every,' ',(CASE WHEN ml.repay_every>1 then 'AÑOS' ELSE 'AÑO' END))
-                WHEN ml.repayment_period_frequency_enum =4 then concat(ml.repay_every,' ','TÉRMINO COMPLETO')
-                ELSE 'INVÁLIDO' END) as frequencyTerm,
-                (CASE
-                WHEN ml.term_period_frequency_enum =0 then concat(ml.term_frequency,' ', (CASE WHEN ml.term_frequency>1 then 'DÍAS' ELSE 'DÍA' END))
-                WHEN ml.term_period_frequency_enum =1 then concat(ml.term_frequency,' ',(CASE WHEN ml.term_frequency>1 then 'SEMANAS' ELSE 'SEMANA' END))
-                WHEN ml.term_period_frequency_enum =2 then concat(ml.term_frequency,' ', (CASE WHEN ml.term_frequency>1 then 'MESES' ELSE 'MES' END))
-                WHEN ml.term_period_frequency_enum =3 then concat(ml.term_frequency,' ',(CASE WHEN ml.term_frequency>1 then 'AÑOS' ELSE 'AÑO' END))
-                WHEN ml.term_period_frequency_enum =4 then concat(ml.term_frequency,' ','TÉRMINO COMPLETO')
-                ELSE 'INVÁLIDO' END) as loanTerm,
-                (case when ml.interest_method_enum = 0 then 'Saldo decreciente' else 'Plano' END) as interestMethod,
-                (ml.annual_nominal_interest_rate/12) as nominalMonthlyRate,
-                ml.annual_nominal_interest_rate as annualInterest,
-                COALESCE(mccv.code_value,'N/A' ) as collateralType,
-                COALESCE(mlc.value,'N/A' )  as collateralValue,
-                'N/A' as registeredMortgage,
-                COALESCE(lad.destino_prestamo,'N/A' )as loanPurpose,
-                psl.date_created as logDate,
-                concat(au.username,' - ',au.firstname,' ', au.lastname, ' ') as updatedBy,
-                concat(fc.username,' - ',fc.firstname,' ', fc.lastname, ' ') as facilitatorName,
-                ml.id as loanId
-                FROM m_prequalification_status_log psl
-                JOIN m_prequalification_group pg on pg.id = psl.prequalification_id
-                JOIN m_prequalification_group_members pgm ON pgm.group_id=pg.id
-                JOIN m_client mc on mc.dpi=pgm.dpi
-                left join m_loan ml on ml.prequalification_id = pg.id and ml.client_id = mc.id
-                left join m_product_loan mpl on mpl.id = ml.product_id
-                left join m_client_loan_additional_properties lad on lad.loan_id=ml.id
-                left join m_loan_collateral mlc on mlc.loan_id = ml.id
-                left join m_code_value mccv on mccv.id = mlc.type_cv_id
-                left join m_group_client mgc on mgc.client_id = mc.id
-                left join m_group mg on mg.id = mgc.group_id
-                left join m_group center on center.id = mg.parent_id
-                left join m_portfolio portfolio on portfolio.id = center.portfolio_id
-                left join m_supervision supv on supv.id = portfolio.supervision_id
-                left join m_agency agency on agency.id = supv.agency_id
-                left join m_appuser au on au.id = psl.assigned_to
-                left join m_appuser fc on fc.id = pg.facilitator
-                left join (select lrs.loan_id , SUM(
+                                ml.principal_amount as loanAmount,
+                                agency.name as agencyName,
+                                mc.dpi as clientCode,
+                                lrs.equivalentAnnualRate,
+                                (CASE
+                                WHEN psl.to_status =1006 then 'COMMITTEE A'
+                                WHEN psl.to_status =1005 then 'COMMITTEE B'
+                                WHEN psl.to_status =1004 then 'COMMITTEE C'
+                                WHEN psl.to_status =1003 then 'COMMITTEE D'
+                                WHEN psl.to_status =1008 then 'COMMITTEE D CON EXCEPCIONES'
+                                WHEN psl.to_status =1009 then 'COMMITTEE C CON EXCEPCIONES'
+                                WHEN psl.to_status =1010 then 'COMMITTEE B CON EXCEPCIONES'
+                                WHEN psl.to_status =1011 then 'COMMITTEE A CON EXCEPCIONES'
+                                ELSE 'INVÁLIDO' END) as commiteeLevel,
+                                COALESCE(
+                                    (
+                                        SELECT SUM(sa.account_balance_derived)
+                                        FROM m_savings_account sa
+                                        WHERE sa.client_id = ml.client_id
+                                          AND sa.status_enum = 300
+                                    ),
+                                    (mpl.required_guarantee_percent/100) * pgm.approved_amount,
+                                    0
+                                ) AS collateral,
+                                COALESCE(
+                					CONCAT(
+                						ROUND(
+                							pgm.approved_amount /
+                							NULLIF(
+                								(
+                									SELECT SUM(pg.valor_garantia)
+                									FROM p_garante pg
+                									WHERE pg.loan_id = ml.id
+                								),
+                								0
+                							),
+                						2),
+                						' %'
+                					),
+                					COALESCE((pgm.approved_amount/((mpl.required_guarantee_percent/100)* pgm.approved_amount)),'N/A')
+                				) AS collateralCoverage,
+                                CASE
+                					WHEN mpl.owner_type_enum = 4 THEN 'PAE'
+                					ELSE 'PUENTE al Éxito'
+                				END AS program,
+                                cv_sol.code_value as sector,
+                                cv_sol_fd.code_value as formalizationDocument,
+                                (select date_created from m_prequalification_status_log where prequalification_id=? and to_status=900 order by date_created desc limit 1 ) as approvalDate,
+                                ml.annual_nominal_interest_rate,lrs.equivalentAnnualRate / 12 AS equivalentMonthlyRate,lrs.installmentAmount,
+                                (CASE
+                                WHEN ml.repayment_period_frequency_enum =0 then concat(ml.repay_every,' ', (CASE WHEN ml.repay_every>1 then 'DÍAS' ELSE 'DÍA' END))
+                                WHEN ml.repayment_period_frequency_enum =1 then concat(ml.repay_every,' ',(CASE WHEN ml.repay_every>1 then 'SEMANAS' ELSE 'SEMANA' END))
+                                WHEN ml.repayment_period_frequency_enum =2 then concat(ml.repay_every,' ', (CASE WHEN ml.repay_every>1 then 'MESES' ELSE 'MES' END))
+                                WHEN ml.repayment_period_frequency_enum =3 then concat(ml.repay_every,' ',(CASE WHEN ml.repay_every>1 then 'AÑOS' ELSE 'AÑO' END))
+                                WHEN ml.repayment_period_frequency_enum =4 then concat(ml.repay_every,' ','TÉRMINO COMPLETO')
+                                ELSE 'INVÁLIDO' END) as frequencyTerm,
+                                (CASE
+                                WHEN ml.term_period_frequency_enum =0 then concat(ml.term_frequency,' ', (CASE WHEN ml.term_frequency>1 then 'DÍAS' ELSE 'DÍA' END))
+                                WHEN ml.term_period_frequency_enum =1 then concat(ml.term_frequency,' ',(CASE WHEN ml.term_frequency>1 then 'SEMANAS' ELSE 'SEMANA' END))
+                                WHEN ml.term_period_frequency_enum =2 then concat(ml.term_frequency,' ', (CASE WHEN ml.term_frequency>1 then 'MESES' ELSE 'MES' END))
+                                WHEN ml.term_period_frequency_enum =3 then concat(ml.term_frequency,' ',(CASE WHEN ml.term_frequency>1 then 'AÑOS' ELSE 'AÑO' END))
+                                WHEN ml.term_period_frequency_enum =4 then concat(ml.term_frequency,' ','TÉRMINO COMPLETO')
+                                ELSE 'INVÁLIDO' END) as loanTerm,
+                                (case when ml.interest_method_enum = 0 then 'Sobre saldos.' else 'Plano' END) as interestMethod,
+                                (ml.annual_nominal_interest_rate/12) as nominalMonthlyRate,
+                                ml.annual_nominal_interest_rate as annualInterest,
+                                COALESCE(
+                				(
+                					SELECT GROUP_CONCAT(mcv.code_value ORDER BY mcv.code_value SEPARATOR ', ')
+                					FROM p_garante pg
+                					JOIN m_code_value mcv
+                						ON mcv.id = pg.guaranteeType_cd_tipo_garantia
+                					WHERE pg.loan_id = ml.id
+                				),
+                                COALESCE(mccv.code_value,'N/A' )) as collateralType,
+                                COALESCE((
+                									SELECT SUM(pg.valor_garantia)
+                									FROM p_garante pg
+                									WHERE pg.loan_id = ml.id
+                								),
+                                COALESCE(mlc.value,'N/A' ))  as collateralValue,
+                                COALESCE(
+                				(
+                					SELECT GROUP_CONCAT(mcv.code_value ORDER BY mcv.code_value SEPARATOR ', ')
+                					FROM p_garante pg
+                					JOIN m_code_value mcv
+                						ON mcv.id = pg.registeredMortgage_cd_hipoteca_registrada
+                					WHERE pg.loan_id = ml.id
+                				),
+                                COALESCE(mccv.code_value,'N/A' )) as registeredMortgage,
+                                COALESCE(
+                				(
+                					SELECT GROUP_CONCAT(mcv.code_value ORDER BY mcv.code_value SEPARATOR ', ')
+                					FROM p_destino pd
+                					JOIN m_code_value mcv
+                						ON mcv.id = pd.loanPurposeOptions_cd_destino
+                					WHERE pd.loan_id = ml.id
+                				),
+                				COALESCE(lad.destino_prestamo,'N/A' )
+                				) AS loanPurpose,
+                                psl.date_created as logDate,
+                                concat(au.username,' - ',au.firstname,' ', au.lastname, ' ') as updatedBy,
+                                concat(fc.username,' - ',fc.firstname,' ', fc.lastname, ' ') as facilitatorName,
+                        COALESCE(
+                          (
+                              SELECT GROUP_CONCAT(
+                                  CONCAT(
+                                      DATE_FORMAT(psl2.date_created,'%d/%m/%Y %H:%i'),
+                                      ' - ',
+                                      psl2.comments,
+                                      ' (Excepción: ',
+                                      CASE WHEN psl2.is_exception = 1 THEN 'SI' ELSE 'NO' END,
+                                      ')'
+                                  )
+                                  ORDER BY psl2.date_created ASC
+                                  SEPARATOR ', '
+                              )
+                              FROM m_prequalification_status_log psl2
+                              WHERE psl2.prequalification_id = pg.id
+                                AND psl2.comments IS NOT NULL
+                                AND psl2.is_exception IS NOT NULL
+                          ),
+                          'N/A'
+                          ) AS analysisInformation,
+                                ml.id as loanId
+                                FROM m_prequalification_status_log psl
+                                JOIN m_prequalification_group pg on pg.id = psl.prequalification_id
+                                JOIN m_prequalification_group_members pgm ON pgm.group_id=pg.id
+                                JOIN m_client mc on mc.dpi=pgm.dpi
+                                left join m_loan ml on ml.prequalification_id = pg.id and ml.client_id = mc.id
+                                left join m_product_loan mpl on mpl.id = ml.product_id
+                                left join m_client_loan_additional_properties lad on lad.loan_id=ml.id
+                                left join m_loan_collateral mlc on mlc.loan_id = ml.id
+                                left join m_code_value mccv on mccv.id = mlc.type_cv_id
+                                left join m_group_client mgc on mgc.client_id = mc.id
+                                left join m_group mg on mg.id = mgc.group_id
+                                left join m_group center on center.id = mg.parent_id
+                                left join m_portfolio portfolio on portfolio.id = center.portfolio_id
+                                left join m_supervision supv on supv.id = portfolio.supervision_id
+                                left join m_agency agency on agency.id = supv.agency_id
+                                left join m_appuser au on au.id = psl.assigned_to
+                                left join m_appuser fc on fc.id = pg.facilitator
+                                left join p_solicitante ps on ps.loan_id = ml.id
+                                left join m_code_value cv_sol on cv_sol.id = ps.classificationOptions_cd_actividad_economica_principal
+                                left join m_code_value cv_sol_fd on cv_sol_fd.id = ps.formalizationDocument_cd_documento_formalizacion
+                                left join (select lrs.loan_id , SUM(
                   COALESCE(lrs.principal_amount, 0) +
                   COALESCE(lrs.interest_amount, 0) +
                   COALESCE(lrs.fee_charges_amount, 0) +
