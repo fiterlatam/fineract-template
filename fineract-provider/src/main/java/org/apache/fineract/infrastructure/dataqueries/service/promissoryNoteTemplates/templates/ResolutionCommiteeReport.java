@@ -250,9 +250,7 @@ public class ResolutionCommiteeReport {
             document.add(Chunk.NEWLINE);
 
             String label = columNames.get("analysisInformation");
-            String value = data.get(0).get("analysisInformation") != null
-                    ? data.get(0).get("analysisInformation").toString()
-                    : "N/A";
+            String value = data.get(0).get("analysisInformation") != null ? data.get(0).get("analysisInformation").toString() : "N/A";
 
             Paragraph paragraph = new Paragraph();
             paragraph.add(new Chunk(label + "\n", labelFont));

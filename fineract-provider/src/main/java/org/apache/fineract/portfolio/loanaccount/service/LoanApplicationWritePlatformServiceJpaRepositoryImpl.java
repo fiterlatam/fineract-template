@@ -1700,7 +1700,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
         final Locale dateLocal = JsonParserHelper.localeFromString(localeAsString);
         final Locale locale = JsonParserHelper.localeFromString("en");
 
-        //this.fromApiJsonDeserializer.validateLoanAdditionalData(jsonCommand);
+        // this.fromApiJsonDeserializer.validateLoanAdditionalData(jsonCommand);
         final JsonElement jsonElement = jsonCommand.jsonElement(LoanApiConstants.LOAN_ADDITIONAL_DATA);
         if (jsonElement == null || jsonElement.isJsonNull()) {
             return null;
