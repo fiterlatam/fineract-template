@@ -908,7 +908,8 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
                 prequalificationGroup.updateStatus(withExceptions ? PrequalificationStatus.PRE_COMMITTEE_D_PENDING_APPROVAL_WITH_EXCEPTIONS
                         : PrequalificationStatus.PRE_COMMITTEE_D_PENDING_APPROVAL);
             } else {
-                if(PrequalificationStatus.fromInt(prequalificationGroup.getStatus()).equals(PrequalificationStatus.RENEGOTIATION_AGENCY_LEAD)){
+                if (PrequalificationStatus.fromInt(prequalificationGroup.getStatus())
+                        .equals(PrequalificationStatus.RENEGOTIATION_AGENCY_LEAD)) {
                     PrequalificationStatus lastStatus = PrequalificationStatus
                             .fromInt(prequalificationData.getLastPrequalificationStatus().getId().intValue());
 
@@ -986,11 +987,16 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
 
     private int getCommitteeLevel(PrequalificationStatus status) {
         switch (status) {
-            case PRE_COMMITTEE_D_PENDING_APPROVAL: return 1;
-            case PRE_COMMITTEE_C_PENDING_APPROVAL: return 2;
-            case PRE_COMMITTEE_B_PENDING_APPROVAL: return 3;
-            case PRE_COMMITTEE_A_PENDING_APPROVAL: return 4;
-            default: return 0;
+            case PRE_COMMITTEE_D_PENDING_APPROVAL:
+                return 1;
+            case PRE_COMMITTEE_C_PENDING_APPROVAL:
+                return 2;
+            case PRE_COMMITTEE_B_PENDING_APPROVAL:
+                return 3;
+            case PRE_COMMITTEE_A_PENDING_APPROVAL:
+                return 4;
+            default:
+                return 0;
         }
     }
 
