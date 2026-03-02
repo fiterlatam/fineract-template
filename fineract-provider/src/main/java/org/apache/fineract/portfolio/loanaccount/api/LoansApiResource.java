@@ -152,6 +152,7 @@ import org.apache.fineract.portfolio.loanproduct.LoanProductConstants;
 import org.apache.fineract.portfolio.loanproduct.data.LoanProductData;
 import org.apache.fineract.portfolio.loanproduct.data.TransactionProcessingStrategyData;
 import org.apache.fineract.portfolio.loanproduct.domain.InterestMethod;
+import org.apache.fineract.portfolio.loanproduct.domain.LoanProductOwnerType;
 import org.apache.fineract.portfolio.loanproduct.service.LoanDropdownReadPlatformService;
 import org.apache.fineract.portfolio.loanproduct.service.LoanProductReadPlatformService;
 import org.apache.fineract.portfolio.note.data.NoteData;
@@ -451,7 +452,14 @@ public class LoansApiResource {
         } else if (templateType.equals("groupAdditionals")) {
             Collection<CodeValueData> loanCycleCompletedOptions = this.codeValueReadPlatformService
                     .retrieveCodeValuesByCode("loanCycleCompletedOptions");
-            Collection<CodeValueData> loanPurposeOptions = this.codeValueReadPlatformService.retrieveCodeValuesByCode("loanPurposeOptions");
+            String loanPurposeOptionsToUse = "loanPurposeOptions";
+            LoanProductData product = newLoanAccount.getProduct();
+            if (product !=null) {
+                if (product.getOwnerTypeOption().getId().equals(LoanProductOwnerType.PAE.getValue())){
+                    loanPurposeOptionsToUse = "loanPurposeOptionsPAE";
+                }
+            }
+            Collection<CodeValueData> loanPurposeOptions = this.codeValueReadPlatformService.retrieveCodeValuesByCode(loanPurposeOptionsToUse);
             Collection<CodeValueData> businessEvolutionOptions = this.codeValueReadPlatformService
                     .retrieveCodeValuesByCode("businessEvolutionOptions");
             Collection<CodeValueData> yesnoOptions = this.codeValueReadPlatformService.retrieveCodeValuesByCode("yesnoOptions");

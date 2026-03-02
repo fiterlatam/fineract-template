@@ -202,4 +202,5 @@
     <include file="parts/PUE_2026_02_25_ADD_PREQUALIFICATION_COMMAND_PROCESSING_PERMISSIONS.xml" relativeToChangelogFile="true"/>
     <include file="parts/PUE_24_02_26_insert_template.xml" relativeToChangelogFile="true"/>
     <include file="parts/PUE_2026_02_26_ADD_COLUMNS_TO_DATATABLES.xml" relativeToChangelogFile="true"/>
+    <include file="parts/PUE_2026_03_02_ADD_LOAN_PURPOSES_PAE.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>
