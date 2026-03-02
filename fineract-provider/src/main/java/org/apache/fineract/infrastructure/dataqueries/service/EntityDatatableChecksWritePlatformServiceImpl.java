@@ -206,7 +206,7 @@ public class EntityDatatableChecksWritePlatformServiceImpl implements EntityData
             }
             if (reqDatatables.size() > 0) {
                 LOG.info("\"error.msg.entry.required.in.datatable {} skipped", reqDatatables.toString());
-                //throw new DatatableEntryRequiredException(reqDatatables.toString());
+                // throw new DatatableEntryRequiredException(reqDatatables.toString());
             }
         }
 

@@ -454,12 +454,13 @@ public class LoansApiResource {
                     .retrieveCodeValuesByCode("loanCycleCompletedOptions");
             String loanPurposeOptionsToUse = "loanPurposeOptions";
             LoanProductData product = newLoanAccount.getProduct();
-            if (product !=null) {
-                if (product.getOwnerTypeOption().getId().equals(LoanProductOwnerType.PAE.getValue())){
+            if (product != null) {
+                if (product.getOwnerTypeOption().getId().equals(LoanProductOwnerType.PAE.getValue())) {
                     loanPurposeOptionsToUse = "loanPurposeOptionsPAE";
                 }
             }
-            Collection<CodeValueData> loanPurposeOptions = this.codeValueReadPlatformService.retrieveCodeValuesByCode(loanPurposeOptionsToUse);
+            Collection<CodeValueData> loanPurposeOptions = this.codeValueReadPlatformService
+                    .retrieveCodeValuesByCode(loanPurposeOptionsToUse);
             Collection<CodeValueData> businessEvolutionOptions = this.codeValueReadPlatformService
                     .retrieveCodeValuesByCode("businessEvolutionOptions");
             Collection<CodeValueData> yesnoOptions = this.codeValueReadPlatformService.retrieveCodeValuesByCode("yesnoOptions");
