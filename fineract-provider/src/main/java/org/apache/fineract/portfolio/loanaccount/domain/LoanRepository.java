@@ -247,7 +247,7 @@ public interface LoanRepository extends JpaRepository<Loan, Long>, JpaSpecificat
     @Query(value = "SELECT direccion_notificaciones FROM p_solicitante WHERE loan_id = ?1", nativeQuery = true)
     String retrieveAddressByLoanId(Long loanId);
 
-    @Query(value = "SELECT cv.code_value FROM p_destino de LEFT JOIN m_code_value cv ON cv.id = de.loanPurposeOptions_cd_destino WHERE loan_id = ?1", nativeQuery = true)
+    @Query(value = "SELECT cv.code_value FROM p_destino de LEFT JOIN m_code_value cv ON cv.id = de.loanPurposeOptionsPAE_cd_destino WHERE loan_id = ?1", nativeQuery = true)
     String retrieveLoanPurposeCodeByLoanId(Long loanId);
 
     @Query(value = GUARANTOR_DATA, nativeQuery = true)
