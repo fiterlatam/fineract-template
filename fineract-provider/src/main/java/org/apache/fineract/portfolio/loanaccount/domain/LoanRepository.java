@@ -237,7 +237,7 @@ public interface LoanRepository extends JpaRepository<Loan, Long>, JpaSpecificat
     @Query(value = "SELECT COUNT(*) FROM p_garante WHERE loan_id = ?1", nativeQuery = true)
     Long containsGuaranteeLoan(Long loanId);
 
-    @Query(value = "SELECT COUNT(*) " + "FROM p_garante gr " + "LEFT JOIN m_code_value cv ON cv.id = gr.guarantee_cd_tipo_garantia "
+    @Query(value = "SELECT COUNT(*) " + "FROM p_garante gr " + "LEFT JOIN m_code_value cv ON cv.id = gr.guaranteeType_cd_tipo_garantia "
             + "WHERE loan_id = ?1 AND cv.code_value <> ?2", nativeQuery = true)
     Long containsGuaranteeByLoanIdAndName(Long loanId, String name);
 
