@@ -333,11 +333,6 @@ public class BureauValidationWritePlatformServiceImpl implements BureauValidatio
                 throw new PlatformDataIntegrityException("error.msg.loan.additional.not.found",
                         "Loan additional properties Not Found for Case ID " + caseId);
             }
-            if (!(loanProduct.getName().equalsIgnoreCase(loanAdditionalData.getProducto())
-                    || loanProduct.getName().equalsIgnoreCase(loanAdditionalData.getPrograma()))) {
-                throw new PlatformDataIntegrityException("error.msg.selected.loan.product.not.same.with.the.case.id",
-                        "Loan additional properties Not Found for Case ID " + caseId);
-            }
             return loanAdditionalData;
 
         } catch (Exception e) {

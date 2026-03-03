@@ -80,10 +80,18 @@ import org.apache.fineract.organisation.bankcheque.domain.Cheque;
 import org.apache.fineract.organisation.bankcheque.domain.ChequeBatchRepositoryWrapper;
 import org.apache.fineract.organisation.prequalification.data.GroupPrequalificationData;
 import org.apache.fineract.organisation.prequalification.data.LoanAdditionalData;
+import org.apache.fineract.organisation.prequalification.data.LoanAdditionalDataPAE;
+import org.apache.fineract.organisation.prequalification.data.paeadditional.CalificacionDelSupervisor;
+import org.apache.fineract.organisation.prequalification.data.paeadditional.EntrevistaCliente;
+import org.apache.fineract.organisation.prequalification.data.paeadditional.VerificacionDelFiador;
+import org.apache.fineract.organisation.prequalification.data.paeadditional.VerificacionNegocio;
+import org.apache.fineract.organisation.prequalification.data.paeadditional.VerificacionVivienda;
 import org.apache.fineract.organisation.prequalification.domain.LoanAdditionProperties;
 import org.apache.fineract.organisation.prequalification.domain.LoanAdditionalPropertiesRepository;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationGroup;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationGroupRepositoryWrapper;
+import org.apache.fineract.organisation.prequalification.domain.pae_entities.LoanAdditionalDataPAEEntity;
+import org.apache.fineract.organisation.prequalification.domain.pae_entities.LoanAdditionalDataPAERepository;
 import org.apache.fineract.organisation.prequalification.exception.PrequalificationNotProvidedException;
 import org.apache.fineract.organisation.prequalification.service.PrequalificationReadPlatformService;
 import org.apache.fineract.organisation.staff.domain.Staff;
@@ -253,6 +261,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
     private final SavingsAccountWritePlatformService savingsAccountWritePlatformService;
     private final AppUserRepository appUserRepository;
     private final LoanAdditionalPropertiesRepository loanAdditionalPropertiesRepository;
+    private final LoanAdditionalDataPAERepository loanAdditionalDataPAERepository;
     private final PrequalificationReadPlatformService prequalificationReadPlatformService;
     private final DocumentWritePlatformService documentWritePlatformService;
     private final LoanApplicationDraftWritePlatformService loanApplicationDraftWritePlatformService;
@@ -293,6 +302,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
             final GroupLoanAdditionalsRepository groupLoanAdditionalsRepository,
             PrequalificationReadPlatformService prequalificationReadPlatformService,
             final DocumentWritePlatformService documentWritePlatformService,
+            final LoanAdditionalDataPAERepository loanAdditionalDataPAERepository,
             ExternalServicesPropertiesReadPlatformService externalServicePropertiesReadPlatformService,
             final LoanApplicationDraftWritePlatformService loanApplicationDraftWritePlatformService) {
         this.context = context;
@@ -349,6 +359,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
         this.documentWritePlatformService = documentWritePlatformService;
         this.loanApplicationDraftWritePlatformService = loanApplicationDraftWritePlatformService;
         this.externalServicePropertiesReadPlatformService = externalServicePropertiesReadPlatformService;
+        this.loanAdditionalDataPAERepository = loanAdditionalDataPAERepository;
     }
 
     private LoanLifecycleStateMachine defaultLoanLifecycleStateMachine() {
@@ -798,6 +809,18 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                 } else {
                     throw new LoanIndividualAdditionDataException("error.msg.loan.additional.data.not.provided",
                             "New loan does not have additional data");
+                }
+            }
+            if (prequalificationGroup != null && prequalificationGroup.isPrequalificationTypePAE()) {
+                final JsonElement loanAdditionalDataJson = command.jsonElement(LoanApiConstants.LOAN_ADDITIONAL_DATA_PAE);
+                if (loanAdditionalDataJson != null && loanAdditionalDataJson.isJsonObject()) {
+                    final LoanAdditionalDataPAE loanAdditionalData = this.fromJsonCommandPAE(command);
+                    final String caseId = loanAdditionalData.getCaseId();
+                    final Client loanClient = newLoanApplication.getClient();
+                    final LoanAdditionalDataPAEEntity loanAdditionProperties = LoanAdditionalDataPAEEntity.fromDTO(loanAdditionalData);
+                    loanAdditionProperties.setCaseId(caseId);
+                    loanAdditionProperties.setLoan(newLoanApplication);
+                    loanAdditionalDataPAERepository.saveAndFlush(loanAdditionProperties);
                 }
             }
 
@@ -1693,6 +1716,156 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
         }
     }
 
+    public LoanAdditionalDataPAE fromJsonCommandPAE(final JsonCommand jsonCommand) {
+        final LoanAdditionalDataPAE loanAdditionalDataPAE = new LoanAdditionalDataPAE();
+        final String dateFormat = jsonCommand.dateFormat();
+        final String localeAsString = jsonCommand.locale();
+        final Locale dateLocal = JsonParserHelper.localeFromString(localeAsString);
+        final Locale locale = JsonParserHelper.localeFromString("en");
+
+        final JsonElement jsonElement = jsonCommand.jsonElement(LoanApiConstants.LOAN_ADDITIONAL_DATA);
+        if (jsonElement == null || jsonElement.isJsonNull()) {
+            return null;
+        }
+
+        final String caseId = this.fromJsonHelper.extractStringNamed("caseId", jsonElement);
+        loanAdditionalDataPAE.setCaseId(caseId);
+
+        // Extract VerificacionVivienda
+        final JsonObject verificacionViviendaElement = this.fromJsonHelper.extractJsonObjectNamed("VerificacionVivienda", jsonElement);
+        if (verificacionViviendaElement != null) {
+            final VerificacionVivienda verificacionVivienda = new VerificacionVivienda();
+            verificacionVivienda.setFechaSupervision(
+                    this.fromJsonHelper.extractLocalDateNamed("FechaSupervision", verificacionViviendaElement, dateFormat, dateLocal));
+            verificacionVivienda.setViviendaPropia(
+                    this.fromJsonHelper.extractStringNamed("ViviendaPropia", verificacionViviendaElement));
+            verificacionVivienda.setEsGuatemalteca(
+                    this.fromJsonHelper.extractStringNamed("EsGuatemalteca", verificacionViviendaElement));
+            verificacionVivienda.setRangoEdad20_60(
+                    this.fromJsonHelper.extractStringNamed("RangoEdad20_60", verificacionViviendaElement));
+            verificacionVivienda.setReciboServiciosConDireccionExacta(
+                    this.fromJsonHelper.extractStringNamed("ReciboServiciosConDireccionExacta", verificacionViviendaElement));
+            verificacionVivienda.setReciboServiciosPropio(
+                    this.fromJsonHelper.extractStringNamed("ReciboServiciosPropio", verificacionViviendaElement));
+            verificacionVivienda.setCuentaConServiciosBasicos(
+                    this.fromJsonHelper.extractStringNamed("CuentaConServiciosBasicos", verificacionViviendaElement));
+            verificacionVivienda.setDireccionCoincideConExpediente(
+                    this.fromJsonHelper.extractStringNamed("DireccionCoincideConExpediente", verificacionViviendaElement));
+            verificacionVivienda.setUbicacionVivienda(
+                    this.fromJsonHelper.extractStringNamed("UbicacionVivienda", verificacionViviendaElement));
+            loanAdditionalDataPAE.setVerificacionVivienda(verificacionVivienda);
+        }
+
+        // Extract VerificacionNegocio
+        final JsonObject verificacionNegocioElement = this.fromJsonHelper.extractJsonObjectNamed("VerificacionNegocio", jsonElement);
+        if (verificacionNegocioElement != null) {
+            final VerificacionNegocio verificacionNegocio = new VerificacionNegocio();
+            verificacionNegocio.setNegocioPropioYManejadoPorCliente(
+                    this.fromJsonHelper.extractStringNamed("NegocioPropioYManejadoPorCliente", verificacionNegocioElement));
+            verificacionNegocio.setAntiguedadMayorA3Anios(
+                    this.fromJsonHelper.extractStringNamed("AntiguedadMayorA3Anios", verificacionNegocioElement));
+            verificacionNegocio.setFotocopiaTarjetaDeSalud(
+                    this.fromJsonHelper.extractStringNamed("FotocopiaTarjetaDeSalud", verificacionNegocioElement));
+            verificacionNegocio.setBoletaOTarjetaDerechoDePiso(
+                    this.fromJsonHelper.extractStringNamed("BoletaOTarjetaDerechoDePiso", verificacionNegocioElement));
+            verificacionNegocio.setFotocopiaFacturasCompraVenta(
+                    this.fromJsonHelper.extractStringNamed("FotocopiaFacturasCompraVenta", verificacionNegocioElement));
+            verificacionNegocio.setCopiaRTU(
+                    this.fromJsonHelper.extractStringNamed("CopiaRTU", verificacionNegocioElement));
+            verificacionNegocio.setFotografiasCoincidenConExpediente(
+                    this.fromJsonHelper.extractStringNamed("FotografiasCoincidenConExpediente", verificacionNegocioElement));
+            verificacionNegocio.setValorVentasComprasCoincidenConExpediente(
+                    this.fromJsonHelper.extractStringNamed("ValorVentasComprasCoincidenConExpediente", verificacionNegocioElement));
+            verificacionNegocio.setNegocioOrdenadoYLimpio(
+                    this.fromJsonHelper.extractStringNamed("NegocioOrdenadoYLimpio", verificacionNegocioElement));
+            verificacionNegocio.setNegocioConcurrido(
+                    this.fromJsonHelper.extractStringNamed("NegocioConcurrido", verificacionNegocioElement));
+            verificacionNegocio.setNegocioElegibleSegunPolitica(
+                    this.fromJsonHelper.extractStringNamed("NegocioElegibleSegunPolitica", verificacionNegocioElement));
+            verificacionNegocio.setPagoDePrestamosCoincidenConExpediente(
+                    this.fromJsonHelper.extractStringNamed("PagoDePrestamosCoincidenConExpediente", verificacionNegocioElement));
+            verificacionNegocio.setUbicacionNegocio(
+                    this.fromJsonHelper.extractStringNamed("UbicacionNegocio", verificacionNegocioElement));
+            verificacionNegocio.setNombreNegocio(
+                    this.fromJsonHelper.extractStringNamed("NombreNegocio", verificacionNegocioElement));
+            verificacionNegocio.setDescripcionNegocio(
+                    this.fromJsonHelper.extractStringNamed("DescripcionNegocio", verificacionNegocioElement));
+            loanAdditionalDataPAE.setVerificacionNegocio(verificacionNegocio);
+        }
+
+        // Extract EntrevistaCliente
+        final JsonObject entrevistaClienteElement = this.fromJsonHelper.extractJsonObjectNamed("EntrevistaCliente", jsonElement);
+        if (entrevistaClienteElement != null) {
+            final EntrevistaCliente entrevistaCliente = new EntrevistaCliente();
+            entrevistaCliente.setEntiendenLoQueDiceElFacilitador(
+                    this.fromJsonHelper.extractStringNamed("EntiendenLoQueDiceElFacilitador", entrevistaClienteElement));
+            entrevistaCliente.setTieneClaroTasaDeInteres(
+                    this.fromJsonHelper.extractStringNamed("TieneClaroTasaDeInteres", entrevistaClienteElement));
+            entrevistaCliente.setMontoYPlazoCoincidenConExpediente(
+                    this.fromJsonHelper.extractStringNamed("MontoYPlazoCoincidenConExpediente", entrevistaClienteElement));
+            entrevistaCliente.setRealizoAlgunPagoAlFacilitador(
+                    this.fromJsonHelper.extractStringNamed("RealizoAlgunPagoAlFacilitador", entrevistaClienteElement));
+            entrevistaCliente.setDestinoDelPrestamoCoincideConPlan(
+                    this.fromJsonHelper.extractStringNamed("DestinoDelPrestamoCoincideConPlan", entrevistaClienteElement));
+            entrevistaCliente.setTieneClaroQueDebeDeParticiparEnCapacitaciones(
+                    this.fromJsonHelper.extractStringNamed("TieneClaroQueDebeDeParticiparEnCapacitaciones", entrevistaClienteElement));
+            entrevistaCliente.setFacilitadorAtendioBienYResolvioSusDudas(
+                    this.fromJsonHelper.extractStringNamed("FacilitadorAtendioBienYResolvioSusDudas", entrevistaClienteElement));
+            entrevistaCliente.setClienteAptoParaContinuarConElProceso(
+                    this.fromJsonHelper.extractStringNamed("ClienteAptoParaContinuarConElProceso", entrevistaClienteElement));
+            entrevistaCliente.setTipoDeGarantia(
+                    this.fromJsonHelper.extractStringNamed("TipoDeGarantia", entrevistaClienteElement));
+            loanAdditionalDataPAE.setEntrevistaCliente(entrevistaCliente);
+        }
+
+        // Extract VerificacionDelFiador
+        final JsonObject verificacionDelFiadorElement = this.fromJsonHelper.extractJsonObjectNamed("VerificacionDelFiador", jsonElement);
+        if (verificacionDelFiadorElement != null) {
+            final VerificacionDelFiador verificacionDelFiador = new VerificacionDelFiador();
+            verificacionDelFiador.setConoceAClienta(
+                    this.fromJsonHelper.extractStringNamed("ConoceAClienta", verificacionDelFiadorElement));
+            verificacionDelFiador.setSiEsFamiliarMuestraIndependenciaEconomica(
+                    this.fromJsonHelper.extractStringNamed("SiEsFamiliarMuestraIndependenciaEconomica", verificacionDelFiadorElement));
+            verificacionDelFiador.setSabeQueEsFiadorYConoceElMonto(
+                    this.fromJsonHelper.extractStringNamed("SabeQueEsFiadorYConoceElMonto", verificacionDelFiadorElement));
+            verificacionDelFiador.setRangoEdad20_60(
+                    this.fromJsonHelper.extractStringNamed("RangoEdad20_60", verificacionDelFiadorElement));
+            verificacionDelFiador.setDireccionCoincideConExpediente(
+                    this.fromJsonHelper.extractStringNamed("DireccionCoincideConExpediente", verificacionDelFiadorElement));
+            verificacionDelFiador.setEstaSolventeEnPDA(
+                    this.fromJsonHelper.extractStringNamed("EstaSolventeEnPDA", verificacionDelFiadorElement));
+            verificacionDelFiador.setAnioDeLaborarO3AniosEnNegocio(
+                    this.fromJsonHelper.extractStringNamed("1AnioDeLaborarO3AniosEnNegocio", verificacionDelFiadorElement));
+            verificacionDelFiador.setEsFiadorDeOtraPersona(
+                    this.fromJsonHelper.extractStringNamed("EsFiadorDeOtraPersona", verificacionDelFiadorElement));
+            verificacionDelFiador.setCuentaConConstanciaDeIngresos(
+                    this.fromJsonHelper.extractStringNamed("CuentaConConstanciaDeIngresos", verificacionDelFiadorElement));
+            verificacionDelFiador.setCuentaconConstanciaDePropiedadDelNegocio(
+                    this.fromJsonHelper.extractStringNamed("CuentaconConstanciaDePropiedadDelNegocio", verificacionDelFiadorElement));
+            verificacionDelFiador.setNegocioElegibleSegunPolitica(
+                    this.fromJsonHelper.extractStringNamed("NegocioElegibleSegunPolitica", verificacionDelFiadorElement));
+            loanAdditionalDataPAE.setVerificacionDelFiador(verificacionDelFiador);
+        }
+
+        // Extract CalificacionDelSupervisor
+        final JsonObject calificacionDelSupervisorElement = this.fromJsonHelper.extractJsonObjectNamed("CalificacionDelSupervisor", jsonElement);
+        if (calificacionDelSupervisorElement != null) {
+            final CalificacionDelSupervisor calificacionDelSupervisor = new CalificacionDelSupervisor();
+            calificacionDelSupervisor.setPunteo(
+                    this.fromJsonHelper.extractBigDecimalNamed("Punteo", calificacionDelSupervisorElement, locale));
+            calificacionDelSupervisor.setCalificacion(
+                    this.fromJsonHelper.extractStringNamed("Calificacion", calificacionDelSupervisorElement));
+            calificacionDelSupervisor.setUbicacion(
+                    this.fromJsonHelper.extractStringNamed("Ubicacion", calificacionDelSupervisorElement));
+            calificacionDelSupervisor.setSupervisor(
+                    this.fromJsonHelper.extractStringNamed("Supervisor", calificacionDelSupervisorElement));
+            calificacionDelSupervisor.setComentarios(
+                    this.fromJsonHelper.extractStringNamed("Comentarios", calificacionDelSupervisorElement));
+            loanAdditionalDataPAE.setCalificacionDelSupervisor(calificacionDelSupervisor);
+        }
+
+        return loanAdditionalDataPAE;
+    }
     public LoanAdditionalData fromJsonCommand(final JsonCommand jsonCommand) {
         final LoanAdditionalData loanAdditionalData = new LoanAdditionalData();
         final String dateFormat = jsonCommand.dateFormat();

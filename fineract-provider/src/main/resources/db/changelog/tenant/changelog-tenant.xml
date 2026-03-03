@@ -203,4 +203,5 @@
     <include file="parts/PUE_24_02_26_insert_template.xml" relativeToChangelogFile="true"/>
     <include file="parts/PUE_2026_02_26_ADD_COLUMNS_TO_DATATABLES.xml" relativeToChangelogFile="true"/>
     <include file="parts/PUE_2026_03_02_ADD_LOAN_PURPOSES_PAE.xml" relativeToChangelogFile="true"/>
+    <include file="parts/PUE_2026_03_03_ADD_PAE_COMMCARE_INTEGRATION.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>

@@ -21,7 +21,11 @@ package org.apache.fineract.organisation.prequalification.data;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.apache.fineract.organisation.prequalification.data.paeadditional.*;
+import org.apache.fineract.organisation.prequalification.data.paeadditional.CalificacionDelSupervisor;
+import org.apache.fineract.organisation.prequalification.data.paeadditional.EntrevistaCliente;
+import org.apache.fineract.organisation.prequalification.data.paeadditional.VerificacionDelFiador;
+import org.apache.fineract.organisation.prequalification.data.paeadditional.VerificacionNegocio;
+import org.apache.fineract.organisation.prequalification.data.paeadditional.VerificacionVivienda;
 import org.springframework.beans.BeanUtils;
 
 @Getter
