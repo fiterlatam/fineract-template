@@ -416,7 +416,7 @@ public class ResolutionCommiteeReport {
                 					SELECT GROUP_CONCAT(mcv.code_value ORDER BY mcv.code_value SEPARATOR ', ')
                 					FROM p_destino pd
                 					JOIN m_code_value mcv
-                						ON mcv.id = pd.loanPurposeOptions_cd_destino
+                						ON mcv.id = pd.loanPurposeOptionsPAE_cd_destino
                 					WHERE pd.loan_id = ml.id
                 				),
                 				COALESCE(lad.destino_prestamo,'N/A' )
