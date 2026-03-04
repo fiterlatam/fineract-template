@@ -130,7 +130,8 @@ public final class LoanApplicationCommandFromApiJsonHelper {
             LoanApiConstants.paymentCapacityParamName, LoanApiConstants.facilitatorParamName, LoanApiConstants.maidenNameParamName,
             LoanApiConstants.politicallyExposedParamName, LoanApiConstants.otherIncomeParamName, LoanApiConstants.currentLoansParamName,
             LoanApiConstants.dateOfBirthParamName, LoanApiConstants.businessActivityParamName, LoanApiConstants.LOAN_ADDITIONAL_DATA,
-            "borrowerCycle", "isBulkImport", "isRestructuredLoan", "restructuredFromLoanId", LoanApiConstants.draftIdParamName));
+            LoanApiConstants.LOAN_ADDITIONAL_DATA_PAE, "borrowerCycle", "isBulkImport", "isRestructuredLoan", "restructuredFromLoanId",
+            LoanApiConstants.draftIdParamName));
 
     private final FromJsonHelper fromApiJsonHelper;
     private final CalculateLoanScheduleQueryFromApiJsonHelper apiJsonHelper;

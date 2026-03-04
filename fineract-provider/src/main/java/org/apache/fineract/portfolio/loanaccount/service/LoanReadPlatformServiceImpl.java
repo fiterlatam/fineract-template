@@ -36,6 +36,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
@@ -69,9 +70,12 @@ import org.apache.fineract.organisation.paedocumentation.data.PaeRequiredDocumen
 import org.apache.fineract.organisation.paedocumentation.service.PaeRequiredDocumentReadPlatformService;
 import org.apache.fineract.organisation.prequalification.data.GroupPrequalificationData;
 import org.apache.fineract.organisation.prequalification.data.LoanAdditionalData;
+import org.apache.fineract.organisation.prequalification.data.LoanAdditionalDataPAE;
 import org.apache.fineract.organisation.prequalification.domain.LoanAdditionProperties;
 import org.apache.fineract.organisation.prequalification.domain.LoanAdditionalPropertiesRepository;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationType;
+import org.apache.fineract.organisation.prequalification.domain.pae_entities.LoanAdditionalDataPAEEntity;
+import org.apache.fineract.organisation.prequalification.domain.pae_entities.LoanAdditionalDataPAERepository;
 import org.apache.fineract.organisation.prequalification.service.PrequalificationReadPlatformServiceImpl;
 import org.apache.fineract.organisation.staff.data.StaffData;
 import org.apache.fineract.organisation.staff.service.StaffReadPlatformService;
@@ -186,6 +190,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
     private final ColumnValidator columnValidator;
     private final DatabaseSpecificSQLGenerator sqlGenerator;
     private final LoanAdditionalPropertiesRepository loanAdditionalPropertiesRepository;
+    private final LoanAdditionalDataPAERepository loanAdditionalDataPAERepository;
     private final AgencyReadPlatformService agencyReadPlatformService;
     private final PrequalificationReadPlatformServiceImpl.PrequalificationIndividualMappingsMapper prequalificationIndividualMappingsMapper = new PrequalificationReadPlatformServiceImpl.PrequalificationIndividualMappingsMapper();
     private final PaeRequiredDocumentReadPlatformService paeRequiredDocumentReadPlatformService;
@@ -276,6 +281,15 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
                                 final LoanAdditionProperties loanAdditionProperties = loanAdditionalPropertiesList.get(0);
                                 final LoanAdditionalData loanAdditionalData = loanAdditionProperties.toData();
                                 loanAccountData.setLoanAdditionalData(loanAdditionalData);
+                            }
+                        }
+                        if (prequalificationType != null && PrequalificationType.PAE.name().equals(prequalificationType.getValue())) {
+                            Optional<LoanAdditionalDataPAEEntity> paeAdditionals = this.loanAdditionalDataPAERepository
+                                    .findByLoanId(loanId);
+                            if (!paeAdditionals.isEmpty()) {
+                                final LoanAdditionalDataPAEEntity loanAdditionProperties = paeAdditionals.get();
+                                final LoanAdditionalDataPAE loanAdditionalData = loanAdditionProperties.toDTO();
+                                loanAccountData.setLoanAdditionalDataPAE(loanAdditionalData);
                             }
                         }
                     }

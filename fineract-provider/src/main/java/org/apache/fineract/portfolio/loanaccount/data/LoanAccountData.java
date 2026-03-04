@@ -37,6 +37,7 @@ import org.apache.fineract.organisation.agency.data.AgencyData;
 import org.apache.fineract.organisation.monetary.data.CurrencyData;
 import org.apache.fineract.organisation.prequalification.data.GroupPrequalificationData;
 import org.apache.fineract.organisation.prequalification.data.LoanAdditionalData;
+import org.apache.fineract.organisation.prequalification.data.LoanAdditionalDataPAE;
 import org.apache.fineract.organisation.staff.data.StaffData;
 import org.apache.fineract.portfolio.account.data.PortfolioAccountData;
 import org.apache.fineract.portfolio.accountdetails.data.LoanAccountSummaryData;
@@ -267,6 +268,7 @@ public final class LoanAccountData {
     private Integer borrowerCycle;
 
     private LoanAdditionalData loanAdditionalData;
+    private LoanAdditionalDataPAE loanAdditionalDataPAE;
 
     private Collection<CodeValueData> loanCycleCompletedOptions;
     private Collection<CodeValueData> loanPurposeOptions;
@@ -2497,8 +2499,16 @@ public final class LoanAccountData {
         return this.loanAdditionalData;
     }
 
+    public LoanAdditionalDataPAE getLoanAdditionalDataPae() {
+        return this.loanAdditionalDataPAE;
+    }
+
     public void setLoanAdditionalData(LoanAdditionalData loanAdditionalData) {
         this.loanAdditionalData = loanAdditionalData;
+    }
+
+    public void setLoanAdditionalDataPAE(LoanAdditionalDataPAE loanAdditionalData) {
+        this.loanAdditionalDataPAE = loanAdditionalData;
     }
 
     public EnumOptionData getLoanType() {
