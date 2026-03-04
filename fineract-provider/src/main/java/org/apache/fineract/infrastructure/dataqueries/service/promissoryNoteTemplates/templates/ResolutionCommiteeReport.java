@@ -352,7 +352,7 @@ public class ResolutionCommiteeReport {
                 							NULLIF(
                 								(
                 									SELECT SUM(pg.valor_garantia)
-                									FROM p_garante pg
+                									FROM p_garantia pg
                 									WHERE pg.loan_id = ml.id
                 								),
                 								0
@@ -390,7 +390,7 @@ public class ResolutionCommiteeReport {
                                 COALESCE(
                 				(
                 					SELECT GROUP_CONCAT(mcv.code_value ORDER BY mcv.code_value SEPARATOR ', ')
-                					FROM p_garante pg
+                					FROM p_garantia pg
                 					JOIN m_code_value mcv
                 						ON mcv.id = pg.guaranteeType_cd_tipo_garantia
                 					WHERE pg.loan_id = ml.id
@@ -398,14 +398,14 @@ public class ResolutionCommiteeReport {
                                 COALESCE(mccv.code_value,'N/A' )) as collateralType,
                                 COALESCE((
                 									SELECT SUM(pg.valor_garantia)
-                									FROM p_garante pg
+                									FROM p_garantia pg
                 									WHERE pg.loan_id = ml.id
                 								),
                                 COALESCE(mlc.value,'N/A' ))  as collateralValue,
                                 COALESCE(
                 				(
                 					SELECT GROUP_CONCAT(mcv.code_value ORDER BY mcv.code_value SEPARATOR ', ')
-                					FROM p_garante pg
+                					FROM p_garantia pg
                 					JOIN m_code_value mcv
                 						ON mcv.id = pg.registeredMortgage_cd_hipoteca_registrada
                 					WHERE pg.loan_id = ml.id

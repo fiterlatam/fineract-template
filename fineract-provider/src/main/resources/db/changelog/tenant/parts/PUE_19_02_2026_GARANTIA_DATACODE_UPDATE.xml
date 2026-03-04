@@ -75,4 +75,16 @@
                 columnDataType="integer"/>
     </changeSet>
 
+    <changeSet author="fiter" id="003-rename-rename_p_garante_table">
+        <renameTable oldTableName="p_garante" newTableName="p_garantia"/>
+    </changeSet>
+
+    <changeSet author="fiter" id="004-rename_p_garante_table">
+        <sql>
+            DELETE FROM m_entity_datatable_check WHERE x_registered_table_name = 'p_garante';
+            UPDATE x_registered_table SET `registered_table_name` = 'p_garantia' WHERE `registered_table_name` = 'p_garante';
+            INSERT INTO m_entity_datatable_check (`application_table_name`, `x_registered_table_name`, `status_enum`, `system_defined`) VALUES ('m_loan', 'p_garantia', 100, b'0');
+        </sql>
+    </changeSet>
+
 </databaseChangeLog>
