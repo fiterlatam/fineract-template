@@ -40,7 +40,7 @@ import org.apache.fineract.organisation.prequalification.data.paeadditional.Cali
 public class CalificacionDelSupervisorEntity extends AbstractPersistableCustom {
 
     @ManyToOne
-    @JoinColumn(name = "loan_additional_pae_id", nullable = false)
+    @JoinColumn(name = "loan_additional_pae_id")
     private LoanAdditionalDataPAEEntity loanAdditionalDataPAE;
 
     @Column(name = "punteo", precision = 19, scale = 6)
@@ -78,4 +78,3 @@ public class CalificacionDelSupervisorEntity extends AbstractPersistableCustom {
         return entity;
     }
 }
-

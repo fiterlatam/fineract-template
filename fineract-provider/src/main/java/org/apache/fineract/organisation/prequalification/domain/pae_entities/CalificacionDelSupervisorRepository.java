@@ -27,4 +27,3 @@ public interface CalificacionDelSupervisorRepository extends JpaRepository<Calif
 
     Optional<CalificacionDelSupervisorEntity> findByLoanAdditionalDataPAE(LoanAdditionalDataPAEEntity loanAdditionalDataPAE);
 }
-

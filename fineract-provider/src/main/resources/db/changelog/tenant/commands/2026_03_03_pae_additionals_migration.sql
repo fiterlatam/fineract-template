@@ -242,4 +242,3 @@ CREATE INDEX idx_supervisor_created ON m_pae_calificacion_del_supervisor(created
 -- DROP TABLE IF EXISTS m_pae_verificacion_negocio;
 -- DROP TABLE IF EXISTS m_pae_verificacion_vivienda;
 -- DROP TABLE IF EXISTS m_pae_loan_additional_data;
-

@@ -27,4 +27,3 @@ public interface VerificacionViviendaRepository extends JpaRepository<Verificaci
 
     List<VerificacionViviendaEntity> findByLoanAdditionalDataPAE(LoanAdditionalDataPAEEntity loanAdditionalDataPAE);
 }
-

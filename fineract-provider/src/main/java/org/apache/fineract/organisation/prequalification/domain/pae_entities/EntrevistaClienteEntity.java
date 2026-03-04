@@ -39,7 +39,7 @@ import org.apache.fineract.organisation.prequalification.data.paeadditional.Entr
 public class EntrevistaClienteEntity extends AbstractPersistableCustom {
 
     @ManyToOne
-    @JoinColumn(name = "loan_additional_pae_id", nullable = false)
+    @JoinColumn(name = "loan_additional_pae_id")
     private LoanAdditionalDataPAEEntity loanAdditionalDataPAE;
 
     @Column(name = "entienden_lo_que_dice_el_facilitador", length = 50)
@@ -97,4 +97,3 @@ public class EntrevistaClienteEntity extends AbstractPersistableCustom {
         return entity;
     }
 }
-

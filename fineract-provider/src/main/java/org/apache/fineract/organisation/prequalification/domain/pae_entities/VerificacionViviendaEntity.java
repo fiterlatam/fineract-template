@@ -40,7 +40,7 @@ import org.apache.fineract.organisation.prequalification.data.paeadditional.Veri
 public class VerificacionViviendaEntity extends AbstractPersistableCustom {
 
     @ManyToOne
-    @JoinColumn(name = "loan_additional_pae_id", nullable = false)
+    @JoinColumn(name = "loan_additional_pae_id")
     private LoanAdditionalDataPAEEntity loanAdditionalDataPAE;
 
     @Column(name = "fecha_supervision")
@@ -102,5 +102,3 @@ public class VerificacionViviendaEntity extends AbstractPersistableCustom {
         this.loanAdditionalDataPAE = loanAdditionalDataPAE;
     }
 }
-
-

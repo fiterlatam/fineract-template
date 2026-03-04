@@ -93,24 +93,6 @@ public class LoanAdditionalDataPAEEntity extends AbstractPersistableCustom {
     public static LoanAdditionalDataPAEEntity fromDTO(final LoanAdditionalDataPAE dto) {
         final LoanAdditionalDataPAEEntity entity = new LoanAdditionalDataPAEEntity();
         entity.setCaseId(dto.getCaseId());
-
-        if (dto.getVerificacionVivienda() != null) {
-            entity.setVerificacionVivienda(VerificacionViviendaEntity.fromDTO(dto.getVerificacionVivienda()));
-        }
-        if (dto.getVerificacionNegocio() != null) {
-            entity.setVerificacionNegocio(VerificacionNegocioEntity.fromDTO(dto.getVerificacionNegocio()));
-        }
-        if (dto.getEntrevistaCliente() != null) {
-            entity.setEntrevistaCliente(EntrevistaClienteEntity.fromDTO(dto.getEntrevistaCliente()));
-        }
-        if (dto.getVerificacionDelFiador() != null) {
-            entity.setVerificacionDelFiador(VerificacionDelFiadorEntity.fromDTO(dto.getVerificacionDelFiador()));
-        }
-        if (dto.getCalificacionDelSupervisor() != null) {
-            entity.setCalificacionDelSupervisor(CalificacionDelSupervisorEntity.fromDTO(dto.getCalificacionDelSupervisor()));
-        }
-
         return entity;
     }
 }
-

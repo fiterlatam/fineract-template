@@ -26,6 +26,12 @@ import org.apache.fineract.organisation.prequalification.data.paeadditional.Entr
 import org.apache.fineract.organisation.prequalification.data.paeadditional.VerificacionDelFiador;
 import org.apache.fineract.organisation.prequalification.data.paeadditional.VerificacionNegocio;
 import org.apache.fineract.organisation.prequalification.data.paeadditional.VerificacionVivienda;
+import org.apache.fineract.organisation.prequalification.domain.pae_entities.CalificacionDelSupervisorEntity;
+import org.apache.fineract.organisation.prequalification.domain.pae_entities.EntrevistaClienteEntity;
+import org.apache.fineract.organisation.prequalification.domain.pae_entities.LoanAdditionalDataPAEEntity;
+import org.apache.fineract.organisation.prequalification.domain.pae_entities.VerificacionDelFiadorEntity;
+import org.apache.fineract.organisation.prequalification.domain.pae_entities.VerificacionNegocioEntity;
+import org.apache.fineract.organisation.prequalification.domain.pae_entities.VerificacionViviendaEntity;
 import org.springframework.beans.BeanUtils;
 
 @Getter
@@ -39,9 +45,43 @@ public class LoanAdditionalDataPAE extends LoanAdditionalData {
     private VerificacionDelFiador verificacionDelFiador;
     private VerificacionVivienda verificacionVivienda;
 
-    public LoanAdditionalDataPAE toPaeEntity() {
-        final LoanAdditionalDataPAE loanAdditionProperties = new LoanAdditionalDataPAE();
-        BeanUtils.copyProperties(this, loanAdditionProperties);
-        return loanAdditionProperties;
+    public LoanAdditionalDataPAEEntity toPaeEntity(LoanAdditionalDataPAEEntity loanAdditionEntity) {
+        CalificacionDelSupervisorEntity calificacionDelSupervisorEntity = loanAdditionEntity.getCalificacionDelSupervisor();
+        EntrevistaClienteEntity entrevistaClienteEntity = loanAdditionEntity.getEntrevistaCliente();
+        VerificacionNegocioEntity verificacionNegocioEntity = loanAdditionEntity.getVerificacionNegocio();
+        VerificacionViviendaEntity verificacionViviendaEntity = loanAdditionEntity.getVerificacionVivienda();
+        VerificacionDelFiadorEntity verificacionDelFiadorEntity = loanAdditionEntity.getVerificacionDelFiador();
+        if (calificacionDelSupervisorEntity == null) {
+            calificacionDelSupervisorEntity = new CalificacionDelSupervisorEntity();
+        }
+        BeanUtils.copyProperties(this.calificacionDelSupervisor, calificacionDelSupervisorEntity);
+        calificacionDelSupervisorEntity.setLoanAdditionalDataPAE(loanAdditionEntity);
+        loanAdditionEntity.setCalificacionDelSupervisor(calificacionDelSupervisorEntity);
+        if (entrevistaClienteEntity == null) {
+            entrevistaClienteEntity = new EntrevistaClienteEntity();
+        }
+        BeanUtils.copyProperties(this.entrevistaCliente, entrevistaClienteEntity);
+        entrevistaClienteEntity.setLoanAdditionalDataPAE(loanAdditionEntity);
+        loanAdditionEntity.setEntrevistaCliente(entrevistaClienteEntity);
+        if (verificacionNegocioEntity == null) {
+            verificacionNegocioEntity = new VerificacionNegocioEntity();
+        }
+        BeanUtils.copyProperties(this.verificacionNegocio, verificacionNegocioEntity);
+        verificacionNegocioEntity.setLoanAdditionalDataPAE(loanAdditionEntity);
+        loanAdditionEntity.setVerificacionNegocio(verificacionNegocioEntity);
+        if (verificacionViviendaEntity == null) {
+            verificacionViviendaEntity = new VerificacionViviendaEntity();
+        }
+        BeanUtils.copyProperties(this.verificacionVivienda, verificacionViviendaEntity);
+        verificacionViviendaEntity.setLoanAdditionalDataPAE(loanAdditionEntity);
+        loanAdditionEntity.setVerificacionVivienda(verificacionViviendaEntity);
+        if (verificacionDelFiadorEntity == null) {
+            verificacionDelFiadorEntity = new VerificacionDelFiadorEntity();
+        }
+        BeanUtils.copyProperties(this.verificacionDelFiador, verificacionDelFiadorEntity);
+        verificacionDelFiadorEntity.setLoanAdditionalDataPAE(loanAdditionEntity);
+        loanAdditionEntity.setVerificacionDelFiador(verificacionDelFiadorEntity);
+
+        return loanAdditionEntity;
     }
 }

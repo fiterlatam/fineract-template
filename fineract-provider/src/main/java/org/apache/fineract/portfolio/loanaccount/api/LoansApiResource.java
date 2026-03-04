@@ -91,6 +91,7 @@ import org.apache.fineract.organisation.monetary.data.CurrencyData;
 import org.apache.fineract.organisation.office.domain.OfficeHierarchyLevel;
 import org.apache.fineract.organisation.prequalification.data.GroupPrequalificationData;
 import org.apache.fineract.organisation.prequalification.data.LoanAdditionalData;
+import org.apache.fineract.organisation.prequalification.data.LoanAdditionalDataPAE;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationType;
 import org.apache.fineract.organisation.staff.data.StaffData;
 import org.apache.fineract.portfolio.account.PortfolioAccountType;
@@ -680,6 +681,7 @@ public class LoansApiResource {
         final Long prequalificationId = loanBasicDetails.getPrequalificationId();
         final GroupPrequalificationData prequalificationData = loanBasicDetails.getPrequalificationData();
         final LoanAdditionalData loanAdditionalData = loanBasicDetails.getLoanAdditionalData();
+        final LoanAdditionalDataPAE loanAdditionalDataPAE = loanBasicDetails.getLoanAdditionalDataPae();
         if (loanBasicDetails.isInterestRecalculationEnabled()) {
             Collection<CalendarData> interestRecalculationCalendarDatas = this.calendarReadPlatformService.retrieveCalendarsByEntity(
                     loanBasicDetails.getInterestRecalculationDetailId(), CalendarEntityType.LOAN_RECALCULATION_REST_DETAIL.getValue(),
@@ -952,6 +954,7 @@ public class LoansApiResource {
         loanAccount.setPrequalificationId(prequalificationId);
         loanAccount.setPrequalificationData(prequalificationData);
         loanAccount.setLoanAdditionalData(loanAdditionalData);
+        loanAccount.setLoanAdditionalDataPAE(loanAdditionalDataPAE);
         final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(uriInfo.getQueryParameters(),
                 mandatoryResponseParameters);
         return this.toApiJsonSerializer.serialize(settings, loanAccount, this.loanDataParameters);

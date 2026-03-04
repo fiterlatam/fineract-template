@@ -29,4 +29,3 @@ public interface LoanAdditionalDataPAERepository extends JpaRepository<LoanAddit
 
     Optional<LoanAdditionalDataPAEEntity> findByCaseId(String caseId);
 }
-

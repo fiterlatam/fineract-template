@@ -27,4 +27,3 @@ public interface VerificacionDelFiadorRepository extends JpaRepository<Verificac
 
     Optional<VerificacionDelFiadorEntity> findByLoanAdditionalDataPAE(LoanAdditionalDataPAEEntity loanAdditionalDataPAE);
 }
-

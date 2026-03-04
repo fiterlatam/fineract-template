@@ -27,4 +27,3 @@ public interface EntrevistaClienteRepository extends JpaRepository<EntrevistaCli
 
     Optional<EntrevistaClienteEntity> findByLoanAdditionalDataPAE(LoanAdditionalDataPAEEntity loanAdditionalDataPAE);
 }
-
