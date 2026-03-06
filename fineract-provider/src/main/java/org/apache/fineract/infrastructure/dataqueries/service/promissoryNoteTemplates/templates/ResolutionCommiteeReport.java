@@ -405,15 +405,6 @@ public class ResolutionCommiteeReport {
                                 COALESCE(
                 				(
                 					SELECT GROUP_CONCAT(mcv.code_value ORDER BY mcv.code_value SEPARATOR ', ')
-                					FROM p_garantia pg
-                					JOIN m_code_value mcv
-                						ON mcv.id = pg.registeredMortgage_cd_hipoteca_registrada
-                					WHERE pg.loan_id = ml.id
-                				),
-                                COALESCE(mccv.code_value,'No Aplica' )) as registeredMortgage,
-                                COALESCE(
-                				(
-                					SELECT GROUP_CONCAT(mcv.code_value ORDER BY mcv.code_value SEPARATOR ', ')
                 					FROM p_destino pd
                 					JOIN m_code_value mcv
                 						ON mcv.id = pd.loanPurposeOptionsPAE_cd_destino
@@ -466,9 +457,9 @@ public class ResolutionCommiteeReport {
                                 left join p_solicitante ps on ps.loan_id = ml.id
                                 left join m_code_value cv_sol on cv_sol.id = ps.classificationOptions_cd_actividad_economica_principal
                                 left join m_code_value cv_sol_fd on cv_sol_fd.id = ps.formalizationDocument_cd_documento_formalizacion
-                                left join p_garantia hptr on hptr.loan_id = ml.id and hptr.guaranteeType_cd_tipo_garantia is not null AND hptr.guaranteeType_cd_tipo_garantia =\s
-                                (select id from m_code_value where code_description='Hipoteca' and code_id = (select id from m_code where code_name='guaranteeType'))
-                                left join m_code_value hptrcv on hptrcv.id = hptr.registeredMortgage_cd_hipoteca_registrada
+                                left join p_garantia hptr on hptr.loan_id
+                                left join m_code_value hptrcv on hptrcv.id = hptr.registeredMortgage_cd_hipoteca_registrada 
+                                left join m_code_value grtp on grtp.id = hptr.guaranteeType_cd_tipo_garantia and grtp.code_description='Hipoteca'
                                 LEFT JOIN (
                                     SELECT
                                         loan_id,
