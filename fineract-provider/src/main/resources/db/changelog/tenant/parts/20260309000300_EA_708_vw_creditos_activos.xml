@@ -1,0 +1,231 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements. See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership. The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License. You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied. See the License for the
+    specific language governing permissions and limitations
+    under the License.
+
+-->
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.1.xsd">
+
+    <changeSet id="10" author="fineract">
+        <sql>
+            <![CDATA[
+                -- public.vw_creditos_activos source
+
+                CREATE OR REPLACE VIEW vw_creditos_activos
+                AS WITH cte_disburment AS (
+                         SELECT d.id,
+                            d.loan_id,
+                            d.expected_disburse_date,
+                            d.disbursedon_date,
+                            d.principal,
+                            d.net_disbursal_amount,
+                            d.is_reversed,
+                            row_number() OVER (PARTITION BY d.loan_id ORDER BY d.disbursedon_date) AS rn
+                           FROM m_loan_disbursement_detail d
+                        ), cte_data AS (
+                         SELECT id_type_cv.code_value AS tipo_identificacion,
+                            ccp."Cedula" AS numero_identificacion,
+                            (mc.firstname::text || ' '::text) || mc.lastname::text AS nombre_titular_cuenta,
+                            ia.codigo_promotor,
+                            ml.account_no AS identificador_cuenta,
+                            mpl.name AS nombre_prestamo,
+                            ml.principal_amount AS monto_prestamo,
+                            ia2.value_buy AS valor_compra,
+                            ml.principal_disbursed_derived AS monto_desembolsado,
+                            ml.number_of_repayments AS numero_coutas,
+                            ml.nominal_interest_rate_per_period AS tasa,
+                            ia.verificacion_riesgo,
+                            to_char(
+                                CASE
+                                    WHEN NULLIF(ml.approvedon_date::text, ''::text) IS NULL THEN NULL::date
+                                    WHEN NULLIF(ml.approvedon_date::text, ''::text) ~ '^\d{4}-\d{2}-\d{2}$'::text THEN to_date(NULLIF(ml.approvedon_date::text, ''::text), 'YYYY-MM-DD'::text)
+                                    WHEN NULLIF(ml.approvedon_date::text, ''::text) ~ '^\d{2}/\d{2}/\d{4}$'::text THEN to_date(NULLIF(ml.approvedon_date::text, ''::text), 'DD/MM/YYYY'::text)
+                                    ELSE NULL::date
+                                END::timestamp with time zone, 'YYYY-MM-DD'::text) AS fecha_aprobacion,
+                            to_char(
+                                CASE
+                                    WHEN NULLIF(ml.disbursedon_date::text, ''::text) IS NULL THEN NULL::date
+                                    WHEN NULLIF(ml.disbursedon_date::text, ''::text) ~ '^\d{4}-\d{2}-\d{2}$'::text THEN to_date(NULLIF(ml.disbursedon_date::text, ''::text), 'YYYY-MM-DD'::text)
+                                    WHEN NULLIF(ml.disbursedon_date::text, ''::text) ~ '^\d{2}/\d{2}/\d{4}$'::text THEN to_date(NULLIF(ml.disbursedon_date::text, ''::text), 'DD/MM/YYYY'::text)
+                                    ELSE NULL::date
+                                END::timestamp with time zone, 'YYYY-MM-DD'::text) AS fecha_desembolso,
+                            to_char(
+                                CASE
+                                    WHEN NULLIF(ml.expected_firstrepaymenton_date::text, ''::text) IS NULL THEN NULL::date
+                                    WHEN NULLIF(ml.expected_firstrepaymenton_date::text, ''::text) ~ '^\d{4}-\d{2}-\d{2}$'::text THEN to_date(NULLIF(ml.expected_firstrepaymenton_date::text, ''::text), 'YYYY-MM-DD'::text)
+                                    WHEN NULLIF(ml.expected_firstrepaymenton_date::text, ''::text) ~ '^\d{2}/\d{2}/\d{4}$'::text THEN to_date(NULLIF(ml.expected_firstrepaymenton_date::text, ''::text), 'DD/MM/YYYY'::text)
+                                    ELSE NULL::date
+                                END::timestamp with time zone, 'YYYY-MM-DD'::text) AS primer_pago,
+                            mlaa.principal_overdue_derived AS capital_pendiente,
+                            mlaa.interest_overdue_derived AS interes_pendiente,
+                            mlaa.fee_charges_overdue_derived AS cargos_pendientes,
+                            0 AS impuestos_pendientes,
+                            mlaa.penalty_charges_overdue_derived AS penalidad_pendiente,
+                            mlaa.total_overdue_derived AS total_pendiente,
+                            ml.principal_repaid_derived AS capital_pagado,
+                            ml.interest_repaid_derived AS interes_pagado,
+                            ml.fee_charges_repaid_derived AS cargos_pagados,
+                            0 AS impuestos_pagados,
+                            ml.penalty_charges_repaid_derived AS penalidad_pagada,
+                            ml.principal_repaid_derived + ml.interest_repaid_derived + ml.fee_charges_repaid_derived + 0::numeric + ml.penalty_charges_repaid_derived AS total_pagado,
+                            ml.principal_disbursed_derived - ml.principal_repaid_derived AS saldo_capital,
+                            ml.interest_charged_derived - ml.interest_repaid_derived AS saldo_interes,
+                            ml.fee_charges_charged_derived - ml.fee_charges_repaid_derived AS saldo_cargos,
+                            ml.penalty_charges_charged_derived - ml.penalty_charges_repaid_derived AS saldo_penalidad,
+                            ml.principal_disbursed_derived - ml.principal_repaid_derived + (ml.interest_charged_derived - ml.interest_repaid_derived) + (ml.fee_charges_charged_derived - ml.fee_charges_repaid_derived) + (ml.penalty_charges_charged_derived - ml.penalty_charges_repaid_derived) AS saldo_total,
+                            mc.mobile_no AS celular,
+                            ccp."Direccion" AS direccion,
+                            mc.email_address AS email,
+                            state_l.enum_value AS estado_credito,
+                                CASE
+                                    WHEN mlaa.total_overdue_derived >= 30000::numeric AND (CURRENT_DATE -
+                                    CASE
+                                        WHEN NULLIF(mlaa.overdue_since_date_derived::text, ''::text) IS NULL THEN NULL::date
+                                        WHEN NULLIF(mlaa.overdue_since_date_derived::text, ''::text) ~ '^\d{4}-\d{2}-\d{2}$'::text THEN to_date(NULLIF(mlaa.overdue_since_date_derived::text, ''::text), 'YYYY-MM-DD'::text)
+                                        WHEN NULLIF(mlaa.overdue_since_date_derived::text, ''::text) ~ '^\d{2}/\d{2}/\d{4}$'::text THEN to_date(NULLIF(mlaa.overdue_since_date_derived::text, ''::text), 'DD/MM/YYYY'::text)
+                                        ELSE NULL::date
+                                    END) > 0 THEN 1
+                                    ELSE 0
+                                END AS in_arrears,
+                                CASE
+                                    WHEN mlaa.total_overdue_derived >= 30000::numeric AND (CURRENT_DATE -
+                                    CASE
+                                        WHEN NULLIF(mlaa.overdue_since_date_derived::text, ''::text) IS NULL THEN NULL::date
+                                        WHEN NULLIF(mlaa.overdue_since_date_derived::text, ''::text) ~ '^\d{4}-\d{2}-\d{2}$'::text THEN to_date(NULLIF(mlaa.overdue_since_date_derived::text, ''::text), 'YYYY-MM-DD'::text)
+                                        WHEN NULLIF(mlaa.overdue_since_date_derived::text, ''::text) ~ '^\d{2}/\d{2}/\d{4}$'::text THEN to_date(NULLIF(mlaa.overdue_since_date_derived::text, ''::text), 'DD/MM/YYYY'::text)
+                                        ELSE NULL::date
+                                    END) > 0 THEN CURRENT_DATE -
+                                    CASE
+                                        WHEN NULLIF(mlaa.overdue_since_date_derived::text, ''::text) IS NULL THEN NULL::date
+                                        WHEN NULLIF(mlaa.overdue_since_date_derived::text, ''::text) ~ '^\d{4}-\d{2}-\d{2}$'::text THEN to_date(NULLIF(mlaa.overdue_since_date_derived::text, ''::text), 'YYYY-MM-DD'::text)
+                                        WHEN NULLIF(mlaa.overdue_since_date_derived::text, ''::text) ~ '^\d{2}/\d{2}/\d{4}$'::text THEN to_date(NULLIF(mlaa.overdue_since_date_derived::text, ''::text), 'DD/MM/YYYY'::text)
+                                        ELSE NULL::date
+                                    END
+                                    ELSE 0
+                                END AS dias_mora,
+                            to_char(
+                                CASE
+                                    WHEN NULLIF(ml.closedon_date::text, ''::text) IS NULL THEN NULL::date
+                                    WHEN NULLIF(ml.closedon_date::text, ''::text) ~ '^\d{4}-\d{2}-\d{2}$'::text THEN to_date(NULLIF(ml.closedon_date::text, ''::text), 'YYYY-MM-DD'::text)
+                                    WHEN NULLIF(ml.closedon_date::text, ''::text) ~ '^\d{2}/\d{2}/\d{4}$'::text THEN to_date(NULLIF(ml.closedon_date::text, ''::text), 'DD/MM/YYYY'::text)
+                                    ELSE NULL::date
+                                END::timestamp with time zone, 'YYYY-MM-DD'::text) AS fecha_cierre,
+                            NULL::text AS fecha_esperada_cierre,
+                            ib.entidad_financiera,
+                            'pendiente'::text AS subestado_cuenta,
+                            ec.fecha_bloqueo,
+                            tipo_bloqueo.code_value AS tipo_bloqueo,
+                            to_char(
+                                CASE
+                                    WHEN NULLIF(ml.submittedon_date::text, ''::text) IS NULL THEN NULL::date
+                                    WHEN NULLIF(ml.submittedon_date::text, ''::text) ~ '^\d{4}-\d{2}-\d{2}$'::text THEN to_date(NULLIF(ml.submittedon_date::text, ''::text), 'YYYY-MM-DD'::text)
+                                    WHEN NULLIF(ml.submittedon_date::text, ''::text) ~ '^\d{2}/\d{2}/\d{4}$'::text THEN to_date(NULLIF(ml.submittedon_date::text, ''::text), 'DD/MM/YYYY'::text)
+                                    ELSE NULL::date
+                                END::timestamp with time zone, 'YYYY-MM-DD'::text) AS fecha_creacion,
+                            ec.reestructurado,
+                            tipo_garantia.code_value AS tipo_garantia,
+                            ia.codigo_promotor_original,
+                            estado_garantia.code_value AS estado_garantia,
+                                CASE
+                                    WHEN vo."SiNoNoAplica_cd_retanqueo" = 2491 THEN 'Si'::text
+                                    WHEN vo."SiNoNoAplica_cd_retanqueo" = 2492 THEN 'No'::text
+                                    WHEN vo."SiNoNoAplica_cd_retanqueo" = 2493 THEN 'No Aplica'::text
+                                    ELSE NULL::text
+                                END AS retanqueo,
+                            tipo_credito.code_value AS tipo_credito,
+                            tipo_producto.code_value AS tipo_producto
+                           FROM m_loan ml
+                             JOIN m_client mc ON ml.client_id = mc.id
+                             JOIN campos_cliente_persona ccp ON mc.id = ccp.client_id
+                             LEFT JOIN m_code_value id_type_cv ON id_type_cv.id = ccp."Customer Identifier_cd_Tipo identificacion"
+                             LEFT JOIN "Informacion Adicional" ia ON ml.id = ia.loan_id
+                             LEFT JOIN m_product_loan mpl ON ml.product_id = mpl.id
+                             LEFT JOIN "Alianzas" ia2 ON ml.id = ia2.loan_id
+                             LEFT JOIN m_loan_arrears_aging mlaa ON ml.id = mlaa.loan_id
+                             LEFT JOIN r_enum_value state_l ON ml.loan_status_id = state_l.enum_id AND state_l.enum_name::text = 'loan_status_id'::text
+                             LEFT JOIN "Informacion Bancaria" ib ON ml.id = ib.loan_id
+                             LEFT JOIN "Estado Cartera" ec ON ml.id = ec.loan_id
+                             LEFT JOIN m_code_value tipo_bloqueo ON ec."Tipo Bloqueo_cd_Tipo Bloqueo" = tipo_bloqueo.id
+                             LEFT JOIN "Detalle garantia" dg ON ml.id = dg.loan_id
+                             LEFT JOIN m_code_value estado_garantia ON dg."Estado Garantía_cd_Estado Garantía" = estado_garantia.id
+                             LEFT JOIN m_code_value tipo_garantia ON dg."Tipo Garantía_cd_Tipo Garantía" = tipo_garantia.id
+                             LEFT JOIN m_code_value tipo_producto ON dg."Tipo Producto_cd_Tipo Producto" = tipo_producto.id
+                             LEFT JOIN "Validacion Operacion" vo ON ml.id = vo.loan_id
+                             LEFT JOIN m_code_value tipo_credito ON vo."Tipo Credito_cd_Tipo Credito" = tipo_credito.id
+                          WHERE ml.loan_status_id = 300
+                        )
+                 SELECT tipo_identificacion,
+                    numero_identificacion,
+                    nombre_titular_cuenta,
+                    codigo_promotor,
+                    identificador_cuenta,
+                    nombre_prestamo,
+                    monto_prestamo,
+                    valor_compra,
+                    monto_desembolsado,
+                    numero_coutas,
+                    tasa,
+                    verificacion_riesgo,
+                    fecha_aprobacion,
+                    fecha_desembolso,
+                    primer_pago,
+                    capital_pendiente,
+                    interes_pendiente,
+                    cargos_pendientes,
+                    impuestos_pendientes,
+                    penalidad_pendiente,
+                    total_pendiente,
+                    capital_pagado,
+                    interes_pagado,
+                    cargos_pagados,
+                    impuestos_pagados,
+                    penalidad_pagada,
+                    total_pagado,
+                    saldo_capital,
+                    saldo_interes,
+                    saldo_cargos,
+                    saldo_penalidad,
+                    saldo_total,
+                    celular,
+                    direccion,
+                    email,
+                    estado_credito,
+                    in_arrears,
+                    dias_mora,
+                    fecha_cierre,
+                    fecha_esperada_cierre,
+                    entidad_financiera,
+                    subestado_cuenta,
+                    fecha_bloqueo,
+                    tipo_bloqueo,
+                    fecha_creacion,
+                    reestructurado,
+                    tipo_garantia,
+                    codigo_promotor_original,
+                    estado_garantia,
+                    retanqueo,
+                    tipo_credito,
+                    tipo_producto
+                   FROM cte_data;
+            ]]>
+        </sql>
+    </changeSet>
+
+</databaseChangeLog>
