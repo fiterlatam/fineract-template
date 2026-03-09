@@ -21,6 +21,7 @@ package org.apache.fineract.useradministration.service;
 import static org.apache.fineract.useradministration.service.AppUserConstants.FACILITATOR_ROLE_START_WITH;
 import static org.apache.fineract.useradministration.service.AppUserConstants.GERENTE_ROLE_START_WITH;
 import static org.apache.fineract.useradministration.service.AppUserConstants.LIDER_AGENCIA_ROLE_START_WITH;
+import static org.apache.fineract.useradministration.service.AppUserConstants.LIDER_ROTATING_ROLE_START_WITH;
 import static org.apache.fineract.useradministration.service.AppUserConstants.REGIONAL_ROLE_START_WITH;
 import static org.apache.fineract.useradministration.service.AppUserConstants.SUPERVISOR_ROLE_START_WITH;
 
@@ -256,6 +257,7 @@ public class AppUserReadPlatformServiceImpl implements AppUserReadPlatformServic
         if (Long.valueOf(OfficeHierarchyLevel.AGENCIA.getValue()).equals(hierarchyLevel)) {
             findUserWithRoleLike(usersDataList, usersforDropdown, LIDER_AGENCIA_ROLE_START_WITH);
             findUserWithRoleLike(usersDataList, usersforDropdown, REGIONAL_ROLE_START_WITH);
+            findUserWithRoleLike(usersDataList, usersforDropdown, LIDER_ROTATING_ROLE_START_WITH);
         }
 
         if (Long.valueOf(OfficeHierarchyLevel.SUPERVISION.getValue()).equals(hierarchyLevel)) {

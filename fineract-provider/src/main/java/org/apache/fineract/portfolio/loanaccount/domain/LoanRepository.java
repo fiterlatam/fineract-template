@@ -108,6 +108,42 @@ public interface LoanRepository extends JpaRepository<Loan, Long>, JpaSpecificat
             LEFT JOIN p_fiador pf ON lo.id = pf.loan_id
             WHERE lo.id = ? LIMIT 1
             """;
+    String AGENCY_LEAD_BY_LOAN_ID_MOD = """
+            SELECT
+                individualOffice.agency_name AS agencia,
+                lo.id AS id,
+                CONCAT(agl.firstname, ' ', agl.lastname) AS lider_agencia,
+                agl.user_dpi AS user_dpi,
+                CONCAT(
+                    COALESCE(pf.primer_nombre, ' '), ' ',
+                    COALESCE(pf.segundo_nombre, ' '), ' ',
+                    COALESCE(pf.primer_apellido, ' '), ' ',
+                    COALESCE(pf.segundo_apellido, ' ')
+                ) AS nombre_fiador,
+                pf.DPI_fiador_tercero AS dpi_fiador,
+                pf.direccion_notificaciones AS direccion_fiador
+            FROM m_loan lo
+            LEFT JOIN (
+                            SELECT
+                                mc.id AS client_id,
+                                ms.agency_id,
+                                mag.responsible_user_id,
+                                mag.NAME AS agency_name,
+                    						ms.linked_office_id AS supervision_office
+                            FROM
+                                m_client mc
+                                INNER JOIN m_group_client mgc ON mgc.client_id = mc.id
+                                INNER JOIN m_group mg ON mg.id = mgc.group_id
+                                INNER JOIN m_group center ON center.id = mg.parent_id
+                                INNER JOIN m_portfolio mp ON mp.id = center.portfolio_id
+                                INNER JOIN m_supervision ms ON ms.id = mp.supervision_id
+                                INNER JOIN m_agency mag ON mag.id = ms.agency_id
+                            GROUP BY mc.id,ms.agency_id,mag.responsible_user_id, mag.NAME,ms.linked_office_id
+                            ) individualOffice ON individualOffice.client_id = lo.client_id
+            LEFT JOIN m_appuser agl ON agl.id = individualOffice.responsible_user_id
+            LEFT JOIN p_fiador pf ON lo.id = pf.loan_id
+            WHERE lo.id = ? LIMIT 1
+            """;
 
     String GUARANTOR_DATA = "SELECT" + "    TRIM(" + "        CONCAT(" + "            COALESCE(primer_nombre, ''), " + "            ' ', "
             + "            COALESCE(segundo_nombre, ''), " + "            ' ', " + "            COALESCE(primer_apellido, ''), "

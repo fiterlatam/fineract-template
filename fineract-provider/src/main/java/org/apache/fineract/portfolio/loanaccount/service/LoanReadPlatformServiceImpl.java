@@ -18,7 +18,7 @@
  */
 package org.apache.fineract.portfolio.loanaccount.service;
 
-import static org.apache.fineract.portfolio.loanaccount.domain.LoanRepository.AGENCY_LEAD_BY_LOAN_ID;
+import static org.apache.fineract.portfolio.loanaccount.domain.LoanRepository.AGENCY_LEAD_BY_LOAN_ID_MOD;
 import static org.apache.fineract.portfolio.loanproduct.service.LoanEnumerations.interestType;
 
 import java.math.BigDecimal;
@@ -2725,7 +2725,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
 
     @Override
     public Map<String, Object> retrieveBasicDataForLoanPromissoryTemplate(Long loanId) {
-        return this.jdbcTemplate.queryForMap(AGENCY_LEAD_BY_LOAN_ID, loanId);
+        return this.jdbcTemplate.queryForMap(AGENCY_LEAD_BY_LOAN_ID_MOD, loanId);
     }
 
     private static final class AdditionalGroupLoanData implements RowMapper<GroupLoanAdditionalData> {

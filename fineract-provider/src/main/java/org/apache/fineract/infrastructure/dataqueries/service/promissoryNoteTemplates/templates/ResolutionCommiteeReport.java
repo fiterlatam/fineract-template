@@ -43,6 +43,7 @@ import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.fineract.organisation.monetary.domain.MonetaryCurrency;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepository;
 import org.apache.fineract.portfolio.loanaccount.service.LoanReadPlatformService;
@@ -181,7 +182,7 @@ public class ResolutionCommiteeReport {
             addStyledCell(mainTable, data.get(0).get("interestMethod"), valueFont, LIGHT_GRAY, 1);
 
             addStyledCell(mainTable, columNames.get("equivalentAnnualRate"), labelFont, VALUE_WHITE, 1);
-            addStyledCell(mainTable, data.get(0).get("equivalentAnnualRate"), valueFont, LIGHT_GRAY, 1);
+            addStyledCell(mainTable, formatAmountPercentage(data.get(0).get("equivalentAnnualRate")), valueFont, LIGHT_GRAY, 1);
             addStyledCell(mainTable, columNames.get("annualInterest"), labelFont, VALUE_WHITE, 1);
             Object annualInterest = data.get(0).get("annualInterest");
             //format as percentage with 2 decimals
@@ -200,16 +201,11 @@ public class ResolutionCommiteeReport {
 
             addStyledCell(mainTable, columNames.get("collateral"), labelFont, VALUE_WHITE, 1);
             Object collateralObj = data.get(0).get("collateral");
+            addStyledCell(mainTable, collateralObj, valueFont, VALUE_YELLOW, 1);
 
-            String collateralFormatted = "0.00";
-
-            if (collateralObj instanceof BigDecimal bd) {
-                collateralFormatted = bd.setScale(2, RoundingMode.HALF_UP).toPlainString();
-            }
-
-            addStyledCell(mainTable, collateralFormatted, valueFont, VALUE_YELLOW, 1);
             addStyledCell(mainTable, columNames.get("collateralCoverage"), labelFont, VALUE_WHITE, 1);
-            addStyledCell(mainTable, data.get(0).get("collateralCoverage"), valueFont, VALUE_YELLOW, 1);
+            Object collateralCoverage = data.get(0).get("collateralCoverage");
+            addStyledCell(mainTable, formatAmountPercentage(collateralCoverage), valueFont, VALUE_YELLOW, 1);
 
             addStyledCell(mainTable, columNames.get("collateralValue"), labelFont, VALUE_WHITE, 1);
             addStyledCell(mainTable, "Q. " +formatAmount(data.get(0).get("collateralValue")), valueFont, LIGHT_GRAY, 1);
@@ -230,9 +226,9 @@ public class ResolutionCommiteeReport {
             addStyledCell(mainTable, data.get(0).get("approvalDate"), valueFont, VALUE_YELLOW, 1);
 
             addStyledCell(mainTable, columNames.get("equivalentMonthlyRate"), labelFont, VALUE_WHITE, 1);
-            addStyledCell(mainTable, data.get(0).get("equivalentMonthlyRate"), valueFont, LIGHT_GRAY, 1);
+            addStyledCell(mainTable, formatAmountPercentage(data.get(0).get("equivalentMonthlyRate")), valueFont, LIGHT_GRAY, 1);
             addStyledCell(mainTable, columNames.get("nominalMonthlyRate"), labelFont, VALUE_WHITE, 1);
-            addStyledCell(mainTable, data.get(0).get("nominalMonthlyRate"), valueFont, LIGHT_GRAY, 1);
+            addStyledCell(mainTable, formatAmountPercentage(data.get(0).get("nominalMonthlyRate")), valueFont, LIGHT_GRAY, 1);
 
             document.add(mainTable);
 
@@ -300,7 +296,8 @@ public class ResolutionCommiteeReport {
 
     private Object formatAmountPercentage(Object annualInterest) {
         String percentageString = "0.00%";
-        if (annualInterest instanceof BigDecimal bd) {
+        if (NumberUtils.isCreatable(String.valueOf(annualInterest))) {
+            BigDecimal bd = new BigDecimal(String.valueOf(annualInterest));
             // Format the number to 2 decimals with thousands separator before adding the percentage symbol
             BigDecimal rounded = bd.setScale(2, RoundingMode.HALF_UP);
             String formatted = String.format("%,.2f", rounded);
@@ -310,7 +307,8 @@ public class ResolutionCommiteeReport {
     }
     private Object formatAmount(Object annualInterest) {
         String percentageString = "0";
-        if (annualInterest instanceof BigDecimal bd) {
+        if (NumberUtils.isCreatable(String.valueOf(annualInterest))) {
+            BigDecimal bd = new BigDecimal(String.valueOf(annualInterest));
             // Format the number to 2 decimals with thousands separator before adding the percentage symbol
             BigDecimal rounded = bd.setScale(2, RoundingMode.HALF_UP);
             String formatted = String.format("%,.2f", rounded);
@@ -361,7 +359,7 @@ public class ResolutionCommiteeReport {
                                 ELSE 'INVÁLIDO' END) as commiteeLevel,
                                 COALESCE(pgr.collateral,'No Aplica') as collateral,
                                 COALESCE(hptrcv.code_description,'No Aplica') as registeredMortgage,
-                                COALESCE(concat((ml.principal_amount/(mlc.value))* 100,' %'),'N/A') as collateralCoverage,
+                                COALESCE((ml.principal_amount/(pgr.collateralValue))* 100,'N/A') as collateralCoverage,
                                 CASE
                 					WHEN mpl.owner_type_enum = 4 THEN 'PAE'
                 					ELSE 'PUENTE al Éxito'
@@ -401,7 +399,7 @@ public class ResolutionCommiteeReport {
                 									FROM p_garantia pg
                 									WHERE pg.loan_id = ml.id
                 								),
-                                COALESCE(mlc.value,'N/A' ))  as collateralValue,
+                                COALESCE(pgr.collateralValue,'N/A' ))  as collateralValue,
                                 COALESCE(
                 				(
                 					SELECT GROUP_CONCAT(mcv.code_value ORDER BY mcv.code_value SEPARATOR ', ')
@@ -462,17 +460,12 @@ public class ResolutionCommiteeReport {
                                 left join m_code_value grtp on grtp.id = hptr.guaranteeType_cd_tipo_garantia and grtp.code_description='Hipoteca'
                                 LEFT JOIN (
                                     SELECT
-                                        loan_id,
-                                        GROUP_CONCAT(CONCAT(detalle_garantia, ' GARANTIA', rn) SEPARATOR ',') AS collateral
-                                    FROM (
-                                        SELECT
-                                            loan_id,
-                                            detalle_garantia,
-                                            ROW_NUMBER() OVER (PARTITION BY loan_id ORDER BY detalle_garantia) AS rn
-                                        FROM p_garantia
-                                    ) t
-                                    GROUP BY loan_id
-                                ) pgr ON pgr.loan_id = ml.id
+                                        loan_id, GROUP_CONCAT( CONCAT( detalle_garantia, ' GARANTIA', rn ) SEPARATOR ',' ) AS collateral, 
+                                        SUM(valor_garantia) AS collateralValue
+                                        FROM
+                                        	( SELECT loan_id, detalle_garantia, valor_garantia, ROW_NUMBER() OVER ( PARTITION BY loan_id ORDER BY detalle_garantia ) AS rn FROM p_garantia ) t
+                                        GROUP BY loan_id
+                                    ) pgr ON pgr.loan_id = ml.id
                                 left join (select lrs.loan_id , SUM(
                                     COALESCE(lrs.principal_amount, 0) +
                                     COALESCE(lrs.interest_amount, 0) +
