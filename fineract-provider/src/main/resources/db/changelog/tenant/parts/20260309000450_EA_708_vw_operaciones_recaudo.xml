@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements. See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership. The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License. You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied. See the License for the
+    specific language governing permissions and limitations
+    under the License.
+
+-->
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.1.xsd">
+
+    <changeSet id="10" author="fineract">
+        <sql>
+            <![CDATA[
+                -- public.vw_operaciones_recaudo source
+
+                CREATE OR REPLACE VIEW vw_operaciones_recaudo
+                AS WITH cte_transaction_repayment AS (
+                         SELECT ml.account_no AS identificador_cuenta,
+                            ccp."Cedula" AS numero_de_identificacion,
+                            mlt.submitted_on_date AS fecha_valor,
+                            mlt.principal_portion_derived AS monto_capital,
+                            mlt.interest_portion_derived AS monto_interes,
+                            mlt.fee_charges_portion_derived AS monto_cargos,
+                            0 AS monto_impuestos,
+                            mlt.penalty_charges_portion_derived AS monto_penalidades,
+                            mlt.principal_portion_derived + mlt.interest_portion_derived + mlt.fee_charges_portion_derived + 0::numeric AS monto,
+                            mn.note AS notas,
+                            'Pago Introducido'::text AS tipo,
+                            cc.name AS canal,
+                            ia.numero_identificacion_aliado
+                           FROM m_loan_transaction mlt
+                             LEFT JOIN r_enum_value rev ON rev.enum_name::text = 'loan_transaction_type_enum'::text AND mlt.transaction_type_enum = rev.enum_id
+                             LEFT JOIN m_loan ml ON mlt.loan_id = ml.id
+                             LEFT JOIN detalles_de_la_transaccion dt ON mlt.id = dt.loan_transaction_id
+                             LEFT JOIN detalles_transacciones_alianzas dta ON mlt.id = dta.loan_transaction_id
+                             JOIN m_client mc ON ml.client_id = mc.id
+                             JOIN campos_cliente_persona ccp ON mc.id = ccp.client_id
+                             LEFT JOIN m_code_value id_type_cv ON id_type_cv.id = ccp."Customer Identifier_cd_Tipo identificacion"
+                             LEFT JOIN m_note mn ON mlt.id = mn.loan_transaction_id
+                             LEFT JOIN m_payment_detail mpd ON mlt.payment_detail_id = mpd.id
+                             LEFT JOIN custom.c_channel cc ON mpd.channel_id = cc.id
+                             LEFT JOIN "Informacion Adicional" ia ON ml.id = ia.loan_id
+                          WHERE mlt.transaction_type_enum = ANY (ARRAY[2, 5])
+                        )
+                 SELECT identificador_cuenta,
+                    numero_de_identificacion,
+                    fecha_valor,
+                    monto_capital,
+                    monto_interes,
+                    monto_cargos,
+                    monto_impuestos,
+                    monto_penalidades,
+                    monto,
+                    notas,
+                    tipo,
+                    canal,
+                    numero_identificacion_aliado
+                   FROM cte_transaction_repayment;
+            ]]>
+        </sql>
+    </changeSet>
+
+</databaseChangeLog>

@@ -26,10 +26,10 @@
     <changeSet id="10" author="fineract">
         <sql>
             <![CDATA[
-                drop view vw_client;
-                drop view vw_creditos_activos ;
-                drop view vw_facturacion_manual;
-                drop view vw_report_client_general;
+                DROP VIEW IF EXISTS vw_client;
+                DROP VIEW IF EXISTS vw_creditos_activos;
+                DROP VIEW IF EXISTS vw_facturacion_manual;
+                DROP VIEW IF EXISTS vw_report_client_general;
             ]]>
         </sql>
     </changeSet>

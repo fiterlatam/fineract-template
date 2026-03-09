@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements. See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership. The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License. You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied. See the License for the
+    specific language governing permissions and limitations
+    under the License.
+
+-->
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.1.xsd">
+
+    <changeSet id="10" author="fineract">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="campos_cliente_persona" columnName="Departamento_cd_Departamento"/>
+            </not>
+        </preConditions>
+
+        <sql>
+            <![CDATA[
+                drop view vw_client;
+                drop view vw_creditos_activos ;
+                drop view vw_desembolsos_cr;
+                drop view vw_facturacion_manual;
+                drop view vw_operaciones_recaudo;
+                drop view vw_report_client_general;
+
+
+                ALTER TABLE campos_cliente_persona RENAME TO campos_cliente_persona_old;
+
+                ALTER TABLE campos_cliente_persona_old
+                RENAME CONSTRAINT campos_cliente_personaz_pkey TO campos_cliente_persona_old_pkey;
+
+                ALTER TABLE campos_cliente_persona_old
+                RENAME CONSTRAINT "unique_campos_cliente_personaz_Cedula" TO "unique_campos_cliente_persona_old_Cedula";
+
+
+                CREATE TABLE campos_cliente_persona (
+                    client_id int8 NOT NULL,
+                    "Cedula" varchar(20) NOT NULL,
+                    "Estado Civil_cd_Estado civil" int4 NULL,
+                    "Edad" int4 NULL,
+                    "Estrato" int4 NULL,
+                    -- NUEVA COLUMNA insertada antes de Ciudad
+                    "Departamento_cd_Departamento" int4 NOT NULL DEFAULT 0,
+                    "Ciudad_cd_Ciudad" int4 NOT NULL,
+                    "Tiene vehiculo propio" bool DEFAULT false NULL,
+                    "Tipo Vehiculo_cd_Tipo de vehiculo" int4 NULL,
+                    "Nivel Academico_cd_Nivel academico" int4 NULL,
+                    "Actividad Laboral_cd_Actividad laboral" int4 NULL,
+                    "Tiempo de actividad laboral" int4 NULL,
+                    "Media de ingresos" numeric(14, 2) NULL,
+                    "Nombre empresa" varchar(100) NULL,
+                    "Direccion" varchar(200) NOT NULL,
+                    "Telefono" varchar(60) NULL,
+                    "Cupo solicitado" numeric(19, 2) NULL,
+                    "Cupo aprobado" numeric(19, 2) NOT NULL,
+                    "Cupo otros prestamos" numeric(19, 2) NOT NULL,
+                    "Cupo score" numeric(19, 2) NULL,
+                    "Valor score" int4 NULL,
+                    "Modelo score" varchar(10) NULL,
+                    created_at timestamp NULL,
+                    updated_at timestamp NULL,
+                    "Customer Identifier_cd_Tipo identificacion" int4 DEFAULT 0 NOT NULL,
+                    "Telefono domicilio" varchar(255) NULL,
+                    "Numero Celular Secundario" varchar(255) NULL,
+                    CONSTRAINT campos_cliente_personaz_pkey PRIMARY KEY (client_id),
+                    CONSTRAINT "unique_campos_cliente_personaz_Cedula" UNIQUE ("Cedula")
+                );
+
+                INSERT INTO campos_cliente_persona (
+                    client_id, "Cedula", "Estado Civil_cd_Estado civil", "Edad", "Estrato",
+                    "Departamento_cd_Departamento", "Ciudad_cd_Ciudad", "Tiene vehiculo propio",
+                    "Tipo Vehiculo_cd_Tipo de vehiculo", "Nivel Academico_cd_Nivel academico",
+                    "Actividad Laboral_cd_Actividad laboral", "Tiempo de actividad laboral",
+                    "Media de ingresos", "Nombre empresa", "Direccion", "Telefono",
+                    "Cupo solicitado", "Cupo aprobado", "Cupo otros prestamos",
+                    "Cupo score", "Valor score", "Modelo score",
+                    created_at, updated_at,
+                    "Customer Identifier_cd_Tipo identificacion", "Telefono domicilio", "Numero Celular Secundario"
+                )
+                SELECT
+                    client_id, "Cedula", "Estado Civil_cd_Estado civil", "Edad", "Estrato",
+                    0, -- department set to zero for older entries
+                    "Ciudad_cd_Ciudad", "Tiene vehiculo propio", "Tipo Vehiculo_cd_Tipo de vehiculo",
+                    "Nivel Academico_cd_Nivel academico", "Actividad Laboral_cd_Actividad laboral",
+                    "Tiempo de actividad laboral", "Media de ingresos", "Nombre empresa", "Direccion",
+                    "Telefono", "Cupo solicitado", "Cupo aprobado", "Cupo otros prestamos",
+                    "Cupo score", "Valor score", "Modelo score",
+                    created_at, updated_at,
+                    "Customer Identifier_cd_Tipo identificacion", "Telefono domicilio", "Numero Celular Secundario"
+                FROM campos_cliente_persona_old;
+
+
+                ALTER TABLE public.campos_cliente_persona
+                ADD CONSTRAINT fk_campos_cliente_persona_client_id
+                FOREIGN KEY (client_id) REFERENCES m_client(id) ON DELETE CASCADE ON UPDATE RESTRICT;
+
+
+                DROP TABLE campos_cliente_persona_old;
+            ]]>
+        </sql>
+    </changeSet>
+
+</databaseChangeLog>

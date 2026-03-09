@@ -445,4 +445,11 @@
     <include file="parts/20260209000400_EA_658_vw_facturacion_manual.xml" relativeToChangelogFile="true"/>
     <include file="parts/20260209000500_EA_658_vw_report_client_general.xml" relativeToChangelogFile="true"/>
     <include file="parts/20260226000100_EA_666_AddOriginalNrOfInstallmentsToTransactionTable.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20260309000100_EA_708_campos_cliente_persona_addcolumn.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20260309000200_EA_708_vw_client.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20260309000300_EA_708_vw_creditos_activos.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20260309000350_EA_708_vw_desembolsos_cr.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20260309000400_EA_708_vw_facturacion_manual.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20260309000450_EA_708_vw_operaciones_recaudo.xml" relativeToChangelogFile="true"/>
+    <include file="parts/20260309000500_EA_708_vw_report_client_general.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>
