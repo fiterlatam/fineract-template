@@ -32,12 +32,12 @@
 
         <sql>
             <![CDATA[
-                drop view vw_client;
-                drop view vw_creditos_activos ;
-                drop view vw_desembolsos_cr;
-                drop view vw_facturacion_manual;
-                drop view vw_operaciones_recaudo;
-                drop view vw_report_client_general;
+                drop view IF EXISTS vw_client;
+                drop view IF EXISTS vw_creditos_activos ;
+                drop view IF EXISTS vw_desembolsos_cr;
+                drop view IF EXISTS vw_facturacion_manual;
+                drop view IF EXISTS vw_operaciones_recaudo;
+                drop view IF EXISTS vw_report_client_general;
 
 
                 ALTER TABLE campos_cliente_persona RENAME TO campos_cliente_persona_old;
