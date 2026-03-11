@@ -294,7 +294,7 @@ public class PromissoryNoteTemplateFour {
 
         if (dpi && number.toString().matches("\\d{13}")) {
             value = "";
-            String valueFormatted = number.toString().replaceFirst("(\\d{4})(\\d{5})(\\d)(\\d{3})", "$1,$2,$3,$4");
+            String valueFormatted = number.toString().replaceFirst("(\\d{4})(\\d{5})(\\d{4})", "$1,$2,$3");
             Iterable<String> parts = Splitter.on(",").split(valueFormatted);
             StringBuilder sb = new StringBuilder();
             for (String part : parts) {
