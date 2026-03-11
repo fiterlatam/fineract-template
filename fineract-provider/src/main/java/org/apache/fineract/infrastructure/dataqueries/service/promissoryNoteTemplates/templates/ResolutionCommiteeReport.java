@@ -171,8 +171,7 @@ public class ResolutionCommiteeReport {
             addStyledCell(mainTable, data.get(0).get("loanTerm"), valueFont, LIGHT_GRAY, 1);
 
             addStyledCell(mainTable, columNames.get("installmentAmount"), labelFont, VALUE_WHITE, 1);
-            addStyledCell(mainTable, "Q. "+ formatAmount(data.get(0).get("installmentAmount")), valueFont,
-                    LIGHT_GRAY, 1);
+            addStyledCell(mainTable, "Q. " + formatAmount(data.get(0).get("installmentAmount")), valueFont, LIGHT_GRAY, 1);
             addStyledCell(mainTable, columNames.get("loanPurpose"), labelFont, VALUE_WHITE, 1);
             addStyledCell(mainTable, data.get(0).get("loanPurpose"), valueFont, VALUE_YELLOW, 1);
 
@@ -186,7 +185,7 @@ public class ResolutionCommiteeReport {
 
             addStyledCell(mainTable, columNames.get("annualInterest"), labelFont, VALUE_WHITE, 1);
             Object annualInterest = data.get(0).get("annualInterest");
-            //format as percentage with 2 decimals
+            // format as percentage with 2 decimals
 
             addStyledCell(mainTable, formatAmountPercentage(annualInterest), valueFont, LIGHT_GRAY, 1);
 
@@ -217,7 +216,7 @@ public class ResolutionCommiteeReport {
             addStyledCell(mainTable, formatAmountPercentage(collateralCoverage), valueFont, VALUE_YELLOW, 1);
 
             addStyledCell(mainTable, columNames.get("collateralValue"), labelFont, VALUE_WHITE, 1);
-            addStyledCell(mainTable, "Q. " +formatAmount(data.get(0).get("collateralValue")), valueFont, LIGHT_GRAY, 1);
+            addStyledCell(mainTable, "Q. " + formatAmount(data.get(0).get("collateralValue")), valueFont, LIGHT_GRAY, 1);
             addStyledCell(mainTable, columNames.get("registeredMortgage"), labelFont, VALUE_WHITE, 1);
             addStyledCell(mainTable, data.get(0).get("registeredMortgage"), valueFont, VALUE_YELLOW, 1);
 
@@ -314,6 +313,7 @@ public class ResolutionCommiteeReport {
         }
         return percentageString;
     }
+
     private Object formatAmount(Object annualInterest) {
         String percentageString = "0";
         if (NumberUtils.isCreatable(String.valueOf(annualInterest))) {
@@ -466,11 +466,11 @@ public class ResolutionCommiteeReport {
                                 left join m_code_value cv_sol on cv_sol.id = ps.classificationOptions_cd_actividad_economica_principal
                                 left join m_code_value cv_sol_fd on cv_sol_fd.id = ps.formalizationDocument_cd_documento_formalizacion
                                 left join p_garantia hptr on hptr.loan_id
-                                left join m_code_value hptrcv on hptrcv.id = hptr.registeredMortgage_cd_hipoteca_registrada 
+                                left join m_code_value hptrcv on hptrcv.id = hptr.registeredMortgage_cd_hipoteca_registrada
                                 left join m_code_value grtp on grtp.id = hptr.guaranteeType_cd_tipo_garantia and grtp.code_description='Hipoteca'
                                 LEFT JOIN (
                                     SELECT
-                                        loan_id, GROUP_CONCAT( CONCAT( detalle_garantia, ' GARANTIA', rn ) SEPARATOR ',' ) AS collateral, 
+                                        loan_id, GROUP_CONCAT( CONCAT( detalle_garantia, ' GARANTIA', rn ) SEPARATOR ',' ) AS collateral,
                                         SUM(valor_garantia) AS collateralValue
                                         FROM
                                         	( SELECT loan_id, detalle_garantia, valor_garantia, ROW_NUMBER() OVER ( PARTITION BY loan_id ORDER BY detalle_garantia ) AS rn FROM p_garantia ) t
