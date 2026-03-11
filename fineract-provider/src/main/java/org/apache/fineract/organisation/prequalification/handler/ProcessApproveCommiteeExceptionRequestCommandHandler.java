@@ -28,7 +28,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-@CommandType(entity = "PREQUALIFICATIONS", action = "APPROVECOMMITEEWITEXC")
+@CommandType(entity = "PREQUALIFICATIONS", action = "APPROVECOMMITEEWHITEXC")
 public class ProcessApproveCommiteeExceptionRequestCommandHandler implements NewCommandSourceHandler {
 
     private final PrequalificationWritePlatformService prequalificationWritePlatformService;

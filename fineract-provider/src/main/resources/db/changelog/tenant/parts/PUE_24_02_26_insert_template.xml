@@ -65,4 +65,44 @@
                     0);
         </sql>
     </changeSet>
+    <changeSet id="2" author="fiter">
+        <sql>
+            UPDATE m_template set text= '{
+"facilitatorName": "Facilitador",
+"clientCode": "Código de cliente",
+"agencyName": "Agencia",
+"title": "Resolución de Crédito Individual",
+"clientName": "Nombre completo del cliente",
+"loanAmount": "Monto del crédito",
+"loanTerm": "Plazo",
+"installmentAmount": "Cuota",
+"loanPurpose": "Destino",
+"frequencyTerm": "Forma de pago",
+"interestMethod": "Tipo de interés",
+"equivalentAnnualRate": "Tasa anual equivalente",
+"annualInterest": "Tasa nominal anual",
+"monthlyInterest": "Tasa nominal mensual",
+"registeredMortgage": "Hipoteca registrada",
+"expenseAdmin": "Gastos administrativos",
+"frequencyTermInt": "Frec. de pago de interés",
+"frequencyTermCap": "Frec. de pago de capital",
+"collateralType": "Tipo de garantía",
+"collateral": "Garantía",
+"collateralCoverage": "Cobertura de garantía",
+"collateralValue": "Valor de la garantía",
+"program": "Programa",
+"sector": "Sector",
+"formalizationDocument": "Documento de formalización",
+"approvalDate": "Fecha de aprobación comité",
+"emitionDate": "Fecha emisión resolución",
+"equivalentMonthlyRate": "TAE mensual",
+"nominalMonthlyRate": "Tasa nominal mensual",
+"observationTitle": "Observaciones y condiciones de aprobación o rechazo",
+"analysisInformation": "Análisis de riesgo de crédito, basado en información socio-económica presentada por la agencia.",
+"committeeLevel": "Nivel de comité",
+"updatedBy": "Usuario",
+"logDate": "Hora de aprobación"
+}' where name = 'Commitee Approval Report';
+        </sql>
+    </changeSet>
 </databaseChangeLog>

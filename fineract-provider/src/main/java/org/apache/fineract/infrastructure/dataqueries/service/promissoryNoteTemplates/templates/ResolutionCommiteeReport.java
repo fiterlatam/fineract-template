@@ -171,8 +171,7 @@ public class ResolutionCommiteeReport {
             addStyledCell(mainTable, data.get(0).get("loanTerm"), valueFont, LIGHT_GRAY, 1);
 
             addStyledCell(mainTable, columNames.get("installmentAmount"), labelFont, VALUE_WHITE, 1);
-            addStyledCell(mainTable, "Q. "+ formatAmount(data.get(0).get("installmentAmount")), valueFont,
-                    LIGHT_GRAY, 1);
+            addStyledCell(mainTable, "Q. " + formatAmount(data.get(0).get("installmentAmount")), valueFont, LIGHT_GRAY, 1);
             addStyledCell(mainTable, columNames.get("loanPurpose"), labelFont, VALUE_WHITE, 1);
             addStyledCell(mainTable, data.get(0).get("loanPurpose"), valueFont, VALUE_YELLOW, 1);
 
@@ -183,14 +182,23 @@ public class ResolutionCommiteeReport {
 
             addStyledCell(mainTable, columNames.get("equivalentAnnualRate"), labelFont, VALUE_WHITE, 1);
             addStyledCell(mainTable, formatAmountPercentage(data.get(0).get("equivalentAnnualRate")), valueFont, LIGHT_GRAY, 1);
+
             addStyledCell(mainTable, columNames.get("annualInterest"), labelFont, VALUE_WHITE, 1);
             Object annualInterest = data.get(0).get("annualInterest");
-            //format as percentage with 2 decimals
+            // format as percentage with 2 decimals
 
             addStyledCell(mainTable, formatAmountPercentage(annualInterest), valueFont, LIGHT_GRAY, 1);
 
             addStyledCell(mainTable, columNames.get("expenseAdmin"), labelFont, VALUE_WHITE, 1);
             addStyledCell(mainTable, data.get(0).get("expenseAdmin"), valueFont, LIGHT_GRAY, 1);
+
+            addStyledCell(mainTable, columNames.get("monthlyInterest"), labelFont, VALUE_WHITE, 1);
+            Object monthlyInterest = data.get(0).get("monthlyInterest");
+            //format as percentage with 2 decimals
+
+            addStyledCell(mainTable, formatAmountPercentage(monthlyInterest), valueFont, LIGHT_GRAY, 1);
+
+
             addStyledCell(mainTable, columNames.get("frequencyTermInt"), labelFont, VALUE_WHITE, 1);
             addStyledCell(mainTable, data.get(0).get("frequencyTerm"), valueFont, LIGHT_GRAY, 1);
 
@@ -208,7 +216,7 @@ public class ResolutionCommiteeReport {
             addStyledCell(mainTable, formatAmountPercentage(collateralCoverage), valueFont, VALUE_YELLOW, 1);
 
             addStyledCell(mainTable, columNames.get("collateralValue"), labelFont, VALUE_WHITE, 1);
-            addStyledCell(mainTable, "Q. " +formatAmount(data.get(0).get("collateralValue")), valueFont, LIGHT_GRAY, 1);
+            addStyledCell(mainTable, "Q. " + formatAmount(data.get(0).get("collateralValue")), valueFont, LIGHT_GRAY, 1);
             addStyledCell(mainTable, columNames.get("registeredMortgage"), labelFont, VALUE_WHITE, 1);
             addStyledCell(mainTable, data.get(0).get("registeredMortgage"), valueFont, VALUE_YELLOW, 1);
 
@@ -305,6 +313,7 @@ public class ResolutionCommiteeReport {
         }
         return percentageString;
     }
+
     private Object formatAmount(Object annualInterest) {
         String percentageString = "0";
         if (NumberUtils.isCreatable(String.valueOf(annualInterest))) {
@@ -345,7 +354,7 @@ public class ResolutionCommiteeReport {
                                 ml.principal_amount as loanAmount,
                                 agency.name as agencyName,
                                 mc.id as clientCode,
-                                lrs.equivalentAnnualRate,
+                                (lrs.equivalentAnnualRate * 100) as equivalentAnnualRate,
                                 'No Aplica' as expenseAdmin,
                                 (CASE
                                 WHEN psl.to_status =1006 then 'COMMITTEE A'
@@ -367,13 +376,13 @@ public class ResolutionCommiteeReport {
                                 cv_sol.code_value as sector,
                                 cv_sol_fd.code_value as formalizationDocument,
                                 (select date_created from m_prequalification_status_log where prequalification_id=? and to_status=900 order by date_created desc limit 1 ) as approvalDate,
-                                ml.annual_nominal_interest_rate,lrs.equivalentAnnualRate / 12 AS equivalentMonthlyRate,lrs.installmentAmount,
+                                ml.annual_nominal_interest_rate,(lrs.equivalentAnnualRate / 12)*100 AS equivalentMonthlyRate,lrs.installmentAmount,
                                 (CASE
-                                WHEN ml.repayment_period_frequency_enum =0 then concat(ml.repay_every,' ', (CASE WHEN ml.repay_every>1 then 'DÍAS' ELSE 'DÍA' END))
-                                WHEN ml.repayment_period_frequency_enum =1 then concat(ml.repay_every,' ',(CASE WHEN ml.repay_every>1 then 'SEMANAS' ELSE 'SEMANA' END))
-                                WHEN ml.repayment_period_frequency_enum =2 then concat(ml.repay_every,' ', (CASE WHEN ml.repay_every>1 then 'MESES' ELSE 'Mensual' END))
-                                WHEN ml.repayment_period_frequency_enum =3 then concat(ml.repay_every,' ',(CASE WHEN ml.repay_every>1 then 'AÑOS' ELSE 'AÑO' END))
-                                WHEN ml.repayment_period_frequency_enum =4 then concat(ml.repay_every,' ','TÉRMINO COMPLETO')
+                                WHEN ml.repayment_period_frequency_enum =0 then 'A diario'
+                                WHEN ml.repayment_period_frequency_enum =1 then 'Semanalmente'
+                                WHEN ml.repayment_period_frequency_enum =2 then 'Mensual'
+                                WHEN ml.repayment_period_frequency_enum =3 then 'Anualmente'
+                                WHEN ml.repayment_period_frequency_enum =4 then 'TÉRMINO COMPLETO'
                                 ELSE 'INVÁLIDO' END) as frequencyTerm,
                                 (CASE
                                 WHEN ml.term_period_frequency_enum =0 then concat(ml.term_frequency,' ', (CASE WHEN ml.term_frequency>1 then 'DÍAS' ELSE 'DÍA' END))
@@ -385,6 +394,7 @@ public class ResolutionCommiteeReport {
                                 (case when ml.interest_method_enum = 0 then 'Sobre saldos.' else 'Plano' END) as interestMethod,
                                 (ml.annual_nominal_interest_rate/12) as nominalMonthlyRate,
                                 ml.annual_nominal_interest_rate as annualInterest,
+                                (ml.annual_nominal_interest_rate/12) as monthlyInterest,
                                 COALESCE(
                 				(
                 					SELECT GROUP_CONCAT(mcv.code_value ORDER BY mcv.code_value SEPARATOR ', ')
@@ -456,11 +466,11 @@ public class ResolutionCommiteeReport {
                                 left join m_code_value cv_sol on cv_sol.id = ps.classificationOptions_cd_actividad_economica_principal
                                 left join m_code_value cv_sol_fd on cv_sol_fd.id = ps.formalizationDocument_cd_documento_formalizacion
                                 left join p_garantia hptr on hptr.loan_id
-                                left join m_code_value hptrcv on hptrcv.id = hptr.registeredMortgage_cd_hipoteca_registrada 
+                                left join m_code_value hptrcv on hptrcv.id = hptr.registeredMortgage_cd_hipoteca_registrada
                                 left join m_code_value grtp on grtp.id = hptr.guaranteeType_cd_tipo_garantia and grtp.code_description='Hipoteca'
                                 LEFT JOIN (
                                     SELECT
-                                        loan_id, GROUP_CONCAT( CONCAT( detalle_garantia, ' GARANTIA', rn ) SEPARATOR ',' ) AS collateral, 
+                                        loan_id, GROUP_CONCAT( CONCAT( detalle_garantia, ' GARANTIA', rn ) SEPARATOR ',' ) AS collateral,
                                         SUM(valor_garantia) AS collateralValue
                                         FROM
                                         	( SELECT loan_id, detalle_garantia, valor_garantia, ROW_NUMBER() OVER ( PARTITION BY loan_id ORDER BY detalle_garantia ) AS rn FROM p_garantia ) t
@@ -483,7 +493,7 @@ public class ResolutionCommiteeReport {
                                       COALESCE(lrs.interest_amount, 0) +
                                       COALESCE(lrs.fee_charges_amount, 0) +
                                       COALESCE(lrs.penalty_charges_amount, 0)
-                                    ) * ml.term_frequency)-ml.principal_amount )/ml.principal_amount)/ml.term_frequency)) as equivalentMonthlyRate
+                                    ) * ml.term_frequency)-ml.principal_amount )/ml.principal_amount)/ml.term_frequency) *100) as equivalentMonthlyRate
                                     from m_loan_repayment_schedule lrs inner join m_loan ml on ml.id=lrs.loan_id where lrs.loan_id = ? AND lrs.installment=1) as lrs on lrs.loan_id = ml.id
                                 where pg.id = ? and psl.to_status in (1003,1004,1005,1006) order by psl.id desc
                 """;
