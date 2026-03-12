@@ -157,10 +157,10 @@ public class PromissoryNoteTemplateSix {
         } else {
             data = (Object[]) dataGuarantor[0];
         }
-        String guarantorName = data[0].toString();
-        String guarantorDPI = data[1].toString();
+        String guarantorName = data[0] != null ? data[0].toString() : "";
+        String guarantorDPI = data[1] != null ? data[1].toString() : "";
         String guarantorDPIText = getNumber(Long.parseLong(guarantorDPI), false, false, true);
-        String guarantorAddress = data[2].toString();
+        String guarantorAddress = data[2] != null ? data[2].toString() : "";
 
         Document document = new Document();
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
