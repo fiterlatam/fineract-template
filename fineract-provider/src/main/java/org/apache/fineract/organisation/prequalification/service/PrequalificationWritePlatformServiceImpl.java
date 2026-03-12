@@ -1041,8 +1041,9 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
 
             PrequalificationStatus lastStatus = PrequalificationStatus
                     .fromInt(prequalificationData.getLastPrequalificationStatus().getId().intValue());
-
-            BigDecimal amount = prequalificationData.getTotalRequestedAmount();
+            final Long renegotiationId = command.longValueOfParameterNamed("renegotiationId");
+            Renegotiation renegotiation = renegotiationRepository.getRenegotiationById(renegotiationId);
+            BigDecimal amount = renegotiation.getProposedAmount();
             PrequalificationStatus targetCommittee = null;
 
             if (amount.compareTo(new BigDecimal("20000")) < 0) {
@@ -1058,7 +1059,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
             int lastLevel = getCommitteeLevel(lastStatus);
             int targetLevel = getCommitteeLevel(targetCommittee);
 
-            if (lastLevel == targetLevel || lastLevel == targetLevel - 1) {
+            if (lastLevel == targetLevel /*|| lastLevel == targetLevel - 1*/) {
                 action = "approveCommittee";
             } else {
                 return sendToFirstPhaseApproveCommitteeD(entityId, command, false, true);
