@@ -1918,4 +1918,10 @@
         </insert>
 
     </changeSet>
+
+    <changeSet id="1773341938903-1" author="brian">
+        <!--        alter table p_solicitante modify DPI to varchar type-->
+        <modifyDataType tableName="p_solicitante" columnName="DPI" newDataType="varchar(50)"/>
+        <modifyDataType tableName="p_fiador" columnName="DPI_fiador_tercero" newDataType="varchar(50)"/>
+    </changeSet>
 </databaseChangeLog>
