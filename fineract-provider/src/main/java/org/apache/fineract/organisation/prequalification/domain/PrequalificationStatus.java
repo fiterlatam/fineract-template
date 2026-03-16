@@ -52,13 +52,13 @@ public enum PrequalificationStatus {
                                                                                                                                     "prequalification.status.committee.b.pending.approval"), PRE_COMMITTEE_A_PENDING_APPROVAL(
                                                                                                                                             1006,
                                                                                                                                             "prequalification.status.committee.a.pending.approval.with.exceptions"), PRE_COMMITTEE_D_PENDING_APPROVAL_WITH_EXCEPTIONS(
-                                                                                                                                                    1008,
+                                                                                                                                                    911,
                                                                                                                                                     "prequalification.status.pre.committee.d.pending.approval.with.exceptions"), PRE_COMMITTEE_C_PENDING_APPROVAL_WITH_EXCEPTIONS(
-                                                                                                                                                            1009,
+                                                                                                                                                            912,
                                                                                                                                                             "prequalification.status.pre.committee.c.pending.approval.with.exceptions"), PRE_COMMITTEE_B_PENDING_APPROVAL_WITH_EXCEPTIONS(
-                                                                                                                                                                    1010,
+                                                                                                                                                                    913,
                                                                                                                                                                     "prequalification.status.committee.b.pending.approval.with.exceptions"), PRE_COMMITTEE_A_PENDING_APPROVAL_WITH_EXCEPTIONS(
-                                                                                                                                                                            1011,
+                                                                                                                                                                            914,
                                                                                                                                                                             "prequalification.status.committee.a.pending.approval"), INVALID(
                                                                                                                                                                                     0,
                                                                                                                                                                                     "prequalification.status.invalid"), RENEGOTIATION_AGENCY_LEAD(
@@ -132,16 +132,16 @@ public enum PrequalificationStatus {
             case 1007:
                 enumeration = PrequalificationStatus.RENEGOTIATION_AGENCY_LEAD;
             break;
-            case 1008:
+            case 911:
                 enumeration = PrequalificationStatus.PRE_COMMITTEE_D_PENDING_APPROVAL_WITH_EXCEPTIONS;
             break;
-            case 1009:
+            case 912:
                 enumeration = PrequalificationStatus.PRE_COMMITTEE_C_PENDING_APPROVAL_WITH_EXCEPTIONS;
             break;
-            case 1010:
+            case 913:
                 enumeration = PrequalificationStatus.PRE_COMMITTEE_B_PENDING_APPROVAL_WITH_EXCEPTIONS;
             break;
-            case 1011:
+            case 914:
                 enumeration = PrequalificationStatus.PRE_COMMITTEE_A_PENDING_APPROVAL_WITH_EXCEPTIONS;
             break;
         }
