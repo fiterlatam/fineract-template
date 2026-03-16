@@ -25,6 +25,7 @@ import com.google.gson.JsonParser;
 import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.text.MessageFormat;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
@@ -1509,6 +1510,10 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
 
     private Integer resolveIndividualStatusRange(PrequalificationGroup prequalificationGroup, @NotNull String action) {
 
+        List<PrequalificationStatusLog> statusLogs = this.preQualificationStatusLogRepository.groupStatusLogs(prequalificationGroup.getId());
+        final boolean ignoreExceptions = statusLogs.stream().anyMatch(statusLog -> PrequalificationStatus.PRE_COMMITTEE_D_PENDING_APPROVAL
+                .getValue().equals(statusLog.getToStatus()) && Boolean.FALSE.equals(statusLog.getWithExceptions()));
+
         Integer finalStatus = null;
         if (action.equalsIgnoreCase("approveanalysis") || action.equalsIgnoreCase("approveCommittee")) {
             Integer fromStatus = prequalificationGroup.getStatus();
@@ -1530,10 +1535,14 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
                     }
                 });
             }
-            Integer errorWarningsCount = redCountRef.get();
-            final String membersql = "select " + this.committeeApprovalsMapper.schema() + " "
-                    + "WHERE ? BETWEEN c.from_amount AND c.to_amount " + "AND ( " + "    (? > c.limit AND c.condition = 'GREATER_THAN') "
-                    + "    OR (? <= c.limit AND c.condition = 'LESS_THAN') ) ORDER BY cv.code_value desc;";
+            Integer errorWarningsCount = ignoreExceptions ? 0 : redCountRef.get();
+
+            final String membersql = MessageFormat.format(
+                    """
+                            select {0}
+                            WHERE ? BETWEEN c.from_amount AND c.to_amount AND ((? > c.limit AND c.condition = ''GREATER_THAN'')
+                            OR (? <= c.limit AND c.condition = ''LESS_THAN'') )
+                             ORDER BY cv.code_value desc;""", this.committeeApprovalsMapper.schema());
 
             List<CommitteeApprovalsData> approvalsRequired = this.jdbcTemplate.query(membersql, this.committeeApprovalsMapper,
                     new Object[] { totalApprovedAmount, errorWarningsCount, errorWarningsCount });
