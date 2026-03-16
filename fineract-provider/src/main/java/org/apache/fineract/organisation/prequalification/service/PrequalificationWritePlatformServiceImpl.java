@@ -1534,7 +1534,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
                     }
                 });
             }
-            Integer errorWarningsCount = redCountRef.get();
+            Integer errorWarningsCount = ignoreExceptions? 0: redCountRef.get();
             final String membersql = "select " + this.committeeApprovalsMapper.schema() + " "
                     + "WHERE ? BETWEEN c.from_amount AND c.to_amount " + "AND ( " + "    (? > c.limit AND c.condition = 'GREATER_THAN') "
                     + "    OR (? <= c.limit AND c.condition = 'LESS_THAN') ) ORDER BY cv.code_value desc;";
