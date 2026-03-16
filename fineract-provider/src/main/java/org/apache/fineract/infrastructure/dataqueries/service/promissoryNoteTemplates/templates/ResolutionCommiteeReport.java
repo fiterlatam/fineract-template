@@ -361,10 +361,10 @@ public class ResolutionCommiteeReport {
                                 WHEN psl.to_status =1005 then 'COMMITTEE B'
                                 WHEN psl.to_status =1004 then 'COMMITTEE C'
                                 WHEN psl.to_status =1003 then 'COMMITTEE D'
-                                WHEN psl.to_status =1008 then 'COMMITTEE D CON EXCEPCIONES'
-                                WHEN psl.to_status =1009 then 'COMMITTEE C CON EXCEPCIONES'
-                                WHEN psl.to_status =1010 then 'COMMITTEE B CON EXCEPCIONES'
-                                WHEN psl.to_status =1011 then 'COMMITTEE A CON EXCEPCIONES'
+                                WHEN psl.to_status =911 then 'COMMITTEE D CON EXCEPCIONES'
+                                WHEN psl.to_status =912 then 'COMMITTEE C CON EXCEPCIONES'
+                                WHEN psl.to_status =913 then 'COMMITTEE B CON EXCEPCIONES'
+                                WHEN psl.to_status =914 then 'COMMITTEE A CON EXCEPCIONES'
                                 ELSE 'INVÁLIDO' END) as commiteeLevel,
                                 COALESCE(pgr.collateral,'No Aplica') as collateral,
                                 COALESCE(hptrcv.code_description,'No Aplica') as registeredMortgage,
@@ -495,7 +495,7 @@ public class ResolutionCommiteeReport {
                                       COALESCE(lrs.penalty_charges_amount, 0)
                                     ) * ml.term_frequency)-ml.principal_amount )/ml.principal_amount)/ml.term_frequency) *100) as equivalentMonthlyRate
                                     from m_loan_repayment_schedule lrs inner join m_loan ml on ml.id=lrs.loan_id where lrs.loan_id = ? AND lrs.installment=1) as lrs on lrs.loan_id = ml.id
-                                where pg.id = ? and psl.to_status in (1003,1004,1005,1006) order by psl.id desc
+                                where pg.id = ? and psl.to_status in (1003,1004,1005,1006,911,912,913,914) order by psl.id desc
                 """;
         return this.jdbcTemplate.queryForList(sql, prequalificationId, loanId, prequalificationId);
     }

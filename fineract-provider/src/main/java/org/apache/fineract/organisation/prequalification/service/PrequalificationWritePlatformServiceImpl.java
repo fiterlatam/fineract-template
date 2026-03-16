@@ -25,7 +25,6 @@ import com.google.gson.JsonParser;
 import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.text.MessageFormat;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
@@ -1322,13 +1321,13 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
             List<LoanData> submittedLoans;
             if (prequalificationGroup.isPrequalificationTypeGroup()) {
                 submittedLoans = jdbcTemplate.query(this.groupTypeLoanMapper.schema(), this.groupTypeLoanMapper,
-                        new Object[] { prequalificationId, dpi, prequalificationId });
+                        prequalificationId, dpi, prequalificationId);
             } else if (prequalificationGroup.isPrequalificationTypePAE()) {
                 submittedLoans = jdbcTemplate.query(this.individualTypeLoanMapper.schema(), this.individualTypeLoanMapper,
-                        new Object[] { prequalificationId, PrequalificationType.PAE.getValue(), dpi, prequalificationId });
+                        prequalificationId, PrequalificationType.PAE.getValue(), dpi, prequalificationId);
             } else {
                 submittedLoans = jdbcTemplate.query(this.individualTypeLoanMapper.schema(), this.individualTypeLoanMapper,
-                        new Object[] { prequalificationId, PrequalificationType.INDIVIDUAL.getValue(), dpi, prequalificationId });
+                        prequalificationId, PrequalificationType.INDIVIDUAL.getValue(), dpi, prequalificationId);
             }
             if (submittedLoans.isEmpty()) {
                 throw new MemberSubmittedLoanNotFoundException(dpi);
@@ -1535,24 +1534,20 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
                     }
                 });
             }
-            Integer errorWarningsCount = ignoreExceptions ? 0 : redCountRef.get();
-
-            final String membersql = MessageFormat.format(
-                    """
-                            select {0}
-                            WHERE ? BETWEEN c.from_amount AND c.to_amount AND ((? > c.limit AND c.condition = ''GREATER_THAN'')
-                            OR (? <= c.limit AND c.condition = ''LESS_THAN'') )
-                             ORDER BY cv.code_value desc;""", this.committeeApprovalsMapper.schema());
+            Integer errorWarningsCount = ignoreExceptions? 0: redCountRef.get();
+            final String membersql = "select " + this.committeeApprovalsMapper.schema() + " "
+                    + "WHERE ? BETWEEN c.from_amount AND c.to_amount " + "AND ( " + "    (? > c.limit AND c.condition = 'GREATER_THAN') "
+                    + "    OR (? <= c.limit AND c.condition = 'LESS_THAN') ) ORDER BY cv.code_value desc;";
 
             List<CommitteeApprovalsData> approvalsRequired = this.jdbcTemplate.query(membersql, this.committeeApprovalsMapper,
-                    new Object[] { totalApprovedAmount, errorWarningsCount, errorWarningsCount });
+                    totalApprovedAmount, errorWarningsCount, errorWarningsCount);
 
             approvalsRequired.sort(Comparator.comparing(CommitteeApprovalsData::getCommittee).reversed());
             finalStatus = PrequalificationStatus.COMPLETED.getValue();
             if (!approvalsRequired.isEmpty()) {
                 for (CommitteeApprovalsData approvalsData : approvalsRequired) {
                     Integer committeeRequired = PrequalificationStatus.resolveCommitteeStatus(approvalsData.getCommittee()).getValue();
-                    if (fromStatus < committeeRequired) {
+                    if (fromStatus < committeeRequired && notSameGroup(fromStatus,committeeRequired)) {
                         finalStatus = committeeRequired;
                         break;
                     }
@@ -1561,6 +1556,14 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         }
 
         return finalStatus;
+    }
+
+    private boolean notSameGroup(Integer fromStatus, Integer committeeRequired) {
+        String fromPrequal = PrequalificationStatus.fromInt(fromStatus).toString();
+        String toPrequal = PrequalificationStatus.fromInt(committeeRequired).toString();
+
+        String withExceptions = fromPrequal.replace("_WITH_EXCEPTIONS", "");
+        return !withExceptions.equals(toPrequal);
     }
 
     // private PrequalificationStatusRange resolveIndividualStatusRangeOld(PrequalificationGroup prequalificationGroup,
