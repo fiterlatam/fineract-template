@@ -235,8 +235,6 @@ public class ResolutionCommiteeReport {
 
             addStyledCell(mainTable, columNames.get("equivalentMonthlyRate"), labelFont, VALUE_WHITE, 1);
             addStyledCell(mainTable, formatAmountPercentage(data.get(0).get("equivalentMonthlyRate")), valueFont, LIGHT_GRAY, 1);
-            addStyledCell(mainTable, columNames.get("nominalMonthlyRate"), labelFont, VALUE_WHITE, 1);
-            addStyledCell(mainTable, formatAmountPercentage(data.get(0).get("nominalMonthlyRate")), valueFont, LIGHT_GRAY, 1);
 
             document.add(mainTable);
 
