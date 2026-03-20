@@ -53,6 +53,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.infrastructure.dataqueries.domain.PromissoryNoteTemplate;
 import org.apache.fineract.infrastructure.dataqueries.domain.PromissoryNoteTemplateRepository;
+import org.apache.fineract.organisation.agency.data.AgencyData;
+import org.apache.fineract.organisation.agency.service.AgencyReadPlatformService;
 import org.apache.fineract.organisation.monetary.domain.MonetaryCurrency;
 import org.apache.fineract.organisation.monetary.domain.MoneyHelper;
 import org.apache.fineract.portfolio.loanaccount.data.LoanAccountData;
@@ -70,6 +72,7 @@ public class PromissoryNoteTemplateOne {
     private final LoanReadPlatformService loanReadPlatformService;
     private final LoanRepository loanRepository;
     private final PromissoryNoteTemplateRepository promissoryNoteTemplateRepository;
+    private final AgencyReadPlatformService agencyReadPlatformService;
 
     public String generatePdf(String json) {
         JsonObject object = JsonParser.parseString(json).getAsJsonObject();
@@ -79,6 +82,7 @@ public class PromissoryNoteTemplateOne {
     private String generate(JsonObject object) {
 
         final Long loanId = object.get("loanId").getAsLong();
+        final Long agencyId = object.get("agencyId").getAsLong();
         final DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd/MM/yyyy", Locale.forLanguageTag("es"));
         final LocalDate date = DateUtils.getBusinessLocalDate();
         final PromissoryNoteTemplate template = promissoryNoteTemplateRepository.findByPromissoryNumber(1L);
@@ -139,10 +143,11 @@ public class PromissoryNoteTemplateOne {
         String witnessName = object.get("witnessName").getAsString();
         String witnessDpiText = getNumber(object.get("witnessDPI").getAsNumber(), false, false, true);
         String witnessDpiNumber = "(" + object.get("witnessDPI").getAsString() + ")";
-        String department = loan.getPrequalificationGroup() != null && loan.getPrequalificationGroup().getAgency() != null
-                && loan.getPrequalificationGroup().getAgency().getCountry() != null
-                        ? loan.getPrequalificationGroup().getAgency().getCity().label().concat(
-                                ", " + loan.getPrequalificationGroup().getAgency().getStateProvince().label())
+
+        AgencyData agencyData = this.agencyReadPlatformService.findById(agencyId);
+        String department = agencyData != null
+                        ? agencyData.getCity().getName().concat(
+                                ", " + agencyData.getState().getName())
                         : "__________";
 
         Document document = new Document();

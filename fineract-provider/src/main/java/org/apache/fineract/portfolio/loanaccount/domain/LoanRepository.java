@@ -75,42 +75,10 @@ public interface LoanRepository extends JpaRepository<Loan, Long>, JpaSpecificat
     String FIND_BY_ACCOUNT_NUMBER = "select loan from Loan loan where loan.accountNumber = :accountNumber";
     String FIND_BY_EXTERNAL_ID = "select loan from Loan loan where loan.externalId = :externalId";
 
-    String AGENCY_LEAD_BY_LOAN_ID = """
-            SELECT
-                ag.name AS agencia,
-                lo.id AS id,
-                CONCAT(agl.firstname, ' ', agl.lastname) AS lider_agencia,
-                agl.user_dpi AS user_dpi,
-                CONCAT(
-                    COALESCE(pf.primer_nombre, ' '), ' ',
-                    COALESCE(pf.segundo_nombre, ' '), ' ',
-                    COALESCE(pf.primer_apellido, ' '), ' ',
-                    COALESCE(pf.segundo_apellido, ' ')
-                ) AS nombre_fiador,
-                pf.DPI_fiador_tercero AS dpi_fiador,
-                pf.direccion_notificaciones AS direccion_fiador
-            FROM m_loan lo
-            LEFT JOIN m_prequalification_group_members pgm ON pgm.id = lo.prequalification_id
-            LEFT JOIN m_prequalification_group pg ON pg.id = pgm.group_id
-            LEFT JOIN m_agency ag ON ag.id = pg.agency_id
-            LEFT JOIN m_appuser agl ON agl.id = ag.responsible_user_id
-            LEFT JOIN (
-                SELECT p1.*
-                FROM m_prequalification_status_log p1
-                INNER JOIN (
-                    SELECT prequalification_id, MAX(id) AS max_id
-                    FROM m_prequalification_status_log
-                    GROUP BY prequalification_id
-                ) p2
-                    ON p1.prequalification_id = p2.prequalification_id
-                    AND p1.id = p2.max_id
-            ) pl ON pl.prequalification_id = lo.prequalification_id
-            LEFT JOIN p_fiador pf ON lo.id = pf.loan_id
-            WHERE lo.id = ? LIMIT 1
-            """;
     String AGENCY_LEAD_BY_LOAN_ID_MOD = """
             SELECT
                 individualOffice.agency_name AS agencia,
+                individualOffice.agency_id AS agencyId,
                 lo.id AS id,
                 CONCAT(agl.firstname, ' ', agl.lastname) AS lider_agencia,
                 agl.user_dpi AS user_dpi,

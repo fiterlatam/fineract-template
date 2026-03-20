@@ -217,17 +217,21 @@ public enum PrequalificationStatus {
 
     }
 
-    public static PrequalificationStatus resolveCommitteeStatus(String committee) {
+    public static PrequalificationStatus resolveCommitteeStatus(String committee, boolean ignoreExceptions) {
         if (StringUtils.hasLength(committee)) {
             switch (committee.toUpperCase()) {
                 case "A":
-                    return PrequalificationStatus.PRE_COMMITTEE_A_PENDING_APPROVAL;
+                    return ignoreExceptions ? PrequalificationStatus.PRE_COMMITTEE_A_PENDING_APPROVAL
+                            : PrequalificationStatus.PRE_COMMITTEE_A_PENDING_APPROVAL_WITH_EXCEPTIONS;
                 case "B":
-                    return PrequalificationStatus.PRE_COMMITTEE_B_PENDING_APPROVAL;
+                    return ignoreExceptions ? PrequalificationStatus.PRE_COMMITTEE_B_PENDING_APPROVAL
+                            : PrequalificationStatus.PRE_COMMITTEE_B_PENDING_APPROVAL_WITH_EXCEPTIONS;
                 case "C":
-                    return PrequalificationStatus.PRE_COMMITTEE_C_PENDING_APPROVAL;
+                    return ignoreExceptions ? PrequalificationStatus.PRE_COMMITTEE_C_PENDING_APPROVAL
+                            : PrequalificationStatus.PRE_COMMITTEE_C_PENDING_APPROVAL_WITH_EXCEPTIONS;
                 case "D":
-                    return PrequalificationStatus.PRE_COMMITTEE_D_PENDING_APPROVAL;
+                    return ignoreExceptions ? PrequalificationStatus.PRE_COMMITTEE_D_PENDING_APPROVAL
+                            : PrequalificationStatus.PRE_COMMITTEE_D_PENDING_APPROVAL_WITH_EXCEPTIONS;
                 default:
                     return PrequalificationStatus.INVALID;
             }
