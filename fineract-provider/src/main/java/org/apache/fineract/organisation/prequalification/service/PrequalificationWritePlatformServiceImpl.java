@@ -918,6 +918,10 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
                 }
                 PrequalificationStatus currentStatus = PrequalificationStatus.fromInt(prequalificationGroup.getStatus());
 
+                if (StringUtils.containsIgnoreCase(currentStatus.toString(),"WITH_EXCEPTIONS")) {
+                    withExceptions = true;
+                }
+
                 if (currentStatus == PrequalificationStatus.PRE_COMMITTEE_D_PENDING_APPROVAL
                         || currentStatus == PrequalificationStatus.PRE_COMMITTEE_D_PENDING_APPROVAL_WITH_EXCEPTIONS) {
 
@@ -988,13 +992,13 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
 
     private int getCommitteeLevel(PrequalificationStatus status) {
         switch (status) {
-            case PRE_COMMITTEE_D_PENDING_APPROVAL:
+            case PRE_COMMITTEE_D_PENDING_APPROVAL, PRE_COMMITTEE_D_PENDING_APPROVAL_WITH_EXCEPTIONS:
                 return 1;
-            case PRE_COMMITTEE_C_PENDING_APPROVAL:
+            case PRE_COMMITTEE_C_PENDING_APPROVAL,PRE_COMMITTEE_C_PENDING_APPROVAL_WITH_EXCEPTIONS:
                 return 2;
-            case PRE_COMMITTEE_B_PENDING_APPROVAL:
+            case PRE_COMMITTEE_B_PENDING_APPROVAL, PRE_COMMITTEE_B_PENDING_APPROVAL_WITH_EXCEPTIONS:
                 return 3;
-            case PRE_COMMITTEE_A_PENDING_APPROVAL:
+            case PRE_COMMITTEE_A_PENDING_APPROVAL, PRE_COMMITTEE_A_PENDING_APPROVAL_WITH_EXCEPTIONS:
                 return 4;
             default:
                 return 0;
@@ -1194,26 +1198,33 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
                 loan.getLoanProductRelatedDetail().getInterestCalculationPeriodMethod().getValue());
         jsonObject.addProperty("interestType", loan.getLoanProductRelatedDetail().getInterestMethod().getValue());
         jsonObject.addProperty("loanType", AccountType.fromInt(loan.getLoanType()).getName());
-        jsonObject.addProperty("interestRatePerPeriod", renegotiationById.getProposedInterest());
-        jsonObject.addProperty("principal", renegotiationById.getProposedAmount());
+        if (renegotiationById.getProposedInterest() !=null)
+            jsonObject.addProperty("interestRatePerPeriod", renegotiationById.getProposedInterest());
+        if (renegotiationById.getProposedAmount() !=null)
+            jsonObject.addProperty("principal", renegotiationById.getProposedAmount());
         jsonObject.addProperty("isEqualAmortization", loan.getLoanProductRelatedDetail().isEqualAmortization());
         jsonObject.addProperty("amortizationType", loan.getLoanProductRelatedDetail().getAmortizationMethod().getValue());
 
         // loan term and repayment structure
-        final Integer loanTermFrequency = renegotiationById.getProposedTerm();
-        final Integer loanTermFrequencyType = PeriodFrequencyType.MONTHS.getValue();
-        final Integer repaymentEvery = loan.getLoanProductRelatedDetail().getRepayEvery();
-        final Integer repaymentFrequencyType = loan.getLoanProductRelatedDetail().getRepaymentPeriodFrequencyType().getValue();
+        if (renegotiationById.getProposedTerm() != null) {
+            final Integer loanTermFrequency = renegotiationById.getProposedTerm();
+            final Integer loanTermFrequencyType = PeriodFrequencyType.MONTHS.getValue();
+            final Integer repaymentEvery = loan.getLoanProductRelatedDetail().getRepayEvery();
+            final Integer repaymentFrequencyType = loan.getLoanProductRelatedDetail().getRepaymentPeriodFrequencyType().getValue();
 
-        jsonObject.addProperty("loanTermFrequency", loanTermFrequency);
-        jsonObject.addProperty("loanTermFrequencyType", loanTermFrequencyType);
-        jsonObject.addProperty("repaymentEvery", repaymentEvery);
-        jsonObject.addProperty("repaymentFrequencyType", repaymentFrequencyType);
+            jsonObject.addProperty("loanTermFrequency", loanTermFrequency);
+            jsonObject.addProperty("loanTermFrequencyType", loanTermFrequencyType);
+            jsonObject.addProperty("repaymentEvery", repaymentEvery);
+            jsonObject.addProperty("repaymentFrequencyType", repaymentFrequencyType);
+
+            final Integer computedNumberOfRepayments = computeNumberOfRepayments(loanTermFrequency, loanTermFrequencyType, repaymentEvery,
+                    repaymentFrequencyType, loan.getLoanProductRelatedDetail().getNumberOfRepayments());
+            jsonObject.addProperty("numberOfRepayments", computedNumberOfRepayments);
+        }
+
 
         // compute number of repayments from term and frequency
-        final Integer computedNumberOfRepayments = computeNumberOfRepayments(loanTermFrequency, loanTermFrequencyType, repaymentEvery,
-                repaymentFrequencyType, loan.getLoanProductRelatedDetail().getNumberOfRepayments());
-        jsonObject.addProperty("numberOfRepayments", computedNumberOfRepayments);
+
 
         final String jsonCommand = jsonObject.toString();
         final JsonCommand loancommand = JsonCommand.from(jsonCommand, jsonObject, this.fromApiJsonHelper, null, loan.getId(), null, null,
@@ -1546,7 +1557,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
             finalStatus = PrequalificationStatus.COMPLETED.getValue();
             if (!approvalsRequired.isEmpty()) {
                 for (CommitteeApprovalsData approvalsData : approvalsRequired) {
-                    Integer committeeRequired = PrequalificationStatus.resolveCommitteeStatus(approvalsData.getCommittee()).getValue();
+                    Integer committeeRequired = PrequalificationStatus.resolveCommitteeStatus(approvalsData.getCommittee(),ignoreExceptions).getValue();
                     if (fromStatus < committeeRequired && notSameGroup(fromStatus,committeeRequired)) {
                         finalStatus = committeeRequired;
                         break;
