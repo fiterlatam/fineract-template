@@ -144,11 +144,9 @@ public class PromissoryNoteTemplateFour {
         // LAST PARAGRAPH
         AgencyData agencyData = this.agencyReadPlatformService.findById(agencyId);
 
-        String department = agencyData != null
-                && agencyData.getCountry() != null
-                        ? agencyData.getCity().getName().concat(
-                                ", " + agencyData.getState().getName())
-                        : "__________";
+        String department = agencyData != null && agencyData.getCountry() != null
+                ? agencyData.getCity().getName().concat(", " + agencyData.getState().getName())
+                : "__________";
 
         // GUARANTOR DATA
         Object[] dataGuarantor = this.loanRepository.retrieveGuarantorDataByLoanId(loanId);

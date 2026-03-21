@@ -194,10 +194,9 @@ public class ResolutionCommiteeReport {
 
             addStyledCell(mainTable, columNames.get("monthlyInterest"), labelFont, VALUE_WHITE, 1);
             Object monthlyInterest = data.get(0).get("monthlyInterest");
-            //format as percentage with 2 decimals
+            // format as percentage with 2 decimals
 
             addStyledCell(mainTable, formatAmountPercentage(monthlyInterest), valueFont, LIGHT_GRAY, 1);
-
 
             addStyledCell(mainTable, columNames.get("frequencyTermInt"), labelFont, VALUE_WHITE, 1);
             addStyledCell(mainTable, data.get(0).get("frequencyTerm"), valueFont, LIGHT_GRAY, 1);

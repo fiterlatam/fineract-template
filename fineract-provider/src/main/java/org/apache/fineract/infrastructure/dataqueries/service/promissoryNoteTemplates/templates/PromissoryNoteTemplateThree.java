@@ -148,11 +148,9 @@ public class PromissoryNoteTemplateThree {
         String witnessDpiNumber = "(" + object.get("witnessDPI").getAsString() + ")";
         AgencyData agencyData = this.agencyReadPlatformService.findById(agencyId);
 
-        String department = agencyData != null
-                && agencyData.getCountry() != null
-                        ? agencyData.getCity().getName().concat(
-                                ", " + agencyData.getState().getName())
-                        : "__________";
+        String department = agencyData != null && agencyData.getCountry() != null
+                ? agencyData.getCity().getName().concat(", " + agencyData.getState().getName())
+                : "__________";
 
         // GUARANTOR DATA
 
