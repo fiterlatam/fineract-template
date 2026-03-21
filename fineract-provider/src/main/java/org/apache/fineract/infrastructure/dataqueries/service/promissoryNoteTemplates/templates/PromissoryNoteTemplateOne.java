@@ -145,7 +145,9 @@ public class PromissoryNoteTemplateOne {
         String witnessDpiNumber = "(" + object.get("witnessDPI").getAsString() + ")";
 
         AgencyData agencyData = this.agencyReadPlatformService.findById(agencyId);
+
         String department = agencyData != null
+                && agencyData.getCountry() != null
                         ? agencyData.getCity().getName().concat(
                                 ", " + agencyData.getState().getName())
                         : "__________";
