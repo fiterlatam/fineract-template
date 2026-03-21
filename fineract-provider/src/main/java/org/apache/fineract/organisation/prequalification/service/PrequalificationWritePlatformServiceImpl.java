@@ -918,7 +918,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
                 }
                 PrequalificationStatus currentStatus = PrequalificationStatus.fromInt(prequalificationGroup.getStatus());
 
-                if (StringUtils.containsIgnoreCase(currentStatus.toString(),"WITH_EXCEPTIONS")) {
+                if (StringUtils.containsIgnoreCase(currentStatus.toString(), "WITH_EXCEPTIONS")) {
                     withExceptions = true;
                 }
 
@@ -994,7 +994,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         switch (status) {
             case PRE_COMMITTEE_D_PENDING_APPROVAL, PRE_COMMITTEE_D_PENDING_APPROVAL_WITH_EXCEPTIONS:
                 return 1;
-            case PRE_COMMITTEE_C_PENDING_APPROVAL,PRE_COMMITTEE_C_PENDING_APPROVAL_WITH_EXCEPTIONS:
+            case PRE_COMMITTEE_C_PENDING_APPROVAL, PRE_COMMITTEE_C_PENDING_APPROVAL_WITH_EXCEPTIONS:
                 return 2;
             case PRE_COMMITTEE_B_PENDING_APPROVAL, PRE_COMMITTEE_B_PENDING_APPROVAL_WITH_EXCEPTIONS:
                 return 3;
@@ -1063,7 +1063,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
             int lastLevel = getCommitteeLevel(lastStatus);
             int targetLevel = getCommitteeLevel(targetCommittee);
 
-            if (lastLevel == targetLevel /*|| lastLevel == targetLevel - 1*/) {
+            if (lastLevel == targetLevel /* || lastLevel == targetLevel - 1 */) {
                 action = "approveCommittee";
             } else {
                 return sendToFirstPhaseApproveCommitteeD(entityId, command, false, true);
@@ -1198,10 +1198,9 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
                 loan.getLoanProductRelatedDetail().getInterestCalculationPeriodMethod().getValue());
         jsonObject.addProperty("interestType", loan.getLoanProductRelatedDetail().getInterestMethod().getValue());
         jsonObject.addProperty("loanType", AccountType.fromInt(loan.getLoanType()).getName());
-        if (renegotiationById.getProposedInterest() !=null)
+        if (renegotiationById.getProposedInterest() != null)
             jsonObject.addProperty("interestRatePerPeriod", renegotiationById.getProposedInterest());
-        if (renegotiationById.getProposedAmount() !=null)
-            jsonObject.addProperty("principal", renegotiationById.getProposedAmount());
+        if (renegotiationById.getProposedAmount() != null) jsonObject.addProperty("principal", renegotiationById.getProposedAmount());
         jsonObject.addProperty("isEqualAmortization", loan.getLoanProductRelatedDetail().isEqualAmortization());
         jsonObject.addProperty("amortizationType", loan.getLoanProductRelatedDetail().getAmortizationMethod().getValue());
 
@@ -1222,9 +1221,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
             jsonObject.addProperty("numberOfRepayments", computedNumberOfRepayments);
         }
 
-
         // compute number of repayments from term and frequency
-
 
         final String jsonCommand = jsonObject.toString();
         final JsonCommand loancommand = JsonCommand.from(jsonCommand, jsonObject, this.fromApiJsonHelper, null, loan.getId(), null, null,
@@ -1331,8 +1328,8 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
             final String dpi = prequalificationGroupMember.getDpi();
             List<LoanData> submittedLoans;
             if (prequalificationGroup.isPrequalificationTypeGroup()) {
-                submittedLoans = jdbcTemplate.query(this.groupTypeLoanMapper.schema(), this.groupTypeLoanMapper,
-                        prequalificationId, dpi, prequalificationId);
+                submittedLoans = jdbcTemplate.query(this.groupTypeLoanMapper.schema(), this.groupTypeLoanMapper, prequalificationId, dpi,
+                        prequalificationId);
             } else if (prequalificationGroup.isPrequalificationTypePAE()) {
                 submittedLoans = jdbcTemplate.query(this.individualTypeLoanMapper.schema(), this.individualTypeLoanMapper,
                         prequalificationId, PrequalificationType.PAE.getValue(), dpi, prequalificationId);
@@ -1520,9 +1517,11 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
 
     private Integer resolveIndividualStatusRange(PrequalificationGroup prequalificationGroup, @NotNull String action) {
 
-        List<PrequalificationStatusLog> statusLogs = this.preQualificationStatusLogRepository.groupStatusLogs(prequalificationGroup.getId());
-        final boolean ignoreExceptions = statusLogs.stream().anyMatch(statusLog -> PrequalificationStatus.PRE_COMMITTEE_D_PENDING_APPROVAL
-                .getValue().equals(statusLog.getToStatus()) && Boolean.FALSE.equals(statusLog.getWithExceptions()));
+        List<PrequalificationStatusLog> statusLogs = this.preQualificationStatusLogRepository
+                .groupStatusLogs(prequalificationGroup.getId());
+        final boolean ignoreExceptions = statusLogs.stream()
+                .anyMatch(statusLog -> PrequalificationStatus.PRE_COMMITTEE_D_PENDING_APPROVAL.getValue().equals(statusLog.getToStatus())
+                        && Boolean.FALSE.equals(statusLog.getWithExceptions()));
 
         Integer finalStatus = null;
         if (action.equalsIgnoreCase("approveanalysis") || action.equalsIgnoreCase("approveCommittee")) {
@@ -1545,7 +1544,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
                     }
                 });
             }
-            Integer errorWarningsCount = ignoreExceptions? 0: redCountRef.get();
+            Integer errorWarningsCount = ignoreExceptions ? 0 : redCountRef.get();
             final String membersql = "select " + this.committeeApprovalsMapper.schema() + " "
                     + "WHERE ? BETWEEN c.from_amount AND c.to_amount " + "AND ( " + "    (? > c.limit AND c.condition = 'GREATER_THAN') "
                     + "    OR (? <= c.limit AND c.condition = 'LESS_THAN') ) ORDER BY cv.code_value desc;";
@@ -1557,8 +1556,9 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
             finalStatus = PrequalificationStatus.COMPLETED.getValue();
             if (!approvalsRequired.isEmpty()) {
                 for (CommitteeApprovalsData approvalsData : approvalsRequired) {
-                    Integer committeeRequired = PrequalificationStatus.resolveCommitteeStatus(approvalsData.getCommittee(),ignoreExceptions).getValue();
-                    if (fromStatus < committeeRequired && notSameGroup(fromStatus,committeeRequired)) {
+                    Integer committeeRequired = PrequalificationStatus
+                            .resolveCommitteeStatus(approvalsData.getCommittee(), ignoreExceptions).getValue();
+                    if (fromStatus < committeeRequired && notSameGroup(fromStatus, committeeRequired)) {
                         finalStatus = committeeRequired;
                         break;
                     }
