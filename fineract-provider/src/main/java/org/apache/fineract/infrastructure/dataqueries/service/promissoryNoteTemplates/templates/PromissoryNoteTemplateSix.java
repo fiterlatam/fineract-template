@@ -305,7 +305,15 @@ public class PromissoryNoteTemplateSix {
             Iterable<String> parts = Splitter.on(",").split(valueFormatted);
             StringBuilder sb = new StringBuilder();
             for (String part : parts) {
-                sb.append(rbnf.format(Long.parseLong(part))).append(", ");
+                int leadingZeros = part.length() - part.replaceFirst("^0+", "").length();
+                if (leadingZeros > 0) {
+                    sb.append("CERO ".repeat(leadingZeros));
+                }
+                long parsed = Long.parseLong(part);
+                if (parsed > 0) {
+                    sb.append(rbnf.format(parsed));
+                }
+                sb.append(", ");
             }
             sb.setLength(sb.length() - 2);
             value = sb.toString().toUpperCase();
