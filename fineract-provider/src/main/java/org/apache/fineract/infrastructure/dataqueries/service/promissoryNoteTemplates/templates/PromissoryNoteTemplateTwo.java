@@ -53,6 +53,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.infrastructure.dataqueries.domain.PromissoryNoteTemplate;
 import org.apache.fineract.infrastructure.dataqueries.domain.PromissoryNoteTemplateRepository;
+import org.apache.fineract.organisation.agency.data.AgencyData;
+import org.apache.fineract.organisation.agency.service.AgencyReadPlatformService;
 import org.apache.fineract.organisation.monetary.domain.MonetaryCurrency;
 import org.apache.fineract.organisation.monetary.domain.MoneyHelper;
 import org.apache.fineract.portfolio.loanaccount.data.LoanAccountData;
@@ -70,6 +72,7 @@ public class PromissoryNoteTemplateTwo {
     private final LoanReadPlatformService loanReadPlatformService;
     private final LoanRepository loanRepository;
     private final PromissoryNoteTemplateRepository promissoryNoteTemplateRepository;
+    private final AgencyReadPlatformService agencyReadPlatformService;
 
     public String generatePdf(String json) {
         JsonObject object = JsonParser.parseString(json).getAsJsonObject();
@@ -79,6 +82,7 @@ public class PromissoryNoteTemplateTwo {
     private String generate(JsonObject object) {
 
         final Long loanId = object.get("loanId").getAsLong();
+        final Long agencyId = object.get("agencyId").getAsLong();
         final DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd/MM/yyyy", Locale.forLanguageTag("es"));
         final LocalDate date = DateUtils.getBusinessLocalDate();
         final PromissoryNoteTemplate template = promissoryNoteTemplateRepository.findByPromissoryNumber(2L);
@@ -134,11 +138,12 @@ public class PromissoryNoteTemplateTwo {
         String interestRateText = getNumber(
                 loan.getLoanProductRelatedDetail().getAnnualNominalInterestRate().divide(BigDecimal.valueOf(12), 2, RoundingMode.HALF_EVEN),
                 true, true, false);
+        AgencyData agencyData = this.agencyReadPlatformService.findById(agencyId);
 
-        String department = loan.getPrequalificationGroup() != null && loan.getPrequalificationGroup().getAgency() != null
-                && loan.getPrequalificationGroup().getAgency().getCountry() != null
-                        ? loan.getPrequalificationGroup().getAgency().getCity().label().concat(
-                                ", " + loan.getPrequalificationGroup().getAgency().getStateProvince().label())
+        String department = agencyData != null
+                && agencyData.getCountry() != null
+                        ? agencyData.getCity().getName().concat(
+                                ", " + agencyData.getState().getName())
                         : "__________";
 
         Document document = new Document();
@@ -268,7 +273,15 @@ public class PromissoryNoteTemplateTwo {
             Iterable<String> parts = Splitter.on(",").split(valueFormatted);
             StringBuilder sb = new StringBuilder();
             for (String part : parts) {
-                sb.append(rbnf.format(Long.parseLong(part))).append(", ");
+                int leadingZeros = part.length() - part.replaceFirst("^0+", "").length();
+                if (leadingZeros > 0) {
+                    sb.append("CERO ".repeat(leadingZeros));
+                }
+                long parsed = Long.parseLong(part);
+                if (parsed > 0) {
+                    sb.append(rbnf.format(parsed));
+                }
+                sb.append(", ");
             }
             sb.setLength(sb.length() - 2);
             value = sb.toString().toUpperCase();
