@@ -140,8 +140,12 @@ public class PromissoryNoteTemplateOne {
                 loan.getLoanProductRelatedDetail().getAnnualNominalInterestRate().divide(BigDecimal.valueOf(12), 2, RoundingMode.HALF_EVEN),
                 true, true, false);
 
-        String department = agencyData != null && agencyData.getCity() != null
-                ? agencyData.getCity().getName().concat(", " + agencyData.getState().getName())
+        String municipio = agencyData != null && agencyData.getCity() != null
+                ? agencyData.getCity().getName()
+                : "__________";
+
+        String department = agencyData != null && agencyData.getState() != null
+                ? agencyData.getState().getName()
                 : "__________";
 
         // LAST PARAGRAPH
@@ -182,7 +186,7 @@ public class PromissoryNoteTemplateOne {
             String bodyText = String.format(template.getBlockOne(), clientName, clientDpiText, clientDpiNumber, clientAddress,
                     creditAmountText, creditPurpose, creditDetail, termText, disbursementDate, secondTermText,
                     numberEqualsQuotas + " de " + quotaAmount, numberLastQuota, lastQuotaAmount, paymentDay, interestRateText, witnessName,
-                    witnessDpiText, witnessDpiNumber, department, date.getDayOfMonth(),
+                    witnessDpiText, witnessDpiNumber, municipio, department, DateUtils.numberToLetters(date.getDayOfMonth()).toLowerCase(),
                     date.getMonth().getDisplayName(TextStyle.FULL, new Locale("es")),
                     DateUtils.numberToLetters(date.getYear() - 2000).toLowerCase());
 

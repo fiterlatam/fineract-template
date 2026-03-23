@@ -148,8 +148,12 @@ public class PromissoryNoteTemplateThree {
         String witnessDpiNumber = "(" + object.get("witnessDPI").getAsString() + ")";
 
         AgencyData agencyData = this.agencyReadPlatformService.findById(agencyId);
-        String department = agencyData != null && agencyData.getCity() != null
-                ? agencyData.getCity().getName().concat(", " + agencyData.getState().getName())
+        String municipio = agencyData != null && agencyData.getCity() != null
+                ? agencyData.getCity().getName()
+                : "__________";
+
+        String department = agencyData != null && agencyData.getState() != null
+                ? agencyData.getState().getName()
                 : "__________";
         // GUARANTOR DATA
 
@@ -199,7 +203,7 @@ public class PromissoryNoteTemplateThree {
             String bodyText = String.format(template.getBlockOne(), clientName, clientDpiText, clientDpiNumber, clientAddress,
                     creditAmountText, creditPurpose, creditDetail, termText, disbursementDate, secondTermText,
                     numberEqualsQuotas + " de " + quotaAmount, numberLastQuota, lastQuotaAmount, paymentDay, interestRateText, witnessName,
-                    witnessDpiText, witnessDpiNumber, department, date.getDayOfMonth(),
+                    witnessDpiText, witnessDpiNumber, municipio, department, DateUtils.numberToLetters(date.getDayOfMonth()).toLowerCase(),
                     date.getMonth().getDisplayName(TextStyle.FULL, new Locale("es")),
                     DateUtils.numberToLetters(date.getYear() - 2000).toLowerCase());
 
@@ -211,8 +215,8 @@ public class PromissoryNoteTemplateThree {
             // Firmas
             document.add(createSignatureSection(clientName, witnessName, "Promitente deudora o libradora", "Testigo"));
 
-            String avalText = String.format(template.getBlockTwo(), guarantorName, guarantorDPIText, guarantorDPI, guarantorAddress,
-                    department, date.getDayOfMonth(), date.getMonth().getDisplayName(TextStyle.FULL, new Locale("es")),
+            String avalText = String.format(template.getBlockTwo(), guarantorName, guarantorDPIText, guarantorDPI, guarantorAddress,municipio,
+                    department, DateUtils.numberToLetters(date.getDayOfMonth()).toLowerCase(), date.getMonth().getDisplayName(TextStyle.FULL, new Locale("es")),
                     DateUtils.numberToLetters(date.getYear() - 2000).toLowerCase());
 
             Paragraph bodyAval = new Paragraph(avalText, normalFont);
