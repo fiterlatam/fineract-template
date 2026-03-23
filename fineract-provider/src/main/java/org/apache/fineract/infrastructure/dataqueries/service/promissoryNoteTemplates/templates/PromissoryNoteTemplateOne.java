@@ -150,8 +150,8 @@ public class PromissoryNoteTemplateOne {
 
         // LAST PARAGRAPH
         String witnessName = object.get("witnessName").getAsString();
-        String witnessDpiText = getNumber(1961224301416L, false, false, true);
-        String witnessDpiNumber = "(1961224301416)";
+        String witnessDpiText = getNumber(object.get("witnessDPI").getAsNumber(), false, false, true);
+        String witnessDpiNumber = "(" + object.get("witnessDPI").getAsString() + ")";
 
 
 
