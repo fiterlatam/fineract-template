@@ -199,7 +199,7 @@ public class PromissoryNoteTemplateSix {
             String bodyText = String.format(template.getBlockOne(), clientName, clientDpiText, clientDpiNumber, clientAddress,
                     creditAmountText, creditPurpose, creditDetail, termText, disbursementDate, secondTermText,
                     numberEqualsQuotas + " de " + quotaAmount, numberLastQuota, lastQuotaAmount, paymentDay, interestRateText,municipio, department,
-                    DateUtils.numberToLetters(date.getDayOfMonth()).toLowerCase(), date.getMonth().getDisplayName(TextStyle.FULL, new Locale("es")), DateUtils.numberToLetters(date.getYear() - 2000));
+                    DateUtils.numberToLetters(date.getDayOfMonth()).toLowerCase(), date.getMonth().getDisplayName(TextStyle.FULL, new Locale("es")), DateUtils.numberToLetters(date.getYear() - 2000).toLowerCase());
 
             Paragraph body = new Paragraph(bodyText, normalFont);
             body.setAlignment(Element.ALIGN_JUSTIFIED);
