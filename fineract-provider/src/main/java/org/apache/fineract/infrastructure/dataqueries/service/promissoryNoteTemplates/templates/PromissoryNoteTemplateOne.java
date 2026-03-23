@@ -86,6 +86,7 @@ public class PromissoryNoteTemplateOne {
         final DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd/MM/yyyy", Locale.forLanguageTag("es"));
         final LocalDate date = DateUtils.getBusinessLocalDate();
         final PromissoryNoteTemplate template = promissoryNoteTemplateRepository.findByPromissoryNumber(1L);
+        AgencyData agencyData = this.agencyReadPlatformService.findById(agencyId);
 
         MonetaryCurrency currency = null;
 
@@ -139,16 +140,16 @@ public class PromissoryNoteTemplateOne {
                 loan.getLoanProductRelatedDetail().getAnnualNominalInterestRate().divide(BigDecimal.valueOf(12), 2, RoundingMode.HALF_EVEN),
                 true, true, false);
 
-        // LAST PARAGRAPH
-        String witnessName = object.get("witnessName").getAsString();
-        String witnessDpiText = getNumber(object.get("witnessDPI").getAsNumber(), false, false, true);
-        String witnessDpiNumber = "(" + object.get("witnessDPI").getAsString() + ")";
-
-        AgencyData agencyData = this.agencyReadPlatformService.findById(agencyId);
-
         String department = agencyData != null && agencyData.getCity() != null
                 ? agencyData.getCity().getName().concat(", " + agencyData.getState().getName())
                 : "__________";
+
+        // LAST PARAGRAPH
+        String witnessName = object.get("witnessName").getAsString();
+        String witnessDpiText = getNumber(1961224301416L, false, false, true);
+        String witnessDpiNumber = "(1961224301416)";
+
+
 
         Document document = new Document();
         ByteArrayOutputStream baos = new ByteArrayOutputStream();

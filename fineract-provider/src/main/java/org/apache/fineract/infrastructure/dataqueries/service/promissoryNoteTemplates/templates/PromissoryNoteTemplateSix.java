@@ -57,6 +57,8 @@ import org.apache.fineract.infrastructure.core.exception.PlatformApiDataValidati
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.infrastructure.dataqueries.domain.PromissoryNoteTemplate;
 import org.apache.fineract.infrastructure.dataqueries.domain.PromissoryNoteTemplateRepository;
+import org.apache.fineract.organisation.agency.data.AgencyData;
+import org.apache.fineract.organisation.agency.service.AgencyReadPlatformService;
 import org.apache.fineract.organisation.monetary.domain.MonetaryCurrency;
 import org.apache.fineract.organisation.monetary.domain.MoneyHelper;
 import org.apache.fineract.portfolio.loanaccount.data.LoanAccountData;
@@ -74,6 +76,7 @@ public class PromissoryNoteTemplateSix {
     private final LoanReadPlatformService loanReadPlatformService;
     private final LoanRepository loanRepository;
     private final PromissoryNoteTemplateRepository promissoryNoteTemplateRepository;
+    private final AgencyReadPlatformService agencyReadPlatformService;
 
     public String generatePdf(String json) {
         JsonObject object = JsonParser.parseString(json).getAsJsonObject();
@@ -83,6 +86,7 @@ public class PromissoryNoteTemplateSix {
     private String generate(JsonObject object) {
 
         final Long loanId = object.get("loanId").getAsLong();
+        final Long agencyId = object.get("agencyId").getAsLong();
         final DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd/MM/yyyy", Locale.forLanguageTag("es"));
         final LocalDate date = DateUtils.getBusinessLocalDate();
         final PromissoryNoteTemplate template = promissoryNoteTemplateRepository.findByPromissoryNumber(6L);
@@ -139,12 +143,10 @@ public class PromissoryNoteTemplateSix {
 
         // LAST PARAGRAPH
 
-        String department = loan.getPrequalificationGroup() != null && loan.getPrequalificationGroup().getAgency() != null
-                && loan.getPrequalificationGroup().getAgency().getCity() != null
-                        ? loan.getPrequalificationGroup().getAgency().getCity().label().concat(
-                                ", " + loan.getPrequalificationGroup().getAgency().getStateProvince().label())
-                        : "__________";
-
+        AgencyData agencyData = this.agencyReadPlatformService.findById(agencyId);
+        String department = agencyData != null && agencyData.getCity() != null
+                ? agencyData.getCity().getName().concat(", " + agencyData.getState().getName())
+                : "__________";
         // GUARANTOR DATA
         Object[] dataGuarantor = this.loanRepository.retrieveGuarantorDataByLoanId(loanId);
         Object[] data = null;
