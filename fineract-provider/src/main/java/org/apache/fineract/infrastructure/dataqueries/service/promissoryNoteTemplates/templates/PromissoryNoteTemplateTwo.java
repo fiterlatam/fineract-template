@@ -140,8 +140,12 @@ public class PromissoryNoteTemplateTwo {
                 true, true, false);
 
         AgencyData agencyData = this.agencyReadPlatformService.findById(agencyId);
-        String department = agencyData != null && agencyData.getCity() != null
-                ? agencyData.getCity().getName().concat(", " + agencyData.getState().getName())
+        String municipio = agencyData != null && agencyData.getCity() != null
+                ? agencyData.getCity().getName()
+                : "__________";
+
+        String department = agencyData != null && agencyData.getState() != null
+                ? agencyData.getState().getName()
                 : "__________";
 
         Document document = new Document();
@@ -174,8 +178,8 @@ public class PromissoryNoteTemplateTwo {
             // Cuerpo completo del pagaré (texto legal completo con variables)
             String bodyText = String.format(template.getBlockOne(), clientName, clientDpiText, clientDpiNumber, clientAddress,
                     creditAmountText, creditPurpose, creditDetail, termText, disbursementDate, secondTermText,
-                    numberEqualsQuotas + " de " + quotaAmount, numberLastQuota, lastQuotaAmount, paymentDay, interestRateText, department,
-                    date.getDayOfMonth(), date.getMonth().getDisplayName(TextStyle.FULL, new Locale("es")),
+                    numberEqualsQuotas + " de " + quotaAmount, numberLastQuota, lastQuotaAmount, paymentDay, interestRateText, municipio, department,
+                    DateUtils.numberToLetters(date.getDayOfMonth()).toLowerCase(), date.getMonth().getDisplayName(TextStyle.FULL, new Locale("es")),
                     DateUtils.numberToLetters(date.getYear() - 2000).toLowerCase());
 
             Paragraph body = new Paragraph(bodyText, normalFont);

@@ -205,4 +205,5 @@
     <include file="parts/PUE_2026_03_02_ADD_LOAN_PURPOSES_PAE.xml" relativeToChangelogFile="true"/>
     <include file="parts/PUE_2026_03_03_ADD_PAE_COMMCARE_INTEGRATION.xml" relativeToChangelogFile="true"/>
     <include file="parts/PUE_2026_03_11_ADD_PAE_APPROVECOMMITEEWHITEXC_permmissions.xml" relativeToChangelogFile="true"/>
+    <include file="parts/PUE_2026_03_23_update_municipio_departamento_templates.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>
