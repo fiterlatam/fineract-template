@@ -57,6 +57,7 @@ import org.apache.fineract.infrastructure.core.exception.PlatformApiDataValidati
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.infrastructure.dataqueries.domain.PromissoryNoteTemplate;
 import org.apache.fineract.infrastructure.dataqueries.domain.PromissoryNoteTemplateRepository;
+import org.apache.fineract.organisation.agency.data.AgencyData;
 import org.apache.fineract.organisation.agency.service.AgencyReadPlatformService;
 import org.apache.fineract.organisation.monetary.domain.MonetaryCurrency;
 import org.apache.fineract.organisation.monetary.domain.MoneyHelper;
@@ -144,10 +145,10 @@ public class PromissoryNoteTemplateFive {
         String witnessName = object.get("witnessName").getAsString();
         String witnessDpiText = getNumber(object.get("witnessDPI").getAsNumber(), false, false, true);
         String witnessDpiNumber = "(" + object.get("witnessDPI").getAsString() + ")";
-        String department = loan.getPrequalificationGroup() != null && loan.getPrequalificationGroup().getAgency() != null
-                && loan.getPrequalificationGroup().getAgency().getCountry() != null
-                        ? loan.getPrequalificationGroup().getAgency().getCity().label().concat(
-                                ", " + loan.getPrequalificationGroup().getAgency().getStateProvince().label())
+        AgencyData agencyData = this.agencyReadPlatformService.findById(agencyId);
+        String department = agencyData != null && agencyData.getCity() != null
+                        ? agencyData.getCity().getName().concat(
+                                ", " + agencyData.getState().getName())
                         : "__________";
 
         // GUARANTOR DATA
