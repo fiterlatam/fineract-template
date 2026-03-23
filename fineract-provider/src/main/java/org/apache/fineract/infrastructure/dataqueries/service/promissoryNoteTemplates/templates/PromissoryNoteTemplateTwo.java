@@ -140,7 +140,7 @@ public class PromissoryNoteTemplateTwo {
                 true, true, false);
         AgencyData agencyData = this.agencyReadPlatformService.findById(agencyId);
 
-        String department = agencyData != null && agencyData.getCountry() != null
+        String department = agencyData != null && agencyData.getCity() != null
                 ? agencyData.getCity().getName().concat(", " + agencyData.getState().getName())
                 : "__________";
 

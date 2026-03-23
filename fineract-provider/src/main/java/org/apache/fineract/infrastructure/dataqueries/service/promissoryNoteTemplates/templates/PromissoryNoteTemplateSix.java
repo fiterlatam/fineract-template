@@ -140,7 +140,7 @@ public class PromissoryNoteTemplateSix {
         // LAST PARAGRAPH
 
         String department = loan.getPrequalificationGroup() != null && loan.getPrequalificationGroup().getAgency() != null
-                && loan.getPrequalificationGroup().getAgency().getCountry() != null
+                && loan.getPrequalificationGroup().getAgency().getCity() != null
                         ? loan.getPrequalificationGroup().getAgency().getCity().label().concat(
                                 ", " + loan.getPrequalificationGroup().getAgency().getStateProvince().label())
                         : "__________";
