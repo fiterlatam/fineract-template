@@ -138,8 +138,8 @@ public class PromissoryNoteTemplateTwo {
         String interestRateText = getNumber(
                 loan.getLoanProductRelatedDetail().getAnnualNominalInterestRate().divide(BigDecimal.valueOf(12), 2, RoundingMode.HALF_EVEN),
                 true, true, false);
-        AgencyData agencyData = this.agencyReadPlatformService.findById(agencyId);
 
+        AgencyData agencyData = this.agencyReadPlatformService.findById(agencyId);
         String department = agencyData != null && agencyData.getCity() != null
                 ? agencyData.getCity().getName().concat(", " + agencyData.getState().getName())
                 : "__________";
