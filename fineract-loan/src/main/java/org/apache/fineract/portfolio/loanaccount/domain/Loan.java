@@ -46,6 +46,7 @@ import java.math.BigDecimal;
 import java.math.MathContext;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
@@ -1403,15 +1404,78 @@ public class Loan extends AbstractAuditableWithUTCDateTimeCustom {
             }
 
         } else if (calculationType.isPercentageOfLifeInsurance()) {
-            // TODO technical debt: review condition above, it may affect "Seguro de Vida" repayments (see Git history)
-            Money amountAux = amount.plus(loanCharge.getAmountPercentageAppliedTo().multiply(percentage).divide(BigDecimal.valueOf(100), 2,
-                    RoundingMode.HALF_UP));
-            amount = amount.plus(amountAux);
+            // Find first installment with non-null life insurance charge portion
+            Money amountAux = Money.zero(getCurrency());
+            LoanRepaymentScheduleInstallment sourceInstallment = getRepaymentScheduleInstallments().stream()
+                    .filter(inst -> inst.getLifeInsuranceChargePortion() != null).findFirst().orElse(null);
 
-            // TODO technical debt: Not the best place to set the amoun, but clock is ticking.
+            if (isLifeInsuranceChargeApplicable(sourceInstallment, installment)) {
+                amountAux = amount.plus(loanCharge.getAmountPercentageAppliedTo().multiply(percentage).divide(BigDecimal.valueOf(100), 2,
+                        RoundingMode.HALF_UP));
+                amount = amount.plus(amountAux);
+            }
+
             installment.setLifeInsuranceChargePortion(amountAux.getAmount());
         }
         return amount;
+    }
+
+    private boolean isLifeInsuranceChargeApplicable(LoanRepaymentScheduleInstallment sourceInstallment,
+            LoanRepaymentScheduleInstallment installment) {
+        if (sourceInstallment == null) {
+            return false;
+        }
+        int installmentDayOfMonth = sourceInstallment.getDueDate().getDayOfMonth();
+        LocalDate periodStartDate = installment.getFromDate();
+        LocalDate periodDueDate = installment.getDueDate();
+        PeriodFrequencyType periodFrequencyType = PeriodFrequencyType.fromInt(installment.getLoan().getTermPeriodFrequencyType());
+
+        Integer maxDayOfMonth = YearMonth.from(periodDueDate).lengthOfMonth();
+
+        periodStartDate = periodStartDate.plusDays(1);
+
+        Integer installmentDayOfMonthClone = installmentDayOfMonth;
+
+        if (installmentDayOfMonth > maxDayOfMonth) {
+            installmentDayOfMonthClone = maxDayOfMonth;
+        }
+
+        LocalDate referenceDate = LocalDate.of(periodDueDate.getYear(), periodDueDate.getMonthValue(), installmentDayOfMonthClone);
+
+        // If weekly repayment
+        if (periodFrequencyType.isWeekly() || periodFrequencyType.isDaily()) {
+            // scenario: when month changes within period...
+            if (periodStartDate.getMonth().compareTo(periodDueDate.getMonth()) != 0) {
+                // scenario: when installment due on day 31 (or 30) and month have 28 or 29 days (feb) or 30 days
+                if (installmentDayOfMonthClone.compareTo(YearMonth.from(periodStartDate).lengthOfMonth()) > 0) {
+                    installmentDayOfMonthClone = YearMonth.from(periodStartDate).lengthOfMonth();
+                }
+
+                LocalDate referenceDateClone = LocalDate.of(periodStartDate.getYear(), periodStartDate.getMonthValue(),
+                        installmentDayOfMonthClone);
+                boolean isWithinRange = isWithinRange(periodStartDate, periodDueDate, referenceDateClone);
+
+                if (isWithinRange) {
+                    referenceDate = referenceDateClone;
+                }
+            }
+
+        } else { // Daily and Monthly
+            if (installment.getInstallmentNumber().compareTo(1) > 0 && installmentDayOfMonth >= 28) {
+                referenceDate = LocalDate.of(periodStartDate.getYear(), periodStartDate.getMonthValue(),
+                        YearMonth.from(periodStartDate).lengthOfMonth());
+            }
+        }
+
+        // If charge date is beween periodStartDate and periodDueDate
+        boolean isWithinRange = isWithinRange(periodStartDate, periodDueDate, referenceDate);
+
+        return isWithinRange;
+    }
+
+    private boolean isWithinRange(LocalDate periodStartDate, LocalDate periodDueDate, LocalDate referenceDate) {
+        return (referenceDate.isEqual(periodStartDate) || referenceDate.isAfter(periodStartDate))
+                && (referenceDate.isEqual(periodDueDate) || referenceDate.isBefore(periodDueDate));
     }
 
     @SuppressWarnings({ "squid:S3776", "squid:S107" })
