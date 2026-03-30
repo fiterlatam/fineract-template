@@ -39,6 +39,9 @@ import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 import javax.persistence.Transient;
+
+import lombok.Getter;
+import lombok.Setter;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.infrastructure.codes.domain.CodeValue;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
@@ -103,6 +106,7 @@ public final class Group extends AbstractAuditableCustom {
     @Column(name = "display_name", length = 100, unique = true)
     private String name;
 
+    @Getter @Setter
     @Column(name = "hierarchy", length = 100)
     private String hierarchy;
 
