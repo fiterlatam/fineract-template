@@ -19,11 +19,15 @@
 package org.apache.fineract.portfolio.loanaccount.event;
 
 import java.math.BigDecimal;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.fineract.commands.event.BaseCustomWebhookEventProcessorImpl;
 import org.apache.fineract.custom.infrastructure.dataqueries.data.DetalleGarantiaDatatableData;
+import org.apache.fineract.custom.infrastructure.dataqueries.data.DetallesDeLaTransacionDatatableData;
+import org.apache.fineract.custom.infrastructure.dataqueries.data.InformacionAdicionalDatatableData;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.portfolio.client.domain.Client;
@@ -32,6 +36,7 @@ import org.apache.fineract.portfolio.loanaccount.domain.Loan;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepositoryWrapper;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanTransaction;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -74,15 +79,32 @@ public class LoanDisbursementReportFileEventProcessor extends BaseCustomWebhookE
                 .max(Comparator.comparing(dt -> dt.getCreatedDateTime())).get();
 
         DetalleGarantiaDatatableData detalleGarantiaDatatableData = loanRejectionGuaranteeEventProcessor.getDetalleGarantia(loan);
+        InformacionAdicionalDatatableData informationTableData = getInformacionAdicional(loan);
 
-        requestBody.put("applyGuarantee", detalleGarantiaDatatableData.isAplicaGarantia());
-        requestBody.put("transactionAmount", disbursalTransaction.getAmount());
+        requestBody.put("externalId", client.getExternalId().getValue());
+        requestBody.put("city", informationTableData.getCiudadCliente() == null ? "" : informationTableData.getCiudadCliente());
+        requestBody.put("region",
+                informationTableData.getDepartamentoCliente() == null ? "" : informationTableData.getDepartamentoCliente());
+        requestBody.put("promoterCode", informationTableData.getCodigoPromotor() == null ? "" : informationTableData.getCodigoPromotor());
         requestBody.put("loanId", loan.getAccountNumber());
         requestBody.put("productName", loan.getLoanProduct().getName());
+        requestBody.put("applyGuarantee", detalleGarantiaDatatableData.isAplicaGarantia() ? "Si" : "No");
+        requestBody.put("guaranteeType",
+                detalleGarantiaDatatableData.getTipoGarantia() == null ? "" : detalleGarantiaDatatableData.getTipoGarantia());
+        requestBody.put("guaranteePercentage",
+                detalleGarantiaDatatableData.getPctComission() == null ? "" : detalleGarantiaDatatableData.getPctComission().toString());
         requestBody.put("transactionId", disbursalTransaction.getId());
 
         List<LoanTransactionData.DisbursementFeeData> disbursementFees = getDisbursementFees(loan.getId());
-        requestBody.put("disbursementFees", disbursementFees);
+        BigDecimal netDisbursalAmount = disbursalTransaction.getAmount();
+        if (!disbursementFees.isEmpty()) {
+            LoanTransactionData.DisbursementFeeData data = disbursementFees.get(0);
+            netDisbursalAmount = data.getNetDisbursalAmount();
+        }
+        requestBody.put("transactionAmount", netDisbursalAmount);
+
+        DetallesDeLaTransacionDatatableData transactionData = getDetallesDeLaTransacion(disbursalTransaction);
+        requestBody.put("commercialEstablishmentId", transactionData.getIdentificacionEstablecimientoComercial());
 
         return requestBody;
     }
@@ -116,5 +138,59 @@ public class LoanDisbursementReportFileEventProcessor extends BaseCustomWebhookE
         }, loanId);
 
         return disbursementFees;
+    }
+
+    private InformacionAdicionalDatatableData getInformacionAdicional(Loan loan) {
+        InformacionAdicionalDatatableData result = InformacionAdicionalDatatableData.builder().build();
+
+        try {
+            String query = """
+                    SELECT *
+                    FROM "Informacion Adicional"
+                    WHERE loan_id = ?
+                    """;
+
+            result = this.jdbcTemplate.queryForObject(query, new RowMapper<InformacionAdicionalDatatableData>() {
+
+                @Override
+                public InformacionAdicionalDatatableData mapRow(ResultSet rs, int rowNum) throws SQLException {
+                    return InformacionAdicionalDatatableData.builder().loanId(rs.getLong("loan_id"))
+                            .ciudadCliente(rs.getString("ciudad_cliente")).departamentoCliente(rs.getString("departamento_cliente"))
+                            .codigoPromotor(rs.getString("codigo_promotor"))
+                            .numeroIdentificacionAliado(rs.getString("numero_identificacion_aliado")).build();
+                }
+            }, loan.getId());
+
+        } catch (Exception e) {
+            return result;
+        }
+
+        return result;
+    }
+
+    private DetallesDeLaTransacionDatatableData getDetallesDeLaTransacion(LoanTransaction loanTransaction) {
+        DetallesDeLaTransacionDatatableData result = DetallesDeLaTransacionDatatableData.builder().build();
+
+        try {
+            String query = """
+                    SELECT *
+                    FROM detalles_de_la_transaccion
+                    WHERE loan_transaction_id = ?
+                    """;
+
+            result = this.jdbcTemplate.queryForObject(query, new RowMapper<DetallesDeLaTransacionDatatableData>() {
+
+                @Override
+                public DetallesDeLaTransacionDatatableData mapRow(ResultSet rs, int rowNum) throws SQLException {
+                    return DetallesDeLaTransacionDatatableData.builder().loanId(loanTransaction.getLoan().getId())
+                            .identificacionEstablecimientoComercial(rs.getString("id_establishment")).build();
+                }
+            }, loanTransaction.getId());
+
+        } catch (Exception e) {
+            return result;
+        }
+
+        return result;
     }
 }
