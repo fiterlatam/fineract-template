@@ -75,7 +75,7 @@
     </changeSet>
 
     <changeSet author="aocampo" id="003-add-registered-mortgage-column">
-        <addColumn tableName="p_garante">
+        <addColumn tableName="p_garantia">
             <column name="registeredMortgage_cd_hipoteca_registrada" type="integer"/>
         </addColumn>
     </changeSet>
