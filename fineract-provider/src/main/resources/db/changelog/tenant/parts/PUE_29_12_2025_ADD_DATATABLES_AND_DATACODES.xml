@@ -1924,4 +1924,26 @@
         <modifyDataType tableName="p_solicitante" columnName="DPI" newDataType="varchar(50)"/>
         <modifyDataType tableName="p_fiador" columnName="DPI_fiador_tercero" newDataType="varchar(50)"/>
     </changeSet>
+
+    <changeSet id="1775665199574-1" author="brian">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="p_fiador" columnName="DPI_fiador_tercero"/>
+            </not>
+        </preConditions>
+        <sql>
+            ALTER TABLE p_fiador
+                MODIFY COLUMN `DPI_fiador_tercero` varchar(255) NULL DEFAULT NULL;
+        </sql>
+    </changeSet>
+
+    <changeSet id="1775665199574-2" author="brian">
+        <preConditions onFail="MARK_RAN">
+                <columnExists tableName="p_destino" columnName="loanPurposeOptions_cd_destino"/>
+        </preConditions>
+        <sql>
+            ALTER TABLE `p_destino`
+                CHANGE COLUMN `loanPurposeOptions_cd_destino` `loanPurposeOptionsPAE_cd_destino` int NULL DEFAULT NULL;
+        </sql>
+    </changeSet>
 </databaseChangeLog>

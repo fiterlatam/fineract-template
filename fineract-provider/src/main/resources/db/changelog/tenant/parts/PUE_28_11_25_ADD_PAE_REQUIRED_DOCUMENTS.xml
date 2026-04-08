@@ -118,4 +118,28 @@
                 splitStatements="true"
                 stripComments="true"/>
     </changeSet>
+    <changeSet id="PUE_08_04_26_ADD_PAE_REQUIRED_DOCUMENTS_CONFIGS_ADDED" author="brian">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">
+                select count(*) from m_code_value where code_value='Documentacion Deudora';
+            </sqlCheck>
+        </preConditions>
+        <sql>
+            INSERT INTO m_code_value (`code_id`, `code_value`, `code_description`, `order_position`, `code_score`, `is_active`, `is_mandatory`)
+            VALUES ( (select id from m_code where code_name='PaeRequiredGuarantees' limit 1), 'Documentacion Deudora', '', 1, NULL, b'1', b'0');
+        </sql>
+    </changeSet>
+    <changeSet id="PUE_08_04_26_ADD_PAE_REQUIRED_DOCUMENTS_CONFIGS_ADDED_02" author="brian">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">
+                select count(*) from m_code_value where code_id = (select id from m_code where code_name='PaeRequiredGuarantees' limit 1) and code_value='Documentacion Deudora';
+            </sqlCheck>
+        </preConditions>
+        <sqlFile
+                encoding="utf8"
+                path="db/changelog/tenant/commands/paedocumentsupdates_02.sql"
+                relativeToChangelogFile="false"
+                splitStatements="true"
+                stripComments="true"/>
+    </changeSet>
 </databaseChangeLog>
