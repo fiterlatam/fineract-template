@@ -30,4 +30,11 @@
                 splitStatements="true"
                 stripComments="true"/>
     </changeSet>
+
+    <changeSet author="fiter" id="02">
+        <sql>
+            UPDATE c_external_service_properties SET `value` = 'mifos.fiter' WHERE `name` = 'commcareApiUsername' LIMIT 1;
+        </sql>
+    </changeSet>
+
 </databaseChangeLog>
