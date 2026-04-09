@@ -75,6 +75,11 @@
     </changeSet>
 
     <changeSet author="aocampo" id="003-add-registered-mortgage-column">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="p_garantia" columnName="registeredMortgage_cd_hipoteca_registrada"/>
+            </not>
+        </preConditions>
         <addColumn tableName="p_garantia">
             <column name="registeredMortgage_cd_hipoteca_registrada" type="integer"/>
         </addColumn>
@@ -120,6 +125,26 @@
         <addColumn tableName="p_solicitante">
             <column name="formalizationDocument_cd_documento_formalizacion" type="integer"/>
         </addColumn>
+    </changeSet>
+
+    <changeSet author="fiter" id="002-missing_column_garatia_table">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="p_garantia" columnName="detalle_garantia"/>
+            </not>
+        </preConditions>
+
+        <addColumn tableName="p_garantia">
+            <column name="detalle_garantia" type="varchar"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="1775666598847-1" author="brian">
+        <sql>
+            UPDATE m_permission SET `code` = 'UPDATE_p_garantia', `entity_name` = 'UPDATE_p_garantia' WHERE `code` = 'UPDATE_p_garante';
+            UPDATE m_permission SET `code` = 'READ_p_garantia', `entity_name` = 'READ_p_garantia' WHERE `code` = 'READ_p_garante';
+            UPDATE m_permission SET `code` = 'CREATE_p_garantia', `entity_name` = 'CREATE_p_garantia' WHERE `code` = 'CREATE_p_garante';
+        </sql>
     </changeSet>
 
 </databaseChangeLog>
