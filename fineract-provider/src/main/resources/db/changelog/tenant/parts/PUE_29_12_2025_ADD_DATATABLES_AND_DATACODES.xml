@@ -1946,4 +1946,23 @@
                 CHANGE COLUMN `loanPurposeOptions_cd_destino` `loanPurposeOptionsPAE_cd_destino` int NULL DEFAULT NULL;
         </sql>
     </changeSet>
+
+    <changeSet id="15042026_1" author="brian">
+        <preConditions onFail="MARK_RAN">
+                <columnExists tableName="p_solicitante" columnName="record_crediticio_PDA"/>
+        </preConditions>
+        <sql>
+            ALTER TABLE `p_solicitante`
+                CHANGE COLUMN `record_crediticio_PDA` `pda_options_pae_cd_record_crediticio_PDA` integer;
+        </sql>
+    </changeSet>
+    <changeSet id="15042026_2" author="brian">
+        <preConditions onFail="MARK_RAN">
+                <columnExists tableName="p_solicitante" columnName="leadershipRole_roles_liderazgo"/>
+        </preConditions>
+        <sql>
+            ALTER TABLE `p_solicitante`
+                CHANGE COLUMN `leadershipRole_roles_liderazgo` `roles_liderazgo_pae_cd_leadershipRole_roles_liderazgo` integer;
+        </sql>
+    </changeSet>
 </databaseChangeLog>
