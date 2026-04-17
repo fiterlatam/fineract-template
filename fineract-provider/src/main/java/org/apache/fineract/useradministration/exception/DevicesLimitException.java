@@ -16,17 +16,21 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.infrastructure.security.domain;
+package org.apache.fineract.useradministration.exception;
 
-import java.util.List;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.apache.fineract.infrastructure.core.exception.AbstractPlatformResourceNotFoundException;
 
-public interface TwoFactorConfigurationRepository
-        extends JpaRepository<TwoFactorConfiguration, Long>, JpaSpecificationExecutor<TwoFactorConfiguration> {
+/**
+ * A {@link RuntimeException} thrown when user resources are not found.
+ */
+public class DevicesLimitException extends AbstractPlatformResourceNotFoundException {
 
-    TwoFactorConfiguration findByName(String name);
+    public DevicesLimitException(final Long id, final long limit) {
+        super("error.msg.user.devices.limit.exceeded", "User with ID " + id + " has exceeded the set devices limit", id, limit);
+    }
 
-    @Override
-    List<TwoFactorConfiguration> findAll();
+    public DevicesLimitException(final String userName, final long limit) {
+        super("error.msg.user.devices.limit.exceeded", "User with name '" + userName + "' Has exceeded the set devices limit", userName,
+                limit);
+    }
 }

@@ -16,17 +16,17 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.infrastructure.security.domain;
+package org.apache.fineract.useradministration.domain;
 
-import java.util.List;
+import java.util.Collection;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
-public interface TwoFactorConfigurationRepository
-        extends JpaRepository<TwoFactorConfiguration, Long>, JpaSpecificationExecutor<TwoFactorConfiguration> {
+public interface AppUserDevicesRepository extends JpaRepository<AppUserDevices, Long> {
 
-    TwoFactorConfiguration findByName(String name);
+    @Query("Select appUser from AppUserDevices appUser where appUser.user = :userid")
+    AppUserDevices findAppUserId(@Param("userid") Long userid);
 
-    @Override
-    List<TwoFactorConfiguration> findAll();
+    Collection<AppUserDevices> findByUser(AppUser user);
 }

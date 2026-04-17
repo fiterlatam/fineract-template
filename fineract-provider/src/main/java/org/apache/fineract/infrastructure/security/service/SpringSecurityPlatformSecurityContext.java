@@ -156,6 +156,9 @@ public class SpringSecurityPlatformSecurityContext implements PlatformSecurityCo
                 return true;
             }
         }
+        if (currentUser.resetPassword()) {
+            return true;
+        }
         return false;
 
     }

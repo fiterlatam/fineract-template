@@ -19,6 +19,7 @@
 package org.apache.fineract.infrastructure.security.service;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import org.apache.commons.lang3.StringUtils;
@@ -38,11 +39,16 @@ import org.apache.fineract.infrastructure.sms.domain.SmsMessage;
 import org.apache.fineract.infrastructure.sms.domain.SmsMessageRepository;
 import org.apache.fineract.infrastructure.sms.scheduler.SmsMessageScheduledJobService;
 import org.apache.fineract.useradministration.domain.AppUser;
+import org.apache.fineract.useradministration.domain.AppUserDevices;
+import org.apache.fineract.useradministration.domain.AppUserDevicesRepository;
+import org.apache.fineract.useradministration.domain.AppUserRepository;
+import org.apache.fineract.useradministration.exception.DevicesLimitException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -52,18 +58,20 @@ public class TwoFactorServiceImpl implements TwoFactorService {
     private final AccessTokenGenerationService accessTokenGenerationService;
     private final PlatformEmailService emailService;
     private final SmsMessageScheduledJobService smsMessageScheduledJobService;
-
     private final OTPRequestRepository otpRequestRepository;
     private final TFAccessTokenRepository tfAccessTokenRepository;
+    private final AppUserDevicesRepository appUserDevicesRepository;
+    private final AppUserRepository appUserRepository;
     private final SmsMessageRepository smsMessageRepository;
-
     private final TwoFactorConfigurationService configurationService;
+    private final JdbcTemplate jdbcTemplate;
 
     @Autowired
     public TwoFactorServiceImpl(AccessTokenGenerationService accessTokenGenerationService, PlatformEmailService emailService,
             SmsMessageScheduledJobService smsMessageScheduledJobService, OTPRequestRepository otpRequestRepository,
             TFAccessTokenRepository tfAccessTokenRepository, SmsMessageRepository smsMessageRepository,
-            TwoFactorConfigurationService configurationService) {
+            TwoFactorConfigurationService configurationService, final AppUserDevicesRepository appUserDevicesRepository,
+            AppUserRepository appUserRepository, JdbcTemplate jdbcTemplate) {
         this.accessTokenGenerationService = accessTokenGenerationService;
         this.emailService = emailService;
         this.smsMessageScheduledJobService = smsMessageScheduledJobService;
@@ -71,6 +79,9 @@ public class TwoFactorServiceImpl implements TwoFactorService {
         this.tfAccessTokenRepository = tfAccessTokenRepository;
         this.smsMessageRepository = smsMessageRepository;
         this.configurationService = configurationService;
+        this.appUserDevicesRepository = appUserDevicesRepository;
+        this.appUserRepository = appUserRepository;
+        this.jdbcTemplate = jdbcTemplate;
     }
 
     @Override
@@ -174,6 +185,23 @@ public class TwoFactorServiceImpl implements TwoFactorService {
     }
 
     @Override
+    public void updateRegisteredDevices(AppUser user, String fingerprint) {
+        if (StringUtils.isBlank(fingerprint)) {
+            return;
+        }
+
+        Collection<AppUserDevices> existingDevices = appUserDevicesRepository.findByUser(user);
+        boolean deviceExists = existingDevices.stream().anyMatch(device -> fingerprint.equals(device.getDeviceId()));
+        if (existingDevices.size() >= 5 && !deviceExists) {
+            throw new DevicesLimitException(user.getUsername(), configurationService.getMaximumUserDevices());
+        }
+        if (!deviceExists) {
+            AppUserDevices newDevice = AppUserDevices.createNew(user, fingerprint);
+            appUserDevicesRepository.save(newDevice);
+        }
+    }
+
+    @Override
     @Cacheable(value = "userTFAccessToken", key = "T(org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil)"
             + ".getTenant().getTenantIdentifier().concat(#user.username).concat(#token + 'tok')")
     public TFAccessToken fetchAccessTokenForUser(final AppUser user, final String token) {
@@ -197,15 +225,17 @@ public class TwoFactorServiceImpl implements TwoFactorService {
             return null;
         }
 
-        return new OTPDeliveryMethod(TwoFactorConstants.SMS_DELIVERY_METHOD_NAME, mobileNo);
+        int accessTokenExtendedLiveTime = (this.configurationService.getAccessTokenExtendedLiveTime() / 86400);
+        return new OTPDeliveryMethod(TwoFactorConstants.SMS_DELIVERY_METHOD_NAME, mobileNo, Integer.toString(accessTokenExtendedLiveTime));
     }
 
     private OTPDeliveryMethod getEmailDeliveryMethodForUser(final AppUser user) {
         if (!configurationService.isEmailEnabled()) {
             return null;
         }
-
-        return new OTPDeliveryMethod(TwoFactorConstants.EMAIL_DELIVERY_METHOD_NAME, user.getEmail());
+        int accessTokenExtendedLiveTime = (this.configurationService.getAccessTokenExtendedLiveTime() / 86400);
+        return new OTPDeliveryMethod(TwoFactorConstants.EMAIL_DELIVERY_METHOD_NAME, user.getEmail(),
+                Integer.toString(accessTokenExtendedLiveTime));
     }
 
     private OTPRequest generateNewToken(final OTPDeliveryMethod deliveryMethod, final boolean extendedAccessToken) {
