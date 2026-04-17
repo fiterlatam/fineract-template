@@ -349,7 +349,7 @@ public class ResolutionCommiteeReport {
 
     private List<Map<String, Object>> retrieveData(Long loanId, Long prequalificationId) {
         String sql = """
-                SELECT mc.display_name as clientName,
+                SELECT DISTINCT psl.to_status, mc.display_name as clientName,
                                 ml.principal_amount as loanAmount,
                                 agency.name as agencyName,
                                 mc.id as clientCode,
@@ -460,7 +460,7 @@ public class ResolutionCommiteeReport {
                                 left join m_supervision supv on supv.id = portfolio.supervision_id
                                 left join m_agency agency on agency.id = supv.agency_id
                                 left join m_appuser au on au.id = psl.assigned_to
-                                left join m_appuser fc on fc.id = pg.facilitator
+                                left join m_appuser fc on fc.id = portfolio.responsible_user_id
                                 left join p_solicitante ps on ps.loan_id = ml.id
                                 left join m_code_value cv_sol on cv_sol.id = ps.classificationOptions_cd_actividad_economica_principal
                                 left join m_code_value cv_sol_fd on cv_sol_fd.id = ps.formalizationDocument_cd_documento_formalizacion
