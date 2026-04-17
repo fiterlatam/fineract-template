@@ -1965,4 +1965,49 @@
                 CHANGE COLUMN `leadershipRole_roles_liderazgo` `roles_liderazgo_pae_cd_leadershipRole_roles_liderazgo` integer;
         </sql>
     </changeSet>
+
+    <changeSet id="17042026_1" author="brian">
+        <preConditions onFail="MARK_RAN">
+                <columnExists tableName="p_solicitante" columnName="Monto_de_creditos_retener"/>
+        </preConditions>
+        <sql>
+            ALTER TABLE p_solicitante
+                MODIFY COLUMN Monto_de_creditos_retener decimal(10,0) AFTER classificationOptions_cd_actividad_economica_principal;
+        </sql>
+    </changeSet>
+
+    <changeSet id="17042026_2" author="brian">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="p_solicitante" columnName="Monto_de_creditos_retener"/>
+            </not>
+        </preConditions>
+        <sql>
+            ALTER TABLE p_solicitante
+                ADD COLUMN Monto_de_creditos_retener decimal(10,0) AFTER classificationOptions_cd_actividad_economica_principal;
+        </sql>
+    </changeSet>
+
+    <changeSet id="17042026_3" author="brian">
+        <preConditions onFail="MARK_RAN">
+            <columnExists tableName="p_solicitante" columnName="municipio"/>
+        </preConditions>
+        <sql>
+            ALTER TABLE p_solicitante
+                MODIFY COLUMN municipio varchar(100) AFTER Ldepartamento_cd_departamento;
+        </sql>
+    </changeSet>
+
+    <changeSet id="17042026_4" author="brian">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="p_solicitante" columnName="municipio"/>
+            </not>
+        </preConditions>
+        <sql>
+            ALTER TABLE p_solicitante
+                ADD COLUMN municipio varchar(100) AFTER Ldepartamento_cd_departamento;
+        </sql>
+    </changeSet>
+
 </databaseChangeLog>
