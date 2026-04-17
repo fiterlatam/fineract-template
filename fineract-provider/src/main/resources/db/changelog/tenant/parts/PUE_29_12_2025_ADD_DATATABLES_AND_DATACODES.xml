@@ -1965,4 +1965,14 @@
                 CHANGE COLUMN `leadershipRole_roles_liderazgo` `roles_liderazgo_pae_cd_leadershipRole_roles_liderazgo` integer;
         </sql>
     </changeSet>
+
+    <changeSet id="17042026_1" author="brian">
+        <preConditions onFail="MARK_RAN">
+                <columnExists tableName="p_solicitante" columnName="leadershipRole_roles_liderazgo"/>
+        </preConditions>
+        <sql>
+            ALTER TABLE p_solicitante
+                MODIFY COLUMN column_name column_definition AFTER other_column;
+        </sql>
+    </changeSet>
 </databaseChangeLog>

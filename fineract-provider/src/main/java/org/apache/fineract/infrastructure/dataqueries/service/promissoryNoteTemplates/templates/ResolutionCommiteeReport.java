@@ -402,7 +402,7 @@ public class ResolutionCommiteeReport {
                 						ON mcv.id = pg.guaranteeType_cd_tipo_garantia
                 					WHERE pg.loan_id = ml.id
                 				),
-                                COALESCE(mccv.code_value,'N/A' )) as collateralType,
+                                CONCAT(mccv.code_value,' ',pgrtype.collateralType)) as collateralType,
                                 COALESCE((
                 									SELECT SUM(pg.valor_garantia)
                 									FROM p_garantia pg
@@ -475,6 +475,14 @@ public class ResolutionCommiteeReport {
                                         	( SELECT loan_id, detalle_garantia, valor_garantia, ROW_NUMBER() OVER ( PARTITION BY loan_id ORDER BY detalle_garantia ) AS rn FROM p_garantia ) t
                                         GROUP BY loan_id
                                     ) pgr ON pgr.loan_id = ml.id
+                                LEFT JOIN (
+                                    SELECT
+                                    	loan_id,
+                                    	GROUP_CONCAT( CONCAT( guarantee_type) SEPARATOR ',' ) AS collateralType
+                                    FROM
+                                        ( SELECT pf.loan_id, mcv.code_value as guarantee_type FROM p_fiador pf LEFT JOIN m_code_value mcv on pf.guarantorType_cd_tipo_fiador_tercero = mcv.id ) t\s
+                                    GROUP BY loan_id 
+                                    	) pgrtype ON pgrtype.loan_id = ml.id 
                                 left join (select lrs.loan_id , SUM(
                                     COALESCE(lrs.principal_amount, 0) +
                                     COALESCE(lrs.interest_amount, 0) +
