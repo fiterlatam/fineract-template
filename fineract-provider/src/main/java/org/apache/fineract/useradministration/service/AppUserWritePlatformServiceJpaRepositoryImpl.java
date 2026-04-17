@@ -73,6 +73,7 @@ import org.apache.fineract.portfolio.client.domain.Client;
 import org.apache.fineract.portfolio.client.domain.ClientRepositoryWrapper;
 import org.apache.fineract.useradministration.api.AppUserApiConstant;
 import org.apache.fineract.useradministration.domain.AppUser;
+import org.apache.fineract.useradministration.domain.AppUserDevices;
 import org.apache.fineract.useradministration.domain.AppUserDevicesRepository;
 import org.apache.fineract.useradministration.domain.AppUserPreviousPassword;
 import org.apache.fineract.useradministration.domain.AppUserPreviousPasswordRepository;
@@ -323,7 +324,7 @@ public class AppUserWritePlatformServiceJpaRepositoryImpl implements AppUserWrit
 
     @Override
     public void logUserAuthenticationDetails(AppUser appUser, HttpServletRequest servletRequest, String action, String result,
-            String username) {
+            String username, boolean processed) {
         if (appUser == null) {
             appUser = this.appUserRepository.findAppUserByName(username);
         }
@@ -342,8 +343,8 @@ public class AppUserWritePlatformServiceJpaRepositoryImpl implements AppUserWrit
         Long userId = appUser.getId();
         this.jdbcTemplate.update("insert into m_portfolio_command_source "
                 + "(action_name,entity_name,office_id,api_get_url,command_as_json,resource_id,maker_id,made_on_date,processing_result_enum) "
-                + "values(?, ?,?,?,?,?,?,current_timestamp ,1) ", action, "AUTHENTICATION", appUser.getOffice().getId(), "/authenticate",
-                "{ipAddress:\"" + clientIp + "\", result: \"" + result + "\"}", userId, userId);
+                + "values(?, ?,?,?,?,?,?,current_timestamp ,?) ", action, "AUTHENTICATION", appUser.getOffice().getId(), "/authenticate",
+                "{ipAddress:\"" + clientIp + "\", result: \"" + result + "\"}", userId, userId, processed);
     }
 
     @Override
@@ -384,20 +385,22 @@ public class AppUserWritePlatformServiceJpaRepositoryImpl implements AppUserWrit
         final PlatformUser dummyPlatformUser = new BasicPasswordEncodablePlatformUser(appUser.getId(), "", newPassword);
         String encodedPass = platformPasswordEncoder.encode(dummyPlatformUser);
 
-        this.jdbcTemplate.update("UPDATE m_appuser SET reset_password = ?, password=?, nonlocked=true WHERE id = ?", true, encodedPass,
-                appUser.getId());
+        this.jdbcTemplate.update(
+                "UPDATE m_appuser SET reset_password = ?, password=?, nonlocked=true, incorrect_access_count=? WHERE id = ?", true,
+                encodedPass, 0, appUser.getId());
 
-        final String emailSubject = "Password Reset Successful";
-        final String emailBody = "Your password has been reset. Your new password is: " + newPassword;
+        final String emailSubject = "Restablecimiento de contraseña exitosa";
+        final String emailBody = "Tu contraseña ha sido restablecida. Tu nueva contraseña es: " + newPassword;
         final EmailDetail emailData = new EmailDetail(emailSubject, emailBody, appUser.getEmail(),
                 appUser.getFirstname() + " " + appUser.getLastname());
         emailService.sendDefinedEmail(emailData);
 
-        if (logoutDevices) {
-            this.appUserDevicesRepository.findByUser(appUser).forEach(device -> {
-                this.appUserDevicesRepository.delete(device);
-            });
+        // always log out of all devices.
+        Collection<AppUserDevices> devices = this.appUserDevicesRepository.findByUser(appUser);
+        for (AppUserDevices device : devices) {
+            this.appUserDevicesRepository.delete(device);
         }
+
         List<TFAccessToken> tfAccessTokens = this.tfAccessTokenRepository.findByUser(appUser);
         tfAccessTokens.forEach(token -> {
             this.tfAccessTokenRepository.delete(token);
