@@ -481,8 +481,8 @@ public class ResolutionCommiteeReport {
                                     	GROUP_CONCAT( CONCAT( guarantee_type) SEPARATOR ',' ) AS collateralType
                                     FROM
                                         ( SELECT pf.loan_id, mcv.code_value as guarantee_type FROM p_fiador pf LEFT JOIN m_code_value mcv on pf.guarantorType_cd_tipo_fiador_tercero = mcv.id ) t\s
-                                    GROUP BY loan_id 
-                                    	) pgrtype ON pgrtype.loan_id = ml.id 
+                                    GROUP BY loan_id
+                                    	) pgrtype ON pgrtype.loan_id = ml.id
                                 left join (select lrs.loan_id , SUM(
                                     COALESCE(lrs.principal_amount, 0) +
                                     COALESCE(lrs.interest_amount, 0) +
