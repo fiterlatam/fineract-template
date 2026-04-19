@@ -140,20 +140,14 @@ public class PromissoryNoteTemplateOne {
                 loan.getLoanProductRelatedDetail().getAnnualNominalInterestRate().divide(BigDecimal.valueOf(12), 2, RoundingMode.HALF_EVEN),
                 true, true, false);
 
-        String municipio = agencyData != null && agencyData.getCity() != null
-                ? agencyData.getCity().getName()
-                : "__________";
+        String municipio = agencyData != null && agencyData.getCity() != null ? agencyData.getCity().getName() : "__________";
 
-        String department = agencyData != null && agencyData.getState() != null
-                ? agencyData.getState().getName()
-                : "__________";
+        String department = agencyData != null && agencyData.getState() != null ? agencyData.getState().getName() : "__________";
 
         // LAST PARAGRAPH
         String witnessName = object.get("witnessName").getAsString();
         String witnessDpiText = getNumber(object.get("witnessDPI").getAsNumber(), false, false, true);
         String witnessDpiNumber = "(" + object.get("witnessDPI").getAsString() + ")";
-
-
 
         Document document = new Document();
         ByteArrayOutputStream baos = new ByteArrayOutputStream();

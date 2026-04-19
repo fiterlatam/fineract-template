@@ -144,13 +144,9 @@ public class PromissoryNoteTemplateSix {
         // LAST PARAGRAPH
 
         AgencyData agencyData = this.agencyReadPlatformService.findById(agencyId);
-        String municipio = agencyData != null && agencyData.getCity() != null
-                ? agencyData.getCity().getName()
-                : "__________";
+        String municipio = agencyData != null && agencyData.getCity() != null ? agencyData.getCity().getName() : "__________";
 
-        String department = agencyData != null && agencyData.getState() != null
-                ? agencyData.getState().getName()
-                : "__________";
+        String department = agencyData != null && agencyData.getState() != null ? agencyData.getState().getName() : "__________";
         // GUARANTOR DATA
         Object[] dataGuarantor = this.loanRepository.retrieveGuarantorDataByLoanId(loanId);
         Object[] data = null;
@@ -198,8 +194,10 @@ public class PromissoryNoteTemplateSix {
             // Cuerpo completo del pagaré (texto legal completo con variables)
             String bodyText = String.format(template.getBlockOne(), clientName, clientDpiText, clientDpiNumber, clientAddress,
                     creditAmountText, creditPurpose, creditDetail, termText, disbursementDate, secondTermText,
-                    numberEqualsQuotas + " de " + quotaAmount, numberLastQuota, lastQuotaAmount, paymentDay, interestRateText,municipio, department,
-                    DateUtils.numberToLetters(date.getDayOfMonth()).toLowerCase(), date.getMonth().getDisplayName(TextStyle.FULL, new Locale("es")), DateUtils.numberToLetters(date.getYear() - 2000).toLowerCase());
+                    numberEqualsQuotas + " de " + quotaAmount, numberLastQuota, lastQuotaAmount, paymentDay, interestRateText, municipio,
+                    department, DateUtils.numberToLetters(date.getDayOfMonth()).toLowerCase(),
+                    date.getMonth().getDisplayName(TextStyle.FULL, new Locale("es")),
+                    DateUtils.numberToLetters(date.getYear() - 2000).toLowerCase());
 
             Paragraph body = new Paragraph(bodyText, normalFont);
             body.setAlignment(Element.ALIGN_JUSTIFIED);
@@ -215,7 +213,8 @@ public class PromissoryNoteTemplateSix {
             String fiadorWitnessDpiText = getNumber(fiadorWitnessDpi, false, false, true);
 
             String avalText = String.format(template.getBlockTwo(), guarantorName, guarantorDPIText, guarantorDPI, guarantorAddress,
-                    fiadorWitnessName, fiadorWitnessDpiText, fiadorWitnessDpi, municipio, department, DateUtils.numberToLetters(date.getDayOfMonth()).toLowerCase(),
+                    fiadorWitnessName, fiadorWitnessDpiText, fiadorWitnessDpi, municipio, department,
+                    DateUtils.numberToLetters(date.getDayOfMonth()).toLowerCase(),
                     date.getMonth().getDisplayName(TextStyle.FULL, new Locale("es")),
                     DateUtils.numberToLetters(date.getYear() - 2000).toLowerCase());
 

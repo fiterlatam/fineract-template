@@ -148,13 +148,9 @@ public class PromissoryNoteTemplateThree {
         String witnessDpiNumber = "(" + object.get("witnessDPI").getAsString() + ")";
 
         AgencyData agencyData = this.agencyReadPlatformService.findById(agencyId);
-        String municipio = agencyData != null && agencyData.getCity() != null
-                ? agencyData.getCity().getName()
-                : "__________";
+        String municipio = agencyData != null && agencyData.getCity() != null ? agencyData.getCity().getName() : "__________";
 
-        String department = agencyData != null && agencyData.getState() != null
-                ? agencyData.getState().getName()
-                : "__________";
+        String department = agencyData != null && agencyData.getState() != null ? agencyData.getState().getName() : "__________";
         // GUARANTOR DATA
 
         Object[] dataGuarantor = this.loanRepository.retrieveGuarantorDataByLoanId(loanId);
@@ -215,8 +211,9 @@ public class PromissoryNoteTemplateThree {
             // Firmas
             document.add(createSignatureSection(clientName, witnessName, "Promitente deudora o libradora", "Testigo"));
 
-            String avalText = String.format(template.getBlockTwo(), guarantorName, guarantorDPIText, guarantorDPI, guarantorAddress,municipio,
-                    department, DateUtils.numberToLetters(date.getDayOfMonth()).toLowerCase(), date.getMonth().getDisplayName(TextStyle.FULL, new Locale("es")),
+            String avalText = String.format(template.getBlockTwo(), guarantorName, guarantorDPIText, guarantorDPI, guarantorAddress,
+                    municipio, department, DateUtils.numberToLetters(date.getDayOfMonth()).toLowerCase(),
+                    date.getMonth().getDisplayName(TextStyle.FULL, new Locale("es")),
                     DateUtils.numberToLetters(date.getYear() - 2000).toLowerCase());
 
             Paragraph bodyAval = new Paragraph(avalText, normalFont);
