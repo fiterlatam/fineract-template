@@ -234,8 +234,8 @@ public class ResolutionCommiteeReport {
 
             addStyledCell(mainTable, columNames.get("equivalentMonthlyRate"), labelFont, VALUE_WHITE, 1);
             addStyledCell(mainTable, formatAmountPercentage(data.get(0).get("equivalentMonthlyRate")), valueFont, LIGHT_GRAY, 1);
-            addStyledCell(mainTable, "", labelFont, VALUE_WHITE, 1);
-            addStyledCell(mainTable, "", valueFont, LIGHT_GRAY, 1);
+            addStyledCell(mainTable, "Monto de creditos a retener", labelFont, VALUE_WHITE, 1);
+            addStyledCell(mainTable, formatAmount(data.get(0).get("motoDeCreditos")), valueFont, LIGHT_GRAY, 1);
 
             document.add(mainTable);
 
@@ -352,6 +352,7 @@ public class ResolutionCommiteeReport {
                 SELECT DISTINCT psl.to_status, mc.display_name as clientName,
                                 ml.principal_amount as loanAmount,
                                 agency.name as agencyName,
+                                coalesce(ps.Monto_de_creditos_retener,0) as motoDeCreditos
                                 mc.id as clientCode,
                                 (lrs.equivalentAnnualRate * 100) as equivalentAnnualRate,
                                 'No Aplica' as expenseAdmin,
