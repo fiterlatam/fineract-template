@@ -352,7 +352,7 @@ public class ResolutionCommiteeReport {
                 SELECT DISTINCT psl.to_status, mc.display_name as clientName,
                                 ml.principal_amount as loanAmount,
                                 agency.name as agencyName,
-                                coalesce(ps.Monto_de_creditos_retener,0) as motoDeCreditos
+                                coalesce(ps.Monto_de_creditos_retener,0) as motoDeCreditos,
                                 mc.id as clientCode,
                                 (lrs.equivalentAnnualRate * 100) as equivalentAnnualRate,
                                 'No Aplica' as expenseAdmin,
