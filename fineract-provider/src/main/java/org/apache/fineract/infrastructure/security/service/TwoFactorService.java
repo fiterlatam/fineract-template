@@ -39,4 +39,6 @@ public interface TwoFactorService {
 
     TFAccessToken invalidateAccessToken(AppUser user, JsonCommand command);
 
+    void updateRegisteredDevices(AppUser user, String fingerprint);
+
 }

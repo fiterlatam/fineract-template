@@ -18,8 +18,11 @@
  */
 package org.apache.fineract.useradministration.service;
 
+import javax.servlet.http.HttpServletRequest;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
+import org.apache.fineract.infrastructure.security.service.PlatformPasswordEncoder;
+import org.apache.fineract.useradministration.domain.AppUser;
 
 public interface AppUserWritePlatformService {
 
@@ -28,4 +31,13 @@ public interface AppUserWritePlatformService {
     CommandProcessingResult updateUser(Long userId, JsonCommand command);
 
     CommandProcessingResult deleteUser(Long userId);
+
+    void logUserAuthenticationDetails(AppUser appUser, HttpServletRequest servletRequest, String action, String result, String username,
+            boolean processed);
+
+    AppUser selfResetUserPassword(Long userId, String apiRequestBodyAsJson, PlatformPasswordEncoder platformPasswordEncoder);
+
+    AppUser completePasswordReset(String username, String otp, Boolean logoutDevices, PlatformPasswordEncoder platformPasswordEncoder);
+
+    AppUser requestPasswordReset(String username);
 }
