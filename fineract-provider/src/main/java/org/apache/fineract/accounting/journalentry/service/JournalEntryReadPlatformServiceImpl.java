@@ -26,7 +26,6 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
@@ -241,53 +240,38 @@ public class JournalEntryReadPlatformServiceImpl implements JournalEntryReadPlat
             final Integer entityType, final JournalEntryAssociationParametersData associationParametersData) {
 
         GLJournalEntryMapper rm = new GLJournalEntryMapper(associationParametersData);
-        final StringBuilder sqlBuilder = new StringBuilder(200);
-        sqlBuilder.append("select " + sqlGenerator.calcFoundRows() + " ");
-        sqlBuilder.append(rm.schema());
-
-        final Object[] objectArray = new Object[15];
-        int arrayPos = 0;
+        final StringBuilder whereClauseBuilder = new StringBuilder(200);
+        final List<Object> parameters = new ArrayList<>(15);
         String whereClose = " where ";
 
         if (StringUtils.isNotBlank(transactionId)) {
-            sqlBuilder.append(whereClose + " journalEntry.transaction_id = ?");
-            objectArray[arrayPos] = transactionId;
-            arrayPos = arrayPos + 1;
-
+            whereClauseBuilder.append(whereClose).append(" journalEntry.transaction_id = ?");
+            parameters.add(transactionId);
             whereClose = " and ";
         }
 
         if (entityType != null && entityType != 0 && (onlyManualEntries == null)) {
 
-            sqlBuilder.append(whereClose + " journalEntry.entity_type_enum = ?");
-
-            objectArray[arrayPos] = entityType;
-            arrayPos = arrayPos + 1;
-
+            whereClauseBuilder.append(whereClose).append(" journalEntry.entity_type_enum = ?");
+            parameters.add(entityType);
             whereClose = " and ";
         }
 
         if (searchParameters.isOfficeIdPassed()) {
-            sqlBuilder.append(whereClose + " journalEntry.office_id = ?");
-            objectArray[arrayPos] = searchParameters.getOfficeId();
-            arrayPos = arrayPos + 1;
-
+            whereClauseBuilder.append(whereClose).append(" journalEntry.office_id = ?");
+            parameters.add(searchParameters.getOfficeId());
             whereClose = " and ";
         }
 
         if (searchParameters.isCurrencyCodePassed()) {
-            sqlBuilder.append(whereClose + " journalEntry.currency_code = ?");
-            objectArray[arrayPos] = searchParameters.getCurrencyCode();
-            arrayPos = arrayPos + 1;
-
+            whereClauseBuilder.append(whereClose).append(" journalEntry.currency_code = ?");
+            parameters.add(searchParameters.getCurrencyCode());
             whereClose = " and ";
         }
 
         if (glAccountId != null && glAccountId != 0) {
-            sqlBuilder.append(whereClose + " journalEntry.account_id = ?");
-            objectArray[arrayPos] = glAccountId;
-            arrayPos = arrayPos + 1;
-
+            whereClauseBuilder.append(whereClose).append(" journalEntry.account_id = ?");
+            parameters.add(glAccountId);
             whereClose = " and ";
         }
 
@@ -298,17 +282,18 @@ public class JournalEntryReadPlatformServiceImpl implements JournalEntryReadPlat
             if (fromDate != null && toDate != null) {
                 fromDateString = df.format(fromDate);
                 toDateString = df.format(toDate);
-                sqlBuilder.append(whereClose + " journalEntry.entry_date between '" + fromDateString + "' and '" + toDateString + "' ");
+                whereClauseBuilder.append(whereClose).append(" journalEntry.entry_date between '").append(fromDateString).append("' and '")
+                        .append(toDateString).append("' ");
 
                 whereClose = " and ";
             } else if (fromDate != null) {
                 fromDateString = df.format(fromDate);
-                sqlBuilder.append(whereClose + " journalEntry.entry_date >= '" + fromDateString + "' ");
+                whereClauseBuilder.append(whereClose).append(" journalEntry.entry_date >= '").append(fromDateString).append("' ");
                 whereClose = " and ";
 
             } else if (toDate != null) {
                 toDateString = df.format(toDate);
-                sqlBuilder.append(whereClose + " journalEntry.entry_date <= '" + toDateString + "' ");
+                whereClauseBuilder.append(whereClose).append(" journalEntry.entry_date <= '").append(toDateString).append("' ");
 
                 whereClose = " and ";
             }
@@ -316,27 +301,30 @@ public class JournalEntryReadPlatformServiceImpl implements JournalEntryReadPlat
 
         if (onlyManualEntries != null) {
             if (onlyManualEntries) {
-                sqlBuilder.append(whereClose + " journalEntry.manual_entry = true");
+                whereClauseBuilder.append(whereClose).append(" journalEntry.manual_entry = true");
 
                 whereClose = " and ";
             }
         }
 
         if (searchParameters.isLoanIdPassed()) {
-            sqlBuilder.append(whereClose + " journalEntry.loan_transaction_id  in (select id from m_loan_transaction where loan_id = ?)");
-            objectArray[arrayPos] = searchParameters.getLoanId();
-            arrayPos = arrayPos + 1;
-
+            whereClauseBuilder.append(whereClose)
+                    .append(" journalEntry.loan_transaction_id  in (select id from m_loan_transaction where loan_id = ?)");
+            parameters.add(searchParameters.getLoanId());
             whereClose = " and ";
         }
         if (searchParameters.isSavingsIdPassed()) {
-            sqlBuilder.append(whereClose
-                    + " journalEntry.savings_transaction_id in (select id from m_savings_account_transaction where savings_account_id = ?)");
-            objectArray[arrayPos] = searchParameters.getSavingsId();
-            arrayPos = arrayPos + 1;
-
+            whereClauseBuilder.append(whereClose)
+                    .append(" journalEntry.savings_transaction_id in (select id from m_savings_account_transaction where savings_account_id = ?)");
+            parameters.add(searchParameters.getSavingsId());
             whereClose = " and ";
         }
+
+        final String whereClause = whereClauseBuilder.toString();
+        final StringBuilder sqlBuilder = new StringBuilder(200);
+        sqlBuilder.append("select ");
+        sqlBuilder.append(rm.schema());
+        sqlBuilder.append(whereClause);
 
         if (searchParameters.isOrderByRequested()) {
             sqlBuilder.append(" order by ").append(searchParameters.getOrderBy());
@@ -359,8 +347,13 @@ public class JournalEntryReadPlatformServiceImpl implements JournalEntryReadPlat
             }
         }
 
-        final Object[] finalObjectArray = Arrays.copyOf(objectArray, arrayPos);
-        return this.paginationHelper.fetchPage(this.jdbcTemplate, sqlBuilder.toString(), finalObjectArray, rm);
+        final Object[] finalObjectArray = parameters.toArray();
+        final List<JournalEntryData> pageItems = this.jdbcTemplate.query(sqlBuilder.toString(), rm, finalObjectArray); // NOSONAR
+
+        final String countSql = "select count(*) from acc_gl_journal_entry as journalEntry" + whereClause;
+        final Integer totalFilteredRecords = this.jdbcTemplate.queryForObject(countSql, Integer.class, finalObjectArray); // NOSONAR
+
+        return new Page<>(pageItems, totalFilteredRecords == null ? 0 : totalFilteredRecords);
     }
 
     @Override
