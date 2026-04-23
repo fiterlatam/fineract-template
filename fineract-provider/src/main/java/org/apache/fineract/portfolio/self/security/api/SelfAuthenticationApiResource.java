@@ -24,10 +24,12 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import org.apache.fineract.infrastructure.security.api.AuthenticationApiResource;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -56,7 +58,7 @@ public class SelfAuthenticationApiResource {
             + "Please visit this link for more info - https://fineract.apache.org/legacy-docs/apiLive.htm#selfbasicauth")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = SelfAuthenticationApiResourceSwagger.PostSelfAuthenticationResponse.class))) })
-    public String authenticate(final String apiRequestBodyAsJson) {
-        return this.authenticationApiResource.authenticate(apiRequestBodyAsJson, true);
+    public String authenticate(final String apiRequestBodyAsJson, @Context HttpServletRequest servletRequest) {
+        return this.authenticationApiResource.authenticate(apiRequestBodyAsJson, true, servletRequest);
     }
 }

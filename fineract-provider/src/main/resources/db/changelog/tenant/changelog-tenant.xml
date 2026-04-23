@@ -161,5 +161,6 @@
     <include file="parts/FS_037_ADD_PERMISSION_SAVINGS_ACCOUNT_REBALANCING.xml" relativeToChangelogFile="true"/>
     <include file="parts/0139-FSF-95_AddConfigurationForRunningBalancesUpdate.xml" relativeToChangelogFile="true"/>
     <include file="parts/0140-ACCOUNTING_MANUAL_ENTRTIES CONFIGURATION.xml" relativeToChangelogFile="true"/>
+    <include file="parts/0148-FBR_ADD_2FA_CONFIGURATIONS.xml" relativeToChangelogFile="true"/>
     <include file="parts/PUE_2026_04_22_INDEX_JOURNAL_ENTRIES_TABLE.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>

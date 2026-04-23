@@ -16,17 +16,13 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.infrastructure.security.domain;
+package org.apache.fineract.infrastructure.security.exception;
 
-import java.util.List;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.apache.fineract.infrastructure.core.exception.AbstractPlatformDomainRuleException;
 
-public interface TwoFactorConfigurationRepository
-        extends JpaRepository<TwoFactorConfiguration, Long>, JpaSpecificationExecutor<TwoFactorConfiguration> {
+public class TWOFAEmailConfigurationException extends AbstractPlatformDomainRuleException {
 
-    TwoFactorConfiguration findByName(String name);
-
-    @Override
-    List<TwoFactorConfiguration> findAll();
+    public TWOFAEmailConfigurationException(String username) {
+        super("error.msg.email.not.configured", "The email for user " + username + " is not setup.", username);
+    }
 }

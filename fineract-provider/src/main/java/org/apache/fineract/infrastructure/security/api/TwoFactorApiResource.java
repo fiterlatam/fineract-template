@@ -28,7 +28,9 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
+import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.UriInfo;
 import org.apache.fineract.commands.domain.CommandWrapper;
 import org.apache.fineract.commands.service.CommandWrapperBuilder;
@@ -101,10 +103,12 @@ public class TwoFactorApiResource {
     @Path("validate")
     @POST
     @Produces({ MediaType.APPLICATION_JSON })
-    public String validate(@QueryParam("token") final String token) {
+    public String validate(@QueryParam("token") final String token, @Context final HttpHeaders headers) {
         final AppUser user = context.authenticatedUser();
-
+        MultivaluedMap<String, String> requestHeaders = headers.getRequestHeaders();
+        String fingerprint = requestHeaders.getFirst("x-client-fingerprint");
         TFAccessToken accessToken = twoFactorService.createAccessTokenFromOTP(user, token);
+        this.twoFactorService.updateRegisteredDevices(user, fingerprint);
 
         return accessTokenSerializer.serialize(accessToken.toTokenData());
     }

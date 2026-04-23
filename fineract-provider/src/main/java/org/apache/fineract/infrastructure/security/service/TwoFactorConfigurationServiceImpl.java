@@ -36,13 +36,11 @@ import org.apache.fineract.infrastructure.security.domain.TwoFactorConfiguration
 import org.apache.fineract.infrastructure.security.domain.TwoFactorConfigurationRepository;
 import org.apache.fineract.useradministration.domain.AppUser;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 @Service
-@ConditionalOnProperty("fineract.security.2fa.enabled")
 public class TwoFactorConfigurationServiceImpl implements TwoFactorConfigurationService {
 
     private static final String DEFAULT_EMAIL_SUBJECT = "Fineract Two-Factor Authentication Token";
@@ -217,6 +215,17 @@ public class TwoFactorConfigurationServiceImpl implements TwoFactorConfiguration
             return defaultValue;
         }
         return value;
+    }
+
+    @Override
+    public Integer getMaximumUserDevices() {
+        Integer defaultValue = 10;
+        Integer value = getIntegerConfig("token-device-limit-configuration", defaultValue);
+        if (value < 1) {
+            return defaultValue;
+        }
+        return value;
+
     }
 
     private boolean getBooleanConfig(final String name, final boolean defaultValue) {

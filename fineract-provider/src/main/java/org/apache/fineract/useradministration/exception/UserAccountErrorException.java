@@ -16,17 +16,16 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.infrastructure.security.domain;
+package org.apache.fineract.useradministration.exception;
 
-import java.util.List;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.apache.fineract.infrastructure.core.exception.AbstractPlatformResourceNotFoundException;
 
-public interface TwoFactorConfigurationRepository
-        extends JpaRepository<TwoFactorConfiguration, Long>, JpaSpecificationExecutor<TwoFactorConfiguration> {
+/**
+ * A {@link RuntimeException} thrown when user resources are not found.
+ */
+public class UserAccountErrorException extends AbstractPlatformResourceNotFoundException {
 
-    TwoFactorConfiguration findByName(String name);
-
-    @Override
-    List<TwoFactorConfiguration> findAll();
+    public UserAccountErrorException(final String action, final String username) {
+        super("error.msg.user." + action, "User " + username + " is " + action, username);
+    }
 }
