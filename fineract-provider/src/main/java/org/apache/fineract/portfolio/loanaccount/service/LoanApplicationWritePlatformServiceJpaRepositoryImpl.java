@@ -173,6 +173,7 @@ import org.apache.fineract.portfolio.loanapplicationdraft.service.LoanApplicatio
 import org.apache.fineract.portfolio.loanproduct.LoanProductConstants;
 import org.apache.fineract.portfolio.loanproduct.data.LoanProductData;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProduct;
+import org.apache.fineract.portfolio.loanproduct.domain.LoanProductOwnerType;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProductRelatedDetail;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProductRepository;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanTransactionProcessingStrategy;
@@ -399,11 +400,11 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                     }
                 }
 
-                // look for active loan products for client if active loan exists new request has to be a topup.
+                // look for active loan products for client if active loan exists, new request has to be a topup.
                 List<Long> activeLoansLoanProductIdsByClient = this.loanRepository.findActiveLoansLoanProductIdsByClient(clientId,
                         LoanStatus.ACTIVE.getValue());
                 if (activeLoansLoanProductIdsByClient.contains(productId) && !Boolean.TRUE.equals(isTopup)
-                        && !Boolean.TRUE.equals(isRestructuredLoan)) {
+                        && !Boolean.TRUE.equals(isRestructuredLoan) && !loanProduct.getOwnerType().equals(LoanProductOwnerType.PAE.getValue())) {
                     throw new LoanDisbursalExistingActiveProduct(loanProduct.getName());
                 }
             }
@@ -457,22 +458,6 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                         dataValidationErrors);
             }
 
-            // final Long prequalificationId = this.fromJsonHelper.extractLongNamed("prequalificationId",
-            // command.parsedJson());
-            //
-            // if (prequalificationId != null && loanProduct.getOwnerType().equals(LoanProductOwnerType.PAE.getValue()))
-            // {
-            // String existingPendingLoan = "select count(*) from m_loan where prequalification_id = ? and
-            // loan_status_id =? ";
-            // Long pendingLoanCount = this.jdbcTemplate.queryForObject(existingPendingLoan, Long.class,
-            // prequalificationId,
-            // LoanStatus.SUBMITTED_AND_PENDING_APPROVAL.getValue());
-            // if (pendingLoanCount > 0) {
-            // throw new PrequalificationNotProvidedException("error.msg.loan.prequalification.pending.loan.exists",
-            // "The prequalification with id " + prequalificationId + " has a pending loan application.",
-            // prequalificationId);
-            // }
-            // }
             final Loan newLoanApplication = this.loanAssembler.assembleFrom(command);
 
             checkForProductMixRestrictions(newLoanApplication);
