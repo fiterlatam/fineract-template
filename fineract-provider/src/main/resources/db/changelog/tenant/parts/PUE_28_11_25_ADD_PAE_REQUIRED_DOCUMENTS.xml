@@ -142,4 +142,18 @@
                 splitStatements="true"
                 stripComments="true"/>
     </changeSet>
+
+    <changeSet id="PUE_23_04_2026_ADD_PAE_REQUIRED_DOCUMENTS_CONFIGS_VEHICLE" author="brian">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <sqlCheck expectedResult="0">
+                    select count(*) from m_code_value where code_value='Vehiculo';
+                </sqlCheck>
+            </not>
+        </preConditions>
+        <sql>
+            INSERT INTO m_code_value (`code_id`, `code_value`, `code_description`, `order_position`, `code_score`, `is_active`, `is_mandatory`)
+            VALUES ( (select id from m_code where code_name='PaeRequiredGuarantees' limit 1), 'Vehiculo', '', 1, NULL, b'1', b'0');
+        </sql>
+    </changeSet>
 </databaseChangeLog>
