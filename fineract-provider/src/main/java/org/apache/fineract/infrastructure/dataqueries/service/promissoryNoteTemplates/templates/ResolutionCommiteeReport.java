@@ -367,7 +367,7 @@ public class ResolutionCommiteeReport {
                                 WHEN psl.to_status =914 then 'COMMITTEE A CON EXCEPCIONES'
                                 ELSE 'INVÁLIDO' END) as commiteeLevel,
                                 COALESCE(pgr.collateral,'No Aplica') as collateral,
-                                COALESCE(hptrcv.code_description,'No Aplica') as registeredMortgage,
+                                COALESCE(hptr.registeredMortgage,'No Aplica') as registeredMortgage,
                                 COALESCE((ml.principal_amount/(pgr.collateralValue))* 100,'N/A') as collateralCoverage,
                                 CASE
                 					WHEN mpl.owner_type_enum = 4 THEN 'PAE'
@@ -465,9 +465,14 @@ public class ResolutionCommiteeReport {
                                 left join p_solicitante ps on ps.loan_id = ml.id
                                 left join m_code_value cv_sol on cv_sol.id = ps.classificationOptions_cd_actividad_economica_principal
                                 left join m_code_value cv_sol_fd on cv_sol_fd.id = ps.formalizationDocument_cd_documento_formalizacion
-                                left join p_garantia hptr on hptr.loan_id
-                                left join m_code_value hptrcv on hptrcv.id = hptr.registeredMortgage_cd_hipoteca_registrada
-                                left join m_code_value grtp on grtp.id = hptr.guaranteeType_cd_tipo_garantia and grtp.code_description='Hipoteca'
+                                LEFT JOIN (
+                                    select grt.id, grt.loan_id, grt.registeredMortgage_cd_hipoteca_registrada,
+                                    hptrcv.code_description as registeredMortgage
+                                    FROM p_garantia grt 
+                                    LEFT JOIN m_code_value hptrcv ON hptrcv.id = grt.registeredMortgage_cd_hipoteca_registrada 
+                                    LEFT JOIN m_code_value grtp ON grtp.id = grt.guaranteeType_cd_tipo_garantia 
+                                    where grtp.code_description = 'Hipoteca' 
+                                    ) hptr on hptr.loan_id = ml.id
                                 LEFT JOIN (
                                     SELECT
                                         loan_id, GROUP_CONCAT( CONCAT( detalle_garantia, ' GARANTIA', rn ) SEPARATOR ',' ) AS collateral,
@@ -503,7 +508,7 @@ public class ResolutionCommiteeReport {
                                       COALESCE(lrs.penalty_charges_amount, 0)
                                     ) * ml.term_frequency)-ml.principal_amount )/ml.principal_amount)/ml.term_frequency) *100) as equivalentMonthlyRate
                                     from m_loan_repayment_schedule lrs inner join m_loan ml on ml.id=lrs.loan_id where lrs.loan_id = ? AND lrs.installment=1) as lrs on lrs.loan_id = ml.id
-                                where pg.id = ? and psl.to_status in (1003,1004,1005,1006,911,912,913,914) order by psl.id desc
+                                where pg.id = ? and psl.to_status in (1003,1004,1005,1006,911,912,913,914) GROUP BY psl.to_status order by psl.id desc
                 """;
         return this.jdbcTemplate.queryForList(sql, prequalificationId, loanId, prequalificationId);
     }
