@@ -156,4 +156,19 @@
             VALUES ( (select id from m_code where code_name='PaeRequiredGuarantees' limit 1), 'Vehiculo', '', 1, NULL, b'1', b'0');
         </sql>
     </changeSet>
+    <changeSet id="PUE_23_04_2026_ADD_PAE_REQUIRED_DOCUMENTS_CONFIGS_VEHICLE_02" author="brian">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <sqlCheck expectedResult="0">
+                    select count(*) from pae_required_documents where category_id = (select id from m_code_value where code_value='Vehiculo' limit 1);
+                </sqlCheck>
+            </not>
+        </preConditions>
+        <sqlFile
+                encoding="utf8"
+                path="db/changelog/tenant/commands/paedocumentsupdates_03.sql"
+                relativeToChangelogFile="false"
+                splitStatements="true"
+                stripComments="true"/>
+    </changeSet>
 </databaseChangeLog>
