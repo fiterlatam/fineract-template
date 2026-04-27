@@ -2010,4 +2010,14 @@
         </sql>
     </changeSet>
 
+    <changeSet id="27042026_4" author="brian">
+        <preConditions onFail="MARK_RAN">
+                <columnExists tableName="p_garantia" columnName="creditRecordPDAOptions_cd_antiguedad_negocio"/>
+        </preConditions>
+        <sql>
+            ALTER TABLE p_garantia
+                DROP COLUMN creditRecordPDAOptions_cd_antiguedad_negocio;
+        </sql>
+    </changeSet>
+
 </databaseChangeLog>
