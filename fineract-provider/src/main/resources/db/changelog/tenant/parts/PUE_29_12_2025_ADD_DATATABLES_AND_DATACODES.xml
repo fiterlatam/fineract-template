@@ -2020,4 +2020,17 @@
         </sql>
     </changeSet>
 
+    <changeSet id="28042026_1" author="brian">
+        <preConditions onFail="MARK_RAN">
+                <columnExists tableName="p_solicitante" columnName="YesNo_cd_deudas_consolidar_meses_enes_mayusculas"/>
+        </preConditions>
+        <sql>
+            ALTER TABLE p_solicitante
+                DROP COLUMN IF EXISTS YesNo_cd_deudas_consolidar_meses_enes_mayusculas,
+                DROP COLUMN IF EXISTS  YesNo_cd_deuda_comprar_mayor_50_prestamo,
+                DROP COLUMN IF EXISTS  YesNo_cd_deuda_comprar_prestamista_inst,
+                DROP COLUMN IF EXISTS  YesNo_cd_monto_prestamo_mayor_Q250K;
+        </sql>
+    </changeSet>
+
 </databaseChangeLog>
