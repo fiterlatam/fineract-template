@@ -2026,10 +2026,10 @@
         </preConditions>
         <sql>
             ALTER TABLE p_solicitante
-                DROP COLUMN IF EXISTS YesNo_cd_deudas_consolidar_meses_enes_mayusculas,
-                DROP COLUMN IF EXISTS  YesNo_cd_deuda_comprar_mayor_50_prestamo,
-                DROP COLUMN IF EXISTS  YesNo_cd_deuda_comprar_prestamista_inst,
-                DROP COLUMN IF EXISTS  YesNo_cd_monto_prestamo_mayor_Q250K;
+                DROP COLUMN  YesNo_cd_deudas_consolidar_meses_enes_mayusculas,
+                DROP COLUMN  YesNo_cd_deuda_comprar_mayor_50_prestamo,
+                DROP COLUMN  YesNo_cd_deuda_comprar_prestamista_inst,
+                DROP COLUMN  YesNo_cd_monto_prestamo_mayor_Q250K;
         </sql>
     </changeSet>
 
