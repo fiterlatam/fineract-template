@@ -2039,7 +2039,7 @@
         </preConditions>
         <sql>
             ALTER TABLE p_solicitante
-                DROP COLUMN  guarantee_cd_garantia,
+                DROP COLUMN  guarantee_cd_garantia;
         </sql>
     </changeSet>
 
