@@ -366,7 +366,7 @@ public class ResolutionCommiteeReport {
                                 WHEN psl.to_status =913 then 'COMMITTEE B CON EXCEPCIONES'
                                 WHEN psl.to_status =914 then 'COMMITTEE A CON EXCEPCIONES'
                                 ELSE 'INVÁLIDO' END) as commiteeLevel,
-                                COALESCE(pgr.collateral,'No Aplica') as collateral,
+                                CONCAT(pgr.collateral,' ,',pgrtype.collateralType) as collateral,
                                 COALESCE(hptr.registeredMortgage,'No Aplica') as registeredMortgage,
                                 COALESCE((ml.principal_amount/(pgr.collateralValue))* 100,'N/A') as collateralCoverage,
                                 CASE
