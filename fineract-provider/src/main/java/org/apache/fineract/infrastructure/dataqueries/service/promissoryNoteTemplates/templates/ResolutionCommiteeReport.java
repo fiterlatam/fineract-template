@@ -207,9 +207,9 @@ public class ResolutionCommiteeReport {
             addStyledCell(mainTable, columNames.get("collateralType"), labelFont, VALUE_WHITE, 1);
             Object collateralType = data.get(0).get("collateralType");
             Object collateralTypeFiador = data.get(0).get("collateralTypeFiador");
-            String collateralTypeString = String.valueOf(collateralType);
-            collateralTypeString = collateralTypeString+ (!StringUtils.isBlank(String.valueOf(collateralTypeFiador))?", "+collateralTypeFiador:"");
-            addStyledCell(mainTable, collateralTypeString, valueFont, VALUE_YELLOW, 1);
+            String collateralTypeString = collateralType!=null?String.valueOf(collateralType):"";
+            collateralTypeString = collateralTypeString+ (collateralTypeFiador!=null && !StringUtils.isBlank(String.valueOf(collateralTypeFiador))?", "+collateralTypeFiador:"");
+            addStyledCell(mainTable, StringUtils.isBlank(collateralTypeString)?"No Aplica":collateralTypeString, valueFont, VALUE_YELLOW, 1);
 
             addStyledCell(mainTable, columNames.get("collateral"), labelFont, VALUE_WHITE, 1);
             Object collateralObj = data.get(0).get("collateral");
