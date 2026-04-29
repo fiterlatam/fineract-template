@@ -366,7 +366,7 @@ public class ResolutionCommiteeReport {
                                 WHEN psl.to_status =913 then 'COMMITTEE B CON EXCEPCIONES'
                                 WHEN psl.to_status =914 then 'COMMITTEE A CON EXCEPCIONES'
                                 ELSE 'INVÁLIDO' END) as commiteeLevel,
-                                CONCAT(pgr.collateral,' ,',pgrtype.collateralType) as collateral,
+                                COALESCE(pgr.collateral,'No Aplica') as collateral,
                                 COALESCE(hptr.registeredMortgage,'No Aplica') as registeredMortgage,
                                 COALESCE((ml.principal_amount/(pgr.collateralValue))* 100,'N/A') as collateralCoverage,
                                 CASE
@@ -395,15 +395,14 @@ public class ResolutionCommiteeReport {
                                 (ml.annual_nominal_interest_rate/12) as nominalMonthlyRate,
                                 ml.annual_nominal_interest_rate as annualInterest,
                                 (ml.annual_nominal_interest_rate/12) as monthlyInterest,
-                                COALESCE(
+                                CONCAT(
                 				(
                 					SELECT GROUP_CONCAT(mcv.code_value ORDER BY mcv.code_value SEPARATOR ', ')
                 					FROM p_garantia pg
                 					JOIN m_code_value mcv
                 						ON mcv.id = pg.guaranteeType_cd_tipo_garantia
                 					WHERE pg.loan_id = ml.id
-                				),
-                                CONCAT(mccv.code_value,' ',pgrtype.collateralType)) as collateralType,
+                				),', ',mccv.code_value,', ',pgrtype.collateralType) as collateralType,
                                 COALESCE((
                 									SELECT SUM(pg.valor_garantia)
                 									FROM p_garantia pg
