@@ -2033,4 +2033,14 @@
         </sql>
     </changeSet>
 
+    <changeSet id="29042026_1" author="brian">
+        <preConditions onFail="MARK_RAN">
+                <columnExists tableName="p_solicitante" columnName="guarantee_cd_garantia"/>
+        </preConditions>
+        <sql>
+            ALTER TABLE p_solicitante
+                DROP COLUMN  guarantee_cd_garantia,
+        </sql>
+    </changeSet>
+
 </databaseChangeLog>
