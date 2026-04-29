@@ -47,6 +47,7 @@ import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.fineract.organisation.monetary.domain.MonetaryCurrency;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepository;
 import org.apache.fineract.portfolio.loanaccount.service.LoanReadPlatformService;
+import org.apache.tika.utils.StringUtils;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
@@ -204,7 +205,11 @@ public class ResolutionCommiteeReport {
             addStyledCell(mainTable, columNames.get("frequencyTermCap"), labelFont, VALUE_WHITE, 1);
             addStyledCell(mainTable, data.get(0).get("frequencyTerm"), valueFont, LIGHT_GRAY, 1);
             addStyledCell(mainTable, columNames.get("collateralType"), labelFont, VALUE_WHITE, 1);
-            addStyledCell(mainTable, data.get(0).get("collateralType"), valueFont, VALUE_YELLOW, 1);
+            Object collateralType = data.get(0).get("collateralType");
+            Object collateralTypeFiador = data.get(0).get("collateralTypeFiador");
+            String collateralTypeString = collateralType!=null?String.valueOf(collateralType):"";
+            collateralTypeString = collateralTypeString+ (collateralTypeFiador!=null && !StringUtils.isBlank(String.valueOf(collateralTypeFiador))?", "+collateralTypeFiador:"");
+            addStyledCell(mainTable, StringUtils.isBlank(collateralTypeString)?"No Aplica":collateralTypeString, valueFont, VALUE_YELLOW, 1);
 
             addStyledCell(mainTable, columNames.get("collateral"), labelFont, VALUE_WHITE, 1);
             Object collateralObj = data.get(0).get("collateral");
@@ -366,7 +371,7 @@ public class ResolutionCommiteeReport {
                                 WHEN psl.to_status =913 then 'COMMITTEE B CON EXCEPCIONES'
                                 WHEN psl.to_status =914 then 'COMMITTEE A CON EXCEPCIONES'
                                 ELSE 'INVÁLIDO' END) as commiteeLevel,
-                                COALESCE(pgr.collateral,'No Aplica') as collateral,
+                                CONCAT(pgr.collateral,'No Aplica') as collateral,
                                 COALESCE(hptr.registeredMortgage,'No Aplica') as registeredMortgage,
                                 COALESCE((ml.principal_amount/(pgr.collateralValue))* 100,'N/A') as collateralCoverage,
                                 CASE
@@ -395,14 +400,16 @@ public class ResolutionCommiteeReport {
                                 (ml.annual_nominal_interest_rate/12) as nominalMonthlyRate,
                                 ml.annual_nominal_interest_rate as annualInterest,
                                 (ml.annual_nominal_interest_rate/12) as monthlyInterest,
-                                CONCAT(
+                                COALESCE(
                 				(
                 					SELECT GROUP_CONCAT(mcv.code_value ORDER BY mcv.code_value SEPARATOR ', ')
                 					FROM p_garantia pg
                 					JOIN m_code_value mcv
                 						ON mcv.id = pg.guaranteeType_cd_tipo_garantia
                 					WHERE pg.loan_id = ml.id
-                				),', ',mccv.code_value,', ',pgrtype.collateralType) as collateralType,
+                				),
+                                CONCAT(mccv.code_value,' ',pgrtype.collateralType)) as collateralType,
+                                CONCAT(mccv.code_value,' ',pgrtype.collateralType) as collateralTypeFiador,
                                 COALESCE((
                 									SELECT SUM(pg.valor_garantia)
                 									FROM p_garantia pg
