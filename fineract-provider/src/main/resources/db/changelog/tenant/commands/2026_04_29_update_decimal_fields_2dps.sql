@@ -56,7 +56,7 @@ ALTER TABLE bitacora_details MODIFY diferential DECIMAL(19,2);
 ALTER TABLE bitacora_master MODIFY amount DECIMAL(19,2);
 ALTER TABLE bitacora_master MODIFY exchange_rate DECIMAL(19,2);
 ALTER TABLE committee_approval_limits MODIFY from_amount DECIMAL(10,2);
-ALTER TABLE committee_approval_limits MODIFY to_amount DECIMAL(10,2);
+ALTER TABLE committee_approval_limits MODIFY to_amount DECIMAL(19,2);
 ALTER TABLE glim_accounts MODIFY application_id DECIMAL(10,2);
 ALTER TABLE glim_accounts MODIFY principal_amount DECIMAL(19,2);
 ALTER TABLE gsim_accounts MODIFY application_id DECIMAL(10,2);
