@@ -93,6 +93,7 @@ public class GroupPrequalificationData {
     private List<String> exceptionListComments;
     private List<String> listComments;
     private Page<CommitteeData> committeeDataPage;
+    private String nextCommitee;
 
     public GroupPrequalificationData(final Long id, final String productName, final String prequalificationNumber, final String agencyName,
             final String portforlioName, final String centerName, final String groupName, final String addedBy,
@@ -249,5 +250,9 @@ public class GroupPrequalificationData {
 
     public void setProductId(Long productId) {
         this.productId = productId;
+    }
+
+    public void setNextCommitee(String commitee) {
+        this.nextCommitee = commitee;
     }
 }

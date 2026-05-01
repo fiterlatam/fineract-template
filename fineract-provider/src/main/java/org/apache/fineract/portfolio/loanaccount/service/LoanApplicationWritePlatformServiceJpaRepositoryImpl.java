@@ -404,7 +404,8 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                 List<Long> activeLoansLoanProductIdsByClient = this.loanRepository.findActiveLoansLoanProductIdsByClient(clientId,
                         LoanStatus.ACTIVE.getValue());
                 if (activeLoansLoanProductIdsByClient.contains(productId) && !Boolean.TRUE.equals(isTopup)
-                        && !Boolean.TRUE.equals(isRestructuredLoan) && !loanProduct.getOwnerType().equals(LoanProductOwnerType.PAE.getValue())) {
+                        && !Boolean.TRUE.equals(isRestructuredLoan)
+                        && !loanProduct.getOwnerType().equals(LoanProductOwnerType.PAE.getValue())) {
                     throw new LoanDisbursalExistingActiveProduct(loanProduct.getName());
                 }
             }
