@@ -208,4 +208,5 @@
     <include file="parts/PUE_2026_03_23_update_municipio_departamento_templates.xml" relativeToChangelogFile="true"/>
     <include file="parts/PUE_2026_04_22_INDEX_JOURNAL_ENTRIES_TABLE.xml" relativeToChangelogFile="true"/>
     <include file="parts/PUE_2026_04_29_DECIMAL_FIELD_UPDATES.xml" relativeToChangelogFile="true"/>
+    <include file="parts/PUE_2026_05_01_INDEX_PREQUALIFICATION_TABLE.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>

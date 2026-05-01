@@ -990,21 +990,6 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
                 .withResourceIdAsString(loan != null ? loan.getId().toString() : "").withEntityId(prequalificationGroup.getId()).build();
     }
 
-    private int getCommitteeLevel(PrequalificationStatus status) {
-        switch (status) {
-            case PRE_COMMITTEE_D_PENDING_APPROVAL, PRE_COMMITTEE_D_PENDING_APPROVAL_WITH_EXCEPTIONS:
-                return 1;
-            case PRE_COMMITTEE_C_PENDING_APPROVAL, PRE_COMMITTEE_C_PENDING_APPROVAL_WITH_EXCEPTIONS:
-                return 2;
-            case PRE_COMMITTEE_B_PENDING_APPROVAL, PRE_COMMITTEE_B_PENDING_APPROVAL_WITH_EXCEPTIONS:
-                return 3;
-            case PRE_COMMITTEE_A_PENDING_APPROVAL, PRE_COMMITTEE_A_PENDING_APPROVAL_WITH_EXCEPTIONS:
-                return 4;
-            default:
-                return 0;
-        }
-    }
-
     @Override
     @Transactional
     public CommandProcessingResult processAnalysisRequest(Long entityId, JsonCommand command) {
@@ -1039,36 +1024,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         if (action.equals("sendToRenegotiation")) {
             return sendToRenegotiation(prequalificationGroup, addedBy, command);
         } // send to renegotiation
-        if (action.equals("approveRenegotiation")) {
-            approveRenegotiation(prequalificationGroup, addedBy, command);
-            GroupPrequalificationData prequalificationData = prequalificationReadPlatformService.retrieveOne(prequalificationGroup.getId());
 
-            PrequalificationStatus lastStatus = PrequalificationStatus
-                    .fromInt(prequalificationData.getLastPrequalificationStatus().getId().intValue());
-            final Long renegotiationId = command.longValueOfParameterNamed("renegotiationId");
-            Renegotiation renegotiation = renegotiationRepository.getRenegotiationById(renegotiationId);
-            BigDecimal amount = renegotiation.getProposedAmount();
-            PrequalificationStatus targetCommittee = null;
-
-            if (amount.compareTo(new BigDecimal("20000")) < 0) {
-                targetCommittee = PrequalificationStatus.PRE_COMMITTEE_D_PENDING_APPROVAL;
-            } else if (amount.compareTo(new BigDecimal("80000")) < 0) {
-                targetCommittee = PrequalificationStatus.PRE_COMMITTEE_C_PENDING_APPROVAL;
-            } else if (amount.compareTo(new BigDecimal("250000")) <= 0) {
-                targetCommittee = PrequalificationStatus.PRE_COMMITTEE_B_PENDING_APPROVAL;
-            } else {
-                targetCommittee = PrequalificationStatus.PRE_COMMITTEE_A_PENDING_APPROVAL;
-            }
-
-            int lastLevel = getCommitteeLevel(lastStatus);
-            int targetLevel = getCommitteeLevel(targetCommittee);
-
-            if (lastLevel == targetLevel /* || lastLevel == targetLevel - 1 */) {
-                action = "approveCommittee";
-            } else {
-                return sendToFirstPhaseApproveCommitteeD(entityId, command, false, true);
-            }
-        }
         if (action.equals("rejectRenegotiation")) {
             return rejectRenegotiation(prequalificationGroup, addedBy, command);
         }
@@ -1084,6 +1040,35 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
             return restartFlow(entityId, command);
         }
         PrequalificationStatus prequalificationStatus = resolveStatus(action);
+        String reportToPrint = null;
+        Long loanId = null;
+
+        if (action.equals("approveRenegotiation")) {
+            approveRenegotiation(prequalificationGroup, addedBy, command);
+            GroupPrequalificationData prequalificationData = prequalificationReadPlatformService.retrieveOne(prequalificationGroup.getId());
+
+            PrequalificationStatus lastStatus = PrequalificationStatus
+                    .fromInt(prequalificationData.getLastPrequalificationStatus().getId().intValue());
+            final Long renegotiationId = command.longValueOfParameterNamed("renegotiationId");
+            Renegotiation renegotiation = renegotiationRepository.getRenegotiationById(renegotiationId);
+            PrequalificationStatus targetCommittee = null;
+
+            Integer nextStageAfterNegotiation = resolveIndividualStatusRange(prequalificationGroup, "approveNegotiatingCommittee",
+                    lastStatus);
+            targetCommittee = PrequalificationStatus.fromInt(nextStageAfterNegotiation);
+
+            prequalificationStatus = targetCommittee;
+            if (prequalificationStatus.equals(PrequalificationStatus.COMPLETED)) {
+                reportToPrint = "Commitee Approval Report";
+                List<Loan> allLoans = this.loanRepositoryWrapper.retrieveAllByPrequalificationId(entityId);
+                if (allLoans.isEmpty()) {
+                    throw new LoanNotFoundException(loanId);
+                }
+                Loan loan = allLoans.get(0);
+                loanId = loan != null ? loan.getId() : null;
+            }
+        }
+
         final List<MemberPrequalificationData> memberPrequalificationDataList = new ArrayList<>();
         if (command.parameterExists("members")) {
             final JsonElement jsonElement = command.jsonElement("members");
@@ -1107,15 +1092,14 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
                 .orElseThrow(() -> new LoanProductNotFoundException(productId));
         final Boolean requireCommitteeApproval = ObjectUtils.defaultIfNull(loanProduct.getRequireCommitteeApproval(), Boolean.FALSE);
         if (prequalificationGroup.isPrequalificationTypeIndividual() && action.equals("approveanalysis") && requireCommitteeApproval) {
-            Integer statusRange = resolveIndividualStatusRange(prequalificationGroup, action);
+            Integer statusRange = resolveIndividualStatusRange(prequalificationGroup, action, null);
             prequalificationStatus = PrequalificationStatus.fromInt(statusRange);
 
         }
-        String reportToPrint = null;
-        Long loanId = null;
+
         if ((prequalificationGroup.isPrequalificationTypeIndividual() || prequalificationGroup.isPrequalificationTypePAE())
                 && action.equals("approveCommittee")) {
-            Integer statusRange = resolveIndividualStatusRange(prequalificationGroup, action);
+            Integer statusRange = resolveIndividualStatusRange(prequalificationGroup, action, null);
             prequalificationStatus = PrequalificationStatus.fromInt(statusRange);
             if (prequalificationStatus.equals(PrequalificationStatus.COMPLETED)) {
                 reportToPrint = "Commitee Approval Report";
@@ -1515,7 +1499,8 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         return status;
     }
 
-    private Integer resolveIndividualStatusRange(PrequalificationGroup prequalificationGroup, @NotNull String action) {
+    private Integer resolveIndividualStatusRange(PrequalificationGroup prequalificationGroup, @NotNull String action,
+            PrequalificationStatus lastStatus) {
 
         List<PrequalificationStatusLog> statusLogs = this.preQualificationStatusLogRepository
                 .groupStatusLogs(prequalificationGroup.getId());
@@ -1524,8 +1509,9 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
                         && Boolean.FALSE.equals(statusLog.getWithExceptions()));
 
         Integer finalStatus = null;
-        if (action.equalsIgnoreCase("approveanalysis") || action.equalsIgnoreCase("approveCommittee")) {
-            Integer fromStatus = prequalificationGroup.getStatus();
+        if (action.equalsIgnoreCase("approveanalysis") || action.equalsIgnoreCase("approveCommittee")
+                || action.equalsIgnoreCase("approveNegotiatingCommittee")) {
+            Integer fromStatus = lastStatus != null ? lastStatus.getValue() : prequalificationGroup.getStatus();
 
             List<PrequalificationGroupMember> members = prequalificationGroup.getMembers();
             BigDecimal totalApprovedAmount = BigDecimal.ZERO;
