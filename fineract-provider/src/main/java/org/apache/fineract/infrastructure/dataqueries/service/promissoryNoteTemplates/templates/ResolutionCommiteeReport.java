@@ -207,9 +207,13 @@ public class ResolutionCommiteeReport {
             addStyledCell(mainTable, columNames.get("collateralType"), labelFont, VALUE_WHITE, 1);
             Object collateralType = data.get(0).get("collateralType");
             Object collateralTypeFiador = data.get(0).get("collateralTypeFiador");
-            String collateralTypeString = collateralType!=null?String.valueOf(collateralType):"";
-            collateralTypeString = collateralTypeString+ (collateralTypeFiador!=null && !StringUtils.isBlank(String.valueOf(collateralTypeFiador))?", "+collateralTypeFiador:"");
-            addStyledCell(mainTable, StringUtils.isBlank(collateralTypeString)?"No Aplica":collateralTypeString, valueFont, VALUE_YELLOW, 1);
+            String collateralTypeString = collateralType != null ? String.valueOf(collateralType) : "";
+            collateralTypeString = collateralTypeString
+                    + (collateralTypeFiador != null && !StringUtils.isBlank(String.valueOf(collateralTypeFiador))
+                            ? ", " + collateralTypeFiador
+                            : "");
+            addStyledCell(mainTable, StringUtils.isBlank(collateralTypeString) ? "No Aplica" : collateralTypeString, valueFont,
+                    VALUE_YELLOW, 1);
 
             addStyledCell(mainTable, columNames.get("collateral"), labelFont, VALUE_WHITE, 1);
             Object collateralObj = data.get(0).get("collateral");
@@ -474,10 +478,10 @@ public class ResolutionCommiteeReport {
                                 LEFT JOIN (
                                     select grt.id, grt.loan_id, grt.registeredMortgage_cd_hipoteca_registrada,
                                     hptrcv.code_description as registeredMortgage
-                                    FROM p_garantia grt 
-                                    LEFT JOIN m_code_value hptrcv ON hptrcv.id = grt.registeredMortgage_cd_hipoteca_registrada 
-                                    LEFT JOIN m_code_value grtp ON grtp.id = grt.guaranteeType_cd_tipo_garantia 
-                                    where grtp.code_description = 'Hipoteca' 
+                                    FROM p_garantia grt
+                                    LEFT JOIN m_code_value hptrcv ON hptrcv.id = grt.registeredMortgage_cd_hipoteca_registrada
+                                    LEFT JOIN m_code_value grtp ON grtp.id = grt.guaranteeType_cd_tipo_garantia
+                                    where grtp.code_description = 'Hipoteca'
                                     ) hptr on hptr.loan_id = ml.id
                                 LEFT JOIN (
                                     SELECT

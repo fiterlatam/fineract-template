@@ -43,7 +43,7 @@ public class GroupPrequalificationData {
     private final Long id;
     private final String productName;
 
-    private final Long productId;
+    private Long productId;
     private final String prequalificationNumber;
     private final String groupName;
     private final String portforlioName;
@@ -93,6 +93,7 @@ public class GroupPrequalificationData {
     private List<String> exceptionListComments;
     private List<String> listComments;
     private Page<CommitteeData> committeeDataPage;
+    private String nextCommitee;
 
     public GroupPrequalificationData(final Long id, final String productName, final String prequalificationNumber, final String agencyName,
             final String portforlioName, final String centerName, final String groupName, final String addedBy,
@@ -245,5 +246,13 @@ public class GroupPrequalificationData {
 
     public void updateRenegotiations(List<RenegotiationData> renegotiations) {
         this.renegotiations = renegotiations;
+    }
+
+    public void setProductId(Long productId) {
+        this.productId = productId;
+    }
+
+    public void setNextCommitee(String commitee) {
+        this.nextCommitee = commitee;
     }
 }
