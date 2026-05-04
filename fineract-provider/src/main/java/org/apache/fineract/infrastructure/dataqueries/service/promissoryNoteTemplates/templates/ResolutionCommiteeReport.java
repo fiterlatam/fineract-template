@@ -413,7 +413,7 @@ public class ResolutionCommiteeReport {
                 					WHERE pg.loan_id = ml.id
                 				),
                                 CONCAT(mccv.code_value,' ',pgrtype.collateralType)) as collateralType,
-                                CONCAT(mccv.code_value,' ',pgrtype.collateralType) as collateralTypeFiador,
+                                pgrtype.collateralType as collateralTypeFiador,
                                 COALESCE((
                 									SELECT SUM(pg.valor_garantia)
                 									FROM p_garantia pg
