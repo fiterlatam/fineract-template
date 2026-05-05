@@ -1048,8 +1048,6 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
 
             PrequalificationStatus lastStatus = PrequalificationStatus
                     .fromInt(prequalificationData.getLastPrequalificationStatus().getId().intValue());
-            final Long renegotiationId = command.longValueOfParameterNamed("renegotiationId");
-            Renegotiation renegotiation = renegotiationRepository.getRenegotiationById(renegotiationId);
             PrequalificationStatus targetCommittee = null;
 
             Integer nextStageAfterNegotiation = resolveIndividualStatusRange(prequalificationGroup, "approveNegotiatingCommittee",
