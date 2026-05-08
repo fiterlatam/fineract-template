@@ -444,7 +444,7 @@ public class ResolutionCommiteeReport {
                                       CASE WHEN psl2.is_exception = 1 THEN 'SI' ELSE 'NO' END,
                                       ')'
                                   )
-                                  ORDER BY psl2.date_created ASC
+                                  ORDER BY psl2.date_created, psl2.id ASC
                                   SEPARATOR ', '
                               )
                               FROM m_prequalification_status_log psl2
@@ -452,7 +452,7 @@ public class ResolutionCommiteeReport {
                                 AND psl2.comments IS NOT NULL
                                 AND psl2.is_exception IS NOT NULL
                           ),
-                          'N/A'
+                          ''
                           ) AS analysisInformation,
                                 ml.id as loanId
                                 FROM m_prequalification_status_log psl
@@ -496,7 +496,9 @@ public class ResolutionCommiteeReport {
                                     	loan_id,
                                     	GROUP_CONCAT( CONCAT( guarantee_type) SEPARATOR ',' ) AS collateralType
                                     FROM
-                                        ( SELECT pf.loan_id, mcv.code_value as guarantee_type FROM p_fiador pf LEFT JOIN m_code_value mcv on pf.guarantorType_cd_tipo_fiador_tercero = mcv.id ) t\s
+                                        ( SELECT pf.loan_id, mcv.code_value as guarantee_type 
+                                            FROM p_fiador pf 
+                                    LEFT JOIN m_code_value mcv on pf.guarantorType_cd_tipo_fiador_tercero = mcv.id ORDER BY pf.id asc) t\s
                                     GROUP BY loan_id
                                     	) pgrtype ON pgrtype.loan_id = ml.id
                                 left join (select lrs.loan_id , SUM(
