@@ -411,6 +411,7 @@ public class ResolutionCommiteeReport {
                 					JOIN m_code_value mcv
                 						ON mcv.id = pg.guaranteeType_cd_tipo_garantia
                 					WHERE pg.loan_id = ml.id
+                					ORDER BY pg.id desc
                 				),
                                 CONCAT(mccv.code_value,' ',pgrtype.collateralType)) as collateralType,
                                 pgrtype.collateralType as collateralTypeFiador,
@@ -488,7 +489,9 @@ public class ResolutionCommiteeReport {
                                         loan_id, GROUP_CONCAT( CONCAT( detalle_garantia, ' GARANTIA', rn ) SEPARATOR ',' ) AS collateral,
                                         SUM(valor_garantia) AS collateralValue
                                         FROM
-                                        	( SELECT loan_id, detalle_garantia, valor_garantia, ROW_NUMBER() OVER ( PARTITION BY loan_id ORDER BY detalle_garantia ) AS rn FROM p_garantia ) t
+                                        	( 
+                                                SELECT loan_id, detalle_garantia, valor_garantia, ROW_NUMBER() OVER 
+                                                ( PARTITION BY loan_id ORDER BY id desc ) AS rn FROM p_garantia ) t
                                         GROUP BY loan_id
                                     ) pgr ON pgr.loan_id = ml.id
                                 LEFT JOIN (
