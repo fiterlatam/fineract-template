@@ -18,31 +18,23 @@
  */
 package org.apache.fineract.infrastructure.security.domain;
 
-import java.util.concurrent.ConcurrentHashMap;
-import org.apache.fineract.infrastructure.security.data.OTPRequest;
 import org.apache.fineract.useradministration.domain.AppUser;
-import org.springframework.stereotype.Repository;
-import org.springframework.util.Assert;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.transaction.annotation.Transactional;
 
-@Repository
-@SuppressWarnings({ "MemberName" })
-public class OTPRequestRepository {
+public interface OTPRequestRepository extends JpaRepository<OTPRequest, Long> {
 
-    private final ConcurrentHashMap<Long, OTPRequest> OTPrequests = new ConcurrentHashMap<>();
+    /**
+     * Returns the single OTP request for the given user, or {@code null} if none exists. The {@code appuser_id} column
+     * has a UNIQUE constraint, so at most one row can ever match.
+     */
+    OTPRequest findByUser(AppUser user);
 
-    public OTPRequest getOTPRequestForUser(AppUser user) {
-        Assert.notNull(user, "User must not be null");
-
-        return this.OTPrequests.get(user.getId());
-    }
-
-    public void addOTPRequest(AppUser user, OTPRequest request) {
-        Assert.notNull(user, "User must not be null");
-        Assert.notNull(request, "Request must not be null");
-        this.OTPrequests.put(user.getId(), request);
-    }
-
-    public void deleteOTPRequestForUser(AppUser user) {
-        this.OTPrequests.remove(user.getId());
-    }
+    @Modifying
+    @Transactional
+    @Query("delete from OTPRequest r where r.user = :user")
+    void deleteAllByUser(@Param("user") AppUser user);
 }
