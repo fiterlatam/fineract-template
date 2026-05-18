@@ -28,7 +28,7 @@ import org.apache.fineract.infrastructure.core.domain.EmailDetail;
 import org.apache.fineract.infrastructure.core.service.PlatformEmailService;
 import org.apache.fineract.infrastructure.security.constants.TwoFactorConstants;
 import org.apache.fineract.infrastructure.security.data.OTPDeliveryMethod;
-import org.apache.fineract.infrastructure.security.data.OTPRequest;
+import org.apache.fineract.infrastructure.security.domain.OTPRequest;
 import org.apache.fineract.infrastructure.security.domain.OTPRequestRepository;
 import org.apache.fineract.infrastructure.security.domain.TFAccessToken;
 import org.apache.fineract.infrastructure.security.domain.TFAccessTokenRepository;
@@ -107,30 +107,39 @@ public class TwoFactorServiceImpl implements TwoFactorService {
             if (smsDelivery == null) {
                 throw new OTPDeliveryMethodInvalidException();
             }
-            final OTPRequest request = generateNewToken(smsDelivery, extendedAccessToken);
+            final OTPRequest request = generateNewToken(user, smsDelivery, extendedAccessToken);
             final String smsText = configurationService.getFormattedSmsTextFor(user, request);
             SmsMessage smsMessage = SmsMessage.pendingSms(null, null, null, user.getStaff(), smsText, user.getStaff().mobileNo(), null,
                     false);
             this.smsMessageRepository.save(smsMessage);
             smsMessageScheduledJobService.sendTriggeredMessage(Collections.singleton(smsMessage), configurationService.getSMSProviderId());
-            otpRequestRepository.addOTPRequest(user, request);
-            return request;
+            return persistOTPRequest(user, request);
         } else if (TwoFactorConstants.EMAIL_DELIVERY_METHOD_NAME.equalsIgnoreCase(deliveryMethodName)) {
             OTPDeliveryMethod emailDelivery = getEmailDeliveryMethodForUser(user);
             if (emailDelivery == null) {
                 throw new OTPDeliveryMethodInvalidException();
             }
-            final OTPRequest request = generateNewToken(emailDelivery, extendedAccessToken);
+            final OTPRequest request = generateNewToken(user, emailDelivery, extendedAccessToken);
             final String emailSubject = configurationService.getFormattedEmailSubjectFor(user, request);
             final String emailBody = configurationService.getFormattedEmailBodyFor(user, request);
             final EmailDetail emailData = new EmailDetail(emailSubject, emailBody, user.getEmail(),
                     user.getFirstname() + " " + user.getLastname());
             emailService.sendDefinedEmail(emailData);
-            otpRequestRepository.addOTPRequest(user, request);
-            return request;
+            return persistOTPRequest(user, request);
         }
 
         throw new OTPDeliveryMethodInvalidException();
+    }
+
+    private OTPRequest persistOTPRequest(final AppUser user, final OTPRequest request) {
+        // Enforce one active OTP per user: update the existing row in place when present, otherwise insert a new one.
+        // The twofactor_otp_request table also has a UNIQUE(appuser_id) constraint as a safety net.
+        final OTPRequest existing = otpRequestRepository.findByUser(user);
+        if (existing != null) {
+            existing.refreshFrom(request);
+            return otpRequestRepository.save(existing);
+        }
+        return otpRequestRepository.save(request);
     }
 
     @Override
@@ -138,16 +147,16 @@ public class TwoFactorServiceImpl implements TwoFactorService {
             + ".getTenant().getTenantIdentifier().concat(#user.username).concat(#result.token + 'tok')")
     public TFAccessToken createAccessTokenFromOTP(final AppUser user, final String otpToken) {
 
-        OTPRequest otpRequest = otpRequestRepository.getOTPRequestForUser(user);
-        if (otpRequest == null || !otpRequest.isValid() || !otpRequest.getToken().equalsIgnoreCase(otpToken)) {
+        OTPRequest otpRequest = otpRequestRepository.findByUser(user);
+        if (otpRequest == null || !otpRequest.isValid() || !otpRequest.matchesToken(otpToken)) {
             throw new OTPTokenInvalidException();
         }
 
-        otpRequestRepository.deleteOTPRequestForUser(user);
+        otpRequestRepository.deleteAllByUser(user);
 
         String token = accessTokenGenerationService.generateRandomToken();
         int liveTime;
-        if (otpRequest.getMetadata().isExtendedAccessToken()) {
+        if (otpRequest.isExtendedAccessToken()) {
             liveTime = configurationService.getAccessTokenExtendedLiveTime();
         } else {
             liveTime = configurationService.getAccessTokenLiveTime();
@@ -238,10 +247,10 @@ public class TwoFactorServiceImpl implements TwoFactorService {
                 Integer.toString(accessTokenExtendedLiveTime));
     }
 
-    private OTPRequest generateNewToken(final OTPDeliveryMethod deliveryMethod, final boolean extendedAccessToken) {
+    private OTPRequest generateNewToken(final AppUser user, final OTPDeliveryMethod deliveryMethod, final boolean extendedAccessToken) {
         int tokenLiveTime = configurationService.getOTPTokenLiveTime();
         int otpLength = configurationService.getOTPTokenLength();
         String token = new RandomOTPGenerator(otpLength).generate();
-        return OTPRequest.create(token, tokenLiveTime, extendedAccessToken, deliveryMethod);
+        return OTPRequest.create(user, token, tokenLiveTime, extendedAccessToken, deliveryMethod);
     }
 }
