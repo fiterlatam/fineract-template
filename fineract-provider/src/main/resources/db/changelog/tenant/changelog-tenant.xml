@@ -209,4 +209,5 @@
     <include file="parts/PUE_2026_04_22_INDEX_JOURNAL_ENTRIES_TABLE.xml" relativeToChangelogFile="true"/>
     <include file="parts/PUE_2026_04_29_DECIMAL_FIELD_UPDATES.xml" relativeToChangelogFile="true"/>
     <include file="parts/PUE_2026_05_01_INDEX_PREQUALIFICATION_TABLE.xml" relativeToChangelogFile="true"/>
+    <include file="parts/0149_FBR_create_2fa_otp_request_table.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>
