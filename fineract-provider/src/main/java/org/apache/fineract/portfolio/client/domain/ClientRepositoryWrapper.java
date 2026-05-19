@@ -21,7 +21,6 @@ package org.apache.fineract.portfolio.client.domain;
 import java.util.Collection;
 import java.util.List;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
-import org.apache.fineract.portfolio.client.exception.ClientDpiExistsException;
 import org.apache.fineract.portfolio.client.exception.ClientNotActiveException;
 import org.apache.fineract.portfolio.client.exception.ClientNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -107,8 +106,8 @@ public class ClientRepositoryWrapper {
 
     public Client getClientByDpiNumber(String dpi) {
         Client client = this.repository.getClientByDpiNumber(dpi);
-        if (client != null) {
-            throw new ClientDpiExistsException(dpi);
+        if (client == null) {
+            throw new ClientNotFoundException(dpi);
         }
         return client;
     }
