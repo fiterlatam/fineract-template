@@ -179,8 +179,10 @@ public final class ClientDataValidator {
 
         if (this.fromApiJsonHelper.parameterExists(ClientApiConstants.externalIdParamName, element)) {
             final String externalId = this.fromApiJsonHelper.extractStringNamed(ClientApiConstants.externalIdParamName, element);
-            baseDataValidator.reset().parameter(ClientApiConstants.externalIdParamName).value(externalId).ignoreIfNull()
-                    .notExceedingLengthOf(100);
+            if (StringUtils.isNotBlank(externalId)) {
+                baseDataValidator.reset().parameter(ClientApiConstants.externalIdParamName).value(externalId)
+                        .failWithCodeNoParameterAddedToErrorCode("not.editable");
+            }
         }
 
         if (this.fromApiJsonHelper.parameterExists(ClientApiConstants.mobileNoParamName, element)) {
@@ -461,8 +463,6 @@ public final class ClientDataValidator {
 
         if (this.fromApiJsonHelper.parameterExists(ClientApiConstants.externalIdParamName, element)) {
             atLeastOneParameterPassedForUpdate = true;
-            final String externalId = this.fromApiJsonHelper.extractStringNamed(ClientApiConstants.externalIdParamName, element);
-            baseDataValidator.reset().parameter(ClientApiConstants.externalIdParamName).value(externalId).notExceedingLengthOf(100);
         }
 
         if (this.fromApiJsonHelper.parameterExists(ClientApiConstants.mobileNoParamName, element)) {

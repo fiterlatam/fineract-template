@@ -30,7 +30,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -59,7 +58,10 @@ import org.apache.fineract.organisation.bankcheque.data.ChequeData;
 import org.apache.fineract.organisation.bankcheque.data.ChequeSearchParams;
 import org.apache.fineract.organisation.bankcheque.data.GuaranteeData;
 import org.apache.fineract.organisation.bankcheque.domain.BankChequeStatus;
+import org.apache.fineract.organisation.bankcheque.exception.BankChequeException;
 import org.apache.fineract.organisation.bankcheque.exception.BatchNotFoundException;
+import org.apache.fineract.portfolio.client.domain.Client;
+import org.apache.fineract.portfolio.client.domain.ClientRepositoryWrapper;
 import org.apache.fineract.organisation.office.domain.OfficeHierarchyLevel;
 import org.apache.fineract.portfolio.group.data.CenterData;
 import org.apache.fineract.portfolio.group.data.GroupGeneralData;
@@ -97,6 +99,7 @@ public class ChequeReadPlatformServiceImpl implements ChequeReadPlatformService 
     private final RestTemplate restTemplate = new RestTemplate();
     private final FromJsonHelper fromApiJsonHelper;
     private final ExternalServicesPropertiesReadPlatformService externalServicePropertiesReadPlatformService;
+    private final ClientRepositoryWrapper clientRepositoryWrapper;
 
     @Override
     public BatchData retrieveBatch(final Long batchId) {
@@ -408,9 +411,13 @@ public class ChequeReadPlatformServiceImpl implements ChequeReadPlatformService 
     }
 
     @Override
-    public List<GuaranteeData> retrieveGuarantees(String caseId, final String locale) {
-        final Locale reqLocale = new Locale(locale);
-        GuaranteeData guaranteeData = GuaranteeData.builder().caseId(caseId).build();
+    public List<GuaranteeData> retrieveGuarantees(String dpi, final String locale) {
+        if (StringUtils.isBlank(dpi)) {
+            throw new BankChequeException("guarantee.dpi.required", "DPI is required to retrieve guarantees");
+        }
+        final Client client = this.clientRepositoryWrapper.getClientByDpiNumber(dpi.trim());
+        final String caseId = this.resolveCaseIdByDpi(dpi.trim(), client.getId());
+        final GuaranteeData guaranteeData = GuaranteeData.builder().caseId(caseId).dpi(dpi.trim()).build();
         final Collection<ExternalServicesPropertiesData> externalServicesPropertiesDatas = this.externalServicePropertiesReadPlatformService
                 .retrieveOne(ExternalServicesConstants.GUARANTEE_SERVICE_NAME);
 
@@ -453,17 +460,77 @@ public class ChequeReadPlatformServiceImpl implements ChequeReadPlatformService 
                     asJsonObject.addProperty("locale", locale);
                     JsonElement withLocale = this.fromApiJsonHelper.parse(asJsonObject.toString());
 
-                    final String clientNo = this.fromApiJsonHelper.extractStringNamed("numero_cliente", withLocale);
+                    String dpiValue = this.fromApiJsonHelper.extractStringNamed("dpi", withLocale);
+                    if (StringUtils.isBlank(dpiValue)) {
+                        dpiValue = client.getDpiNumber();
+                    }
+                    String clientNo = this.fromApiJsonHelper.extractStringNamed("numero_cliente", withLocale);
+                    String guaranteeCaseId = this.fromApiJsonHelper.extractStringNamed("case_id", element);
+                    if (StringUtils.isBlank(guaranteeCaseId)) {
+                        guaranteeCaseId = this.fromApiJsonHelper.extractStringNamed("caseId", element);
+                    }
+                    if (StringUtils.isBlank(guaranteeCaseId)) {
+                        guaranteeCaseId = this.fromApiJsonHelper.extractStringNamed("case_id", withLocale);
+                    }
+                    if (StringUtils.isBlank(guaranteeCaseId)) {
+                        guaranteeCaseId = caseId;
+                    }
                     final String clientName = this.fromApiJsonHelper.extractStringNamed("name", withLocale);
                     final String withdrawalReason = this.fromApiJsonHelper.extractStringNamed("razon_retiro", withLocale);
                     final BigDecimal requestedAmount = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed("monto", withLocale);
                     final String requestedAmountString = String.valueOf(requestedAmount);
-                    final GuaranteeData guarantee = GuaranteeData.builder().id(id).caseId(caseId).clientNo(clientNo).clientName(clientName)
+                    final GuaranteeData guarantee = GuaranteeData.builder().id(id).dpi(dpiValue).caseId(guaranteeCaseId).clientNo(clientNo)
+                            .clientName(clientName)
                             .withdrawalReason(withdrawalReason).requestedAmount(requestedAmountString).status(status).build();
                     guaranteeDataList.add(guarantee);
                 }
             }
         }
         return guaranteeDataList;
+    }
+
+    private String resolveCaseIdByDpi(final String dpi, final Long clientId) {
+        final String loanAdditionalSql = """
+                SELECT clap.case_id
+                FROM m_client_loan_additional_properties clap
+                INNER JOIN m_client c ON c.id = clap.client_id
+                WHERE c.dpi = ? AND clap.case_id IS NOT NULL AND TRIM(clap.case_id) <> ''
+                ORDER BY clap.id DESC
+                LIMIT 1
+                """;
+        final String paeAdditionalSql = """
+                SELECT pae.case_id
+                FROM m_pae_loan_additional_data pae
+                INNER JOIN m_loan l ON l.id = pae.loan_id
+                INNER JOIN m_client c ON c.id = l.client_id
+                WHERE c.dpi = ? AND pae.case_id IS NOT NULL AND TRIM(pae.case_id) <> ''
+                ORDER BY pae.id DESC
+                LIMIT 1
+                """;
+        final String bankChequeSql = """
+                SELECT mbc.case_id
+                FROM m_bank_check mbc
+                WHERE mbc.numero_cliente = ? AND mbc.case_id IS NOT NULL AND TRIM(mbc.case_id) <> ''
+                  AND mbc.guarantee_id IS NOT NULL
+                ORDER BY mbc.id DESC
+                LIMIT 1
+                """;
+        String caseId = this.queryLatestCaseId(loanAdditionalSql, dpi);
+        if (StringUtils.isBlank(caseId)) {
+            caseId = this.queryLatestCaseId(paeAdditionalSql, dpi);
+        }
+        if (StringUtils.isBlank(caseId)) {
+            caseId = this.queryLatestCaseId(bankChequeSql, dpi);
+        }
+        if (StringUtils.isBlank(caseId)) {
+            throw new BankChequeException("guarantee.case.id.not.found.for.dpi",
+                    "Case ID not found for client DPI " + dpi + " and client id " + clientId);
+        }
+        return caseId;
+    }
+
+    private String queryLatestCaseId(final String sql, final String dpi) {
+        final List<String> caseIds = this.jdbcTemplate.query(sql, (rs, rowNum) -> rs.getString("case_id"), dpi);
+        return caseIds.isEmpty() ? null : caseIds.get(0);
     }
 }

@@ -26,6 +26,7 @@ import lombok.Data;
 public class GuaranteeData {
 
     private Long id;
+    private String dpi;
     private String clientNo;
     private String clientName;
     private String withdrawalReason;
