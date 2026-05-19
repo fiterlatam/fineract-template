@@ -34,7 +34,7 @@ public interface ChequeReadPlatformService {
 
     ChequeData retrieveChequeById(Long chequeId);
 
-    List<GuaranteeData> retrieveGuarantees(final String caseId, final String locale);
+    List<GuaranteeData> retrieveGuarantees(final String dpi, final String locale);
 
     Page<ChequeData> retrieveAll(final ChequeSearchParams chequeSearchParams, final PaginationParameters parameters);
 
