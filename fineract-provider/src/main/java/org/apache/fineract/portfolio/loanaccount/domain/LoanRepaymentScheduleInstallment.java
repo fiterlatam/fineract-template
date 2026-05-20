@@ -31,7 +31,10 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
+import javax.persistence.Transient;
+import lombok.Setter;
 import org.apache.fineract.infrastructure.core.domain.AbstractAuditableCustom;
+import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.organisation.monetary.domain.MonetaryCurrency;
 import org.apache.fineract.organisation.monetary.domain.Money;
 import org.apache.fineract.portfolio.repaymentwithpostdatedchecks.domain.PostDatedChecks;
@@ -57,25 +60,31 @@ public final class LoanRepaymentScheduleInstallment extends AbstractAuditableCus
     @Column(name = "principal_amount", scale = 6, precision = 19, nullable = true)
     private BigDecimal principal;
 
+    @Setter
     @Column(name = "principal_completed_derived", scale = 6, precision = 19, nullable = true)
     private BigDecimal principalCompleted;
 
+    @Setter
     @Column(name = "principal_writtenoff_derived", scale = 6, precision = 19, nullable = true)
     private BigDecimal principalWrittenOff;
 
     @Column(name = "interest_amount", scale = 6, precision = 19, nullable = true)
     private BigDecimal interestCharged;
 
+    @Setter
     @Column(name = "interest_completed_derived", scale = 6, precision = 19, nullable = true)
     private BigDecimal interestPaid;
 
+    @Setter
     @Column(name = "interest_waived_derived", scale = 6, precision = 19, nullable = true)
     private BigDecimal interestWaived;
 
+    @Setter
     @Column(name = "interest_writtenoff_derived", scale = 6, precision = 19, nullable = true)
     private BigDecimal interestWrittenOff;
 
     @Column(name = "accrual_interest_derived", scale = 6, precision = 19, nullable = true)
+    @Setter
     private BigDecimal interestAccrued;
 
     @Column(name = "reschedule_interest_portion", scale = 6, precision = 19, nullable = true)
@@ -84,12 +93,15 @@ public final class LoanRepaymentScheduleInstallment extends AbstractAuditableCus
     @Column(name = "fee_charges_amount", scale = 6, precision = 19, nullable = true)
     private BigDecimal feeChargesCharged;
 
+    @Setter
     @Column(name = "fee_charges_completed_derived", scale = 6, precision = 19, nullable = true)
     private BigDecimal feeChargesPaid;
 
+    @Setter
     @Column(name = "fee_charges_writtenoff_derived", scale = 6, precision = 19, nullable = true)
     private BigDecimal feeChargesWrittenOff;
 
+    @Setter
     @Column(name = "fee_charges_waived_derived", scale = 6, precision = 19, nullable = true)
     private BigDecimal feeChargesWaived;
 
@@ -99,18 +111,22 @@ public final class LoanRepaymentScheduleInstallment extends AbstractAuditableCus
     @Column(name = "penalty_charges_amount", scale = 6, precision = 19, nullable = true)
     private BigDecimal penaltyCharges;
 
+    @Setter
     @Column(name = "penalty_charges_completed_derived", scale = 6, precision = 19, nullable = true)
     private BigDecimal penaltyChargesPaid;
 
+    @Setter
     @Column(name = "penalty_charges_writtenoff_derived", scale = 6, precision = 19, nullable = true)
     private BigDecimal penaltyChargesWrittenOff;
 
+    @Setter
     @Column(name = "penalty_charges_waived_derived", scale = 6, precision = 19, nullable = true)
     private BigDecimal penaltyChargesWaived;
 
     @Column(name = "accrual_penalty_charges_derived", scale = 6, precision = 19, nullable = true)
     private BigDecimal penaltyAccrued;
 
+    @Setter
     @Column(name = "total_paid_in_advance_derived", scale = 6, precision = 19, nullable = true)
     private BigDecimal totalPaidInAdvance;
 
@@ -134,6 +150,10 @@ public final class LoanRepaymentScheduleInstallment extends AbstractAuditableCus
 
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY, mappedBy = "installment")
     private Set<LoanInstallmentCharge> installmentCharges = new HashSet<>();
+
+    @Setter
+    @Transient
+    private BigDecimal npaInterestToWriteOff;
 
     LoanRepaymentScheduleInstallment() {
         this.installmentNumber = null;
@@ -300,6 +320,10 @@ public final class LoanRepaymentScheduleInstallment extends AbstractAuditableCus
         return Money.of(currency, this.penaltyCharges);
     }
 
+    public Money getNpaInterestToWriteOff(final MonetaryCurrency currency) {
+        return Money.of(currency, this.npaInterestToWriteOff);
+    }
+
     public Money getPenaltyChargesPaid(final MonetaryCurrency currency) {
         return Money.of(currency, this.penaltyChargesPaid);
     }
@@ -445,6 +469,35 @@ public final class LoanRepaymentScheduleInstallment extends AbstractAuditableCus
         } else {
             this.interestPaid = getInterestPaid(currency).plus(transactionAmountRemaining).getAmount();
             interestPortionOfTransaction = interestPortionOfTransaction.plus(transactionAmountRemaining);
+        }
+
+        this.interestPaid = defaultToNullIfZero(this.interestPaid);
+
+        checkIfRepaymentPeriodObligationsAreMet(transactionDate, currency);
+
+        trackAdvanceAndLateTotalsForRepaymentPeriod(transactionDate, currency, interestPortionOfTransaction);
+
+        return interestPortionOfTransaction;
+    }
+
+    public Money payAccruedInterestComponent(final LocalDate transactionDate, final Money transactionAmountRemaining) {
+
+        final MonetaryCurrency currency = transactionAmountRemaining.getCurrency();
+        Money interestPortionOfTransaction = Money.zero(currency);
+        this.interestPaid = transactionAmountRemaining.zero().getAmount();
+        final Money accruedInterest = getAccruedInterestOutstanding(currency);
+        Money interestDue = accruedInterest.zero();
+        if (getInterestPaid(currency).compareTo(accruedInterest) < 0) {
+            interestDue = accruedInterest.minus(getInterestPaid(currency));
+        }
+        if (interestDue.isGreaterThanZero()) {
+            if (transactionAmountRemaining.isGreaterThanOrEqualTo(interestDue)) {
+                this.interestPaid = getInterestPaid(currency).plus(interestDue).getAmount();
+                interestPortionOfTransaction = interestPortionOfTransaction.plus(interestDue);
+            } else {
+                this.interestPaid = getInterestPaid(currency).plus(transactionAmountRemaining).getAmount();
+                interestPortionOfTransaction = interestPortionOfTransaction.plus(transactionAmountRemaining);
+            }
         }
 
         this.interestPaid = defaultToNullIfZero(this.interestPaid);
@@ -629,6 +682,9 @@ public final class LoanRepaymentScheduleInstallment extends AbstractAuditableCus
         this.obligationsMet = getTotalOutstanding(currency).isZero();
         if (this.obligationsMet) {
             this.obligationsMetOnDate = transactionDate;
+            if (this.loan.getLoanProduct().getWaiveInterestEarlyRepayment() && this.dueDate.isAfter(DateUtils.getLocalDateOfTenant())) {
+                this.loan.updateAccruedTillDate(this.dueDate);
+            }
         } else {
             this.obligationsMetOnDate = null;
         }

@@ -67,7 +67,7 @@ public class S3ContentRepository implements ContentRepository {
                 documentCommand.getParentEntityId());
         final String uploadDocFullPath = uploadDocFolder + File.separator + fileName;
 
-        putObject(fileName, toUpload, uploadDocFullPath);
+        putObject(fileName, toUpload, uploadDocFullPath, documentCommand.getSize());
         return uploadDocFullPath;
     }
 
@@ -82,7 +82,7 @@ public class S3ContentRepository implements ContentRepository {
         final String uploadImageLocation = generateClientImageParentDirectory(resourceId);
         final String fileLocation = uploadImageLocation + File.separator + imageName;
 
-        putObject(imageName, toUploadInputStream, fileLocation);
+        putObject(imageName, toUploadInputStream, fileLocation, fileSize);
         return fileLocation;
     }
 
@@ -90,10 +90,9 @@ public class S3ContentRepository implements ContentRepository {
     public String saveImage(final Base64EncodedImage base64EncodedImage, final Long resourceId, final String imageName) {
         final String uploadImageLocation = generateClientImageParentDirectory(resourceId);
         final String fileLocation = uploadImageLocation + File.separator + imageName + base64EncodedImage.getFileExtension();
-        final InputStream toUploadInputStream = new ByteArrayInputStream(
-                Base64.getMimeDecoder().decode(base64EncodedImage.getBase64EncodedString()));
-
-        putObject(imageName, toUploadInputStream, fileLocation);
+        final byte[] decodedBytes = Base64.getMimeDecoder().decode(base64EncodedImage.getBase64EncodedString());
+        final InputStream toUploadInputStream = new ByteArrayInputStream(decodedBytes);
+        putObject(imageName, toUploadInputStream, fileLocation, (long) decodedBytes.length);
         return fileLocation;
     }
 
@@ -150,15 +149,21 @@ public class S3ContentRepository implements ContentRepository {
         }
     }
 
-    private void putObject(final String filename, final InputStream inputStream, final String s3UploadLocation)
+    private void putObject(final String filename, final InputStream inputStream, final String s3UploadLocation, Long fileSize)
             throws ContentManagementException {
         try {
             if (log.isDebugEnabled()) {
                 log.debug("Uploading a new object to S3 {}", LogParameterEscapeUtil.escapeLogParameter(s3UploadLocation));
             }
-            this.s3Client.putObject(new PutObjectRequest(this.s3BucketName, s3UploadLocation, inputStream, new ObjectMetadata()));
+            final byte[] bytes = inputStream.readAllBytes();
+            ObjectMetadata metadata = new ObjectMetadata();
+            metadata.setContentLength(bytes.length);
+
+            this.s3Client.putObject(new PutObjectRequest(this.s3BucketName, s3UploadLocation, new ByteArrayInputStream(bytes), metadata));
         } catch (AmazonClientException ase) {
             throw new ContentManagementException(filename, ase.getMessage(), ase);
+        } catch (IOException e) {
+            throw new ContentManagementException(filename, e.getMessage(), e);
         }
     }
 

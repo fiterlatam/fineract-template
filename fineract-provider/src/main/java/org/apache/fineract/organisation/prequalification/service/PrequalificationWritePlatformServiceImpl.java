@@ -21,6 +21,7 @@ package org.apache.fineract.organisation.prequalification.service;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -30,16 +31,23 @@ import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import javax.transaction.Transactional;
+import javax.ws.rs.NotFoundException;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.fineract.commands.domain.CommandSource;
+import org.apache.fineract.commands.domain.CommandSourceRepository;
 import org.apache.fineract.infrastructure.codes.data.CodeValueData;
+import org.apache.fineract.infrastructure.codes.domain.CodeValue;
+import org.apache.fineract.infrastructure.codes.domain.CodeValueRepository;
 import org.apache.fineract.infrastructure.codes.service.CodeValueReadPlatformService;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
@@ -61,9 +69,12 @@ import org.apache.fineract.infrastructure.jobs.service.JobName;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.organisation.agency.domain.Agency;
 import org.apache.fineract.organisation.agency.domain.AgencyRepositoryWrapper;
+import org.apache.fineract.organisation.committee.data.CommitteeApprovalsData;
+import org.apache.fineract.organisation.committee.mappers.RequiredCommitteeApprovalsMapper;
 import org.apache.fineract.organisation.prequalification.command.PrequalificationDataValidator;
 import org.apache.fineract.organisation.prequalification.command.PrequalificatoinApiConstants;
 import org.apache.fineract.organisation.prequalification.data.GenericValidationResultSet;
+import org.apache.fineract.organisation.prequalification.data.GroupPrequalificationData;
 import org.apache.fineract.organisation.prequalification.data.LoanData;
 import org.apache.fineract.organisation.prequalification.data.MemberPrequalificationData;
 import org.apache.fineract.organisation.prequalification.data.PrequalificationChecklistData;
@@ -77,29 +88,34 @@ import org.apache.fineract.organisation.prequalification.domain.Prequalification
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationMemberIndication;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationStatus;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationStatusLog;
-import org.apache.fineract.organisation.prequalification.domain.PrequalificationStatusRange;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationStatusRangeRepository;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationSubStatus;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationType;
+import org.apache.fineract.organisation.prequalification.domain.Renegotiation;
+import org.apache.fineract.organisation.prequalification.domain.RenegotiationRepositoryWrapper;
 import org.apache.fineract.organisation.prequalification.exception.ApprovedAmountGreaterThanRequestedException;
 import org.apache.fineract.organisation.prequalification.exception.GroupMemberPreQualificationNotFound;
 import org.apache.fineract.organisation.prequalification.exception.MemberNotSelectedException;
 import org.apache.fineract.organisation.prequalification.exception.MemberSubmittedLoanNotFoundException;
 import org.apache.fineract.organisation.prequalification.exception.PrequalificationStatusNotChangedException;
 import org.apache.fineract.organisation.prequalification.exception.PrequalificationStatusNotCompletedException;
+import org.apache.fineract.organisation.prequalification.exception.RenegotiationNotFoundException;
 import org.apache.fineract.organisation.prequalification.exception.RequestedAmountGreaterThanOriginalException;
 import org.apache.fineract.organisation.prequalification.serialization.PrequalificationMemberCommandFromApiJsonDeserializer;
+import org.apache.fineract.portfolio.accountdetails.domain.AccountType;
 import org.apache.fineract.portfolio.blacklist.domain.BlacklistStatus;
 import org.apache.fineract.portfolio.client.service.ClientChargeWritePlatformServiceJpaRepositoryImpl;
 import org.apache.fineract.portfolio.client.service.ClientReadPlatformService;
+import org.apache.fineract.portfolio.common.domain.PeriodFrequencyType;
 import org.apache.fineract.portfolio.group.domain.Group;
 import org.apache.fineract.portfolio.group.domain.GroupRepositoryWrapper;
 import org.apache.fineract.portfolio.loanaccount.domain.GroupLoanAdditionals;
 import org.apache.fineract.portfolio.loanaccount.domain.GroupLoanAdditionalsRepository;
 import org.apache.fineract.portfolio.loanaccount.domain.Loan;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepositoryWrapper;
+import org.apache.fineract.portfolio.loanaccount.exception.LoanNotFoundException;
 import org.apache.fineract.portfolio.loanaccount.service.LoanApplicationWritePlatformService;
-import org.apache.fineract.portfolio.loanaccount.service.LoanReadPlatformService;
+import org.apache.fineract.portfolio.loanaccount.service.LoanUtilService;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProduct;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProductOwnerType;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProductRepository;
@@ -110,13 +126,13 @@ import org.apache.fineract.useradministration.exception.UserNotFoundException;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Service;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class PrequalificationWritePlatformServiceImpl implements PrequalificationWritePlatformService {
 
     private static final Logger LOG = LoggerFactory.getLogger(ClientChargeWritePlatformServiceJpaRepositoryImpl.class);
@@ -148,55 +164,12 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
     private final GroupLoanAdditionalsRepository groupLoanAdditionalsRepository;
     private final LoanRepositoryWrapper loanRepositoryWrapper;
     private final PrequalificationChecklistWritePlatformService prequalificationChecklistWritePlatformService;
-    private final LoanReadPlatformService loanReadPlatformService;
-
-    @Autowired
-    public PrequalificationWritePlatformServiceImpl(final PlatformSecurityContext context,
-            final PrequalificationDataValidator dataValidator, final GroupRepositoryWrapper groupRepositoryWrapper,
-            final AppUserRepository appUserRepository, final LoanProductRepository loanProductRepository,
-            final ClientReadPlatformService clientReadPlatformService, final AgencyRepositoryWrapper agencyRepositoryWrapper,
-            final PrequalificationMemberCommandFromApiJsonDeserializer apiJsonDeserializer,
-            final PrequalificationGroupMemberRepositoryWrapper preQualificationMemberRepository,
-            final PreQualificationStatusLogRepository preQualificationLogRepository,
-            final PrequalificationChecklistReadPlatformService prequalificationChecklistReadPlatformService,
-            final CodeValueReadPlatformService codeValueReadPlatformService, final JdbcTemplate jdbcTemplate,
-            final ContentRepositoryFactory contentRepositoryFactory, final DocumentRepository documentRepository,
-            final DocumentReadPlatformService documentReadPlatformService,
-            final GroupPrequalificationRelationshipRepository groupPrequalificationRelationshipRepository,
-            final PrequalificationGroupRepositoryWrapper prequalificationGroupRepositoryWrapper,
-            final PrequalificationStatusRangeRepository prequalificationStatusRangeRepository,
-            final PrequalificationReadPlatformService prequalificationReadPlatformService, FromJsonHelper fromApiJsonHelper,
-            final LoanApplicationWritePlatformService loanApplicationWritePlatformService,
-            final PrequalificationChecklistWritePlatformService prequalificationChecklistWritePlatformService,
-            final LoanReadPlatformService loanReadPlatformService, final GroupLoanAdditionalsRepository groupLoanAdditionalsRepository,
-            final LoanRepositoryWrapper loanRepositoryWrapper) {
-        this.context = context;
-        this.dataValidator = dataValidator;
-        this.loanProductRepository = loanProductRepository;
-        this.clientReadPlatformService = clientReadPlatformService;
-        this.codeValueReadPlatformService = codeValueReadPlatformService;
-        this.prequalificationGroupRepositoryWrapper = prequalificationGroupRepositoryWrapper;
-        this.groupRepositoryWrapper = groupRepositoryWrapper;
-        this.appUserRepository = appUserRepository;
-        this.agencyRepositoryWrapper = agencyRepositoryWrapper;
-        this.apiJsonDeserializer = apiJsonDeserializer;
-        this.preQualificationMemberRepository = preQualificationMemberRepository;
-        this.prequalificationChecklistReadPlatformService = prequalificationChecklistReadPlatformService;
-        this.preQualificationLogRepository = preQualificationLogRepository;
-        this.jdbcTemplate = jdbcTemplate;
-        this.contentRepositoryFactory = contentRepositoryFactory;
-        this.documentRepository = documentRepository;
-        this.documentReadPlatformService = documentReadPlatformService;
-        this.groupPrequalificationRelationshipRepository = groupPrequalificationRelationshipRepository;
-        this.prequalificationStatusRangeRepository = prequalificationStatusRangeRepository;
-        this.prequalificationReadPlatformService = prequalificationReadPlatformService;
-        this.fromApiJsonHelper = fromApiJsonHelper;
-        this.loanApplicationWritePlatformService = loanApplicationWritePlatformService;
-        this.groupLoanAdditionalsRepository = groupLoanAdditionalsRepository;
-        this.loanRepositoryWrapper = loanRepositoryWrapper;
-        this.prequalificationChecklistWritePlatformService = prequalificationChecklistWritePlatformService;
-        this.loanReadPlatformService = loanReadPlatformService;
-    }
+    private final RequiredCommitteeApprovalsMapper committeeApprovalsMapper = new RequiredCommitteeApprovalsMapper();
+    private final CommandSourceRepository commandSourceRepository;
+    private final CodeValueRepository codeValueRepository;
+    private final RenegotiationRepositoryWrapper renegotiationRepository;
+    private final PreQualificationStatusLogRepository preQualificationStatusLogRepository;
+    private final LoanUtilService loanUtilService;
 
     @Transactional
     @Override
@@ -270,7 +243,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         this.prequalificationGroupRepositoryWrapper.saveAndFlush(prequalificationGroup);
 
         PrequalificationStatusLog statusLog = PrequalificationStatusLog.fromJson(addedBy, PrequalificationStatus.PENDING.getValue(),
-                prequalificationGroup.getStatus(), null, prequalificationGroup);
+                prequalificationGroup.getStatus(), null, prequalificationGroup, null, null);
 
         this.preQualificationLogRepository.saveAndFlush(statusLog);
 
@@ -436,7 +409,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         this.prequalificationGroupRepositoryWrapper.saveAndFlush(prequalificationGroup);
         AppUser addedBy = this.context.getAuthenticatedUserIfPresent();
         PrequalificationStatusLog statusLog = PrequalificationStatusLog.fromJson(addedBy, fromStatus, prequalificationGroup.getStatus(),
-                comment, prequalificationGroup);
+                comment, prequalificationGroup, null, null);
         this.preQualificationLogRepository.saveAndFlush(statusLog);
         return groupId;
     }
@@ -577,9 +550,12 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
             if (prequalificationGroup.isPrequalificationTypeGroup()) {
                 submittedLoans = jdbcTemplate.query(this.groupTypeLoanMapper.schema(), this.groupTypeLoanMapper, prequalificationId,
                         member.getDpi(), prequalificationId);
+            } else if (prequalificationGroup.isPrequalificationTypePAE()) {
+                submittedLoans = jdbcTemplate.query(this.individualTypeLoanMapper.schema(), this.individualTypeLoanMapper,
+                        prequalificationId, PrequalificationType.PAE.getValue(), member.getDpi(), prequalificationId);
             } else {
                 submittedLoans = jdbcTemplate.query(this.individualTypeLoanMapper.schema(), this.individualTypeLoanMapper,
-                        prequalificationId, member.getDpi(), prequalificationId);
+                        prequalificationId, PrequalificationType.PAE.getValue(), member.getDpi(), prequalificationId);
             }
             if (submittedLoans.isEmpty()) {
                 throw new MemberSubmittedLoanNotFoundException(member.getDpi());
@@ -616,6 +592,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         }
 
         this.preQualificationMemberRepository.saveAndFlush(member);
+        updateLoanAssociated(command);
         return new CommandProcessingResultBuilder() //
                 .withCommandId(command.commandId()) //
                 .withResourceIdAsString(memberId.toString()) //
@@ -821,14 +798,14 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         this.prequalificationGroupRepositoryWrapper.save(prequalificationGroup);
 
         PrequalificationStatusLog statusLog = PrequalificationStatusLog.fromJson(addedBy, fromStatus, prequalificationGroup.getStatus(),
-                comments, prequalificationGroup);
+                comments, prequalificationGroup, null, null);
 
         this.preQualificationLogRepository.saveAndFlush(statusLog);
         return new CommandProcessingResultBuilder().withCommandId(command.commandId()).withEntityId(prequalificationGroup.getId()).build();
     }
 
     @Override
-    public CommandProcessingResult sendForAnalysis(Long entityId, JsonCommand command) {
+    public CommandProcessingResult sendForAnalysis(Long entityId, JsonCommand command, Boolean withExceptions) {
         final PrequalificationGroup prequalificationGroup = this.prequalificationGroupRepositoryWrapper
                 .findOneWithNotFoundDetection(entityId);
 
@@ -848,11 +825,15 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
             });
         }
 
+        if (withExceptions) {
+            status.set(PrequalificationStatus.ANALYSIS_UNIT_PENDING_APPROVAL_WITH_EXCEPTIONS);
+        }
+
         prequalificationGroup.updateStatus(status.get());
 
         String comments = command.stringValueOfParameterNamed("comments");
         PrequalificationStatusLog statusLog = PrequalificationStatusLog.fromJson(appUser, fromStatus, prequalificationGroup.getStatus(),
-                comments, prequalificationGroup);
+                comments, prequalificationGroup, null, null);
 
         this.preQualificationLogRepository.saveAndFlush(statusLog);
 
@@ -887,7 +868,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
 
         String comments = command.stringValueOfParameterNamed("comments");
         PrequalificationStatusLog statusLog = PrequalificationStatusLog.fromJson(appUser, fromStatus, prequalificationGroup.getStatus(),
-                comments, prequalificationGroup);
+                comments, prequalificationGroup, null, null);
 
         this.preQualificationLogRepository.saveAndFlush(statusLog);
 
@@ -895,10 +876,141 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
     }
 
     @Override
+    public CommandProcessingResult sendToFirstPhaseApproveCommitteeD(Long entityId, JsonCommand command, boolean withExceptions,
+            boolean nextPhase) {
+        final PrequalificationGroup prequalificationGroup = this.prequalificationGroupRepositoryWrapper
+                .findOneWithNotFoundDetection(entityId);
+
+        GroupPrequalificationData prequalificationData = prequalificationReadPlatformService.retrieveOne(prequalificationGroup.getId());
+
+        AppUser appUser = this.context.authenticatedUser();
+        Integer fromStatus = prequalificationGroup.getStatus();
+        String action = command.stringValueOfParameterNamed("action");
+        /*
+         * BigDecimal amount = prequalificationData.getTotalRequestedAmount(); if (amount != null) { if
+         * (amount.compareTo(new BigDecimal("20000")) < 0) { // Monto < 20.000 → Comité D
+         * prequalificationGroup.updateStatus( PrequalificationStatus.PRE_COMMITTEE_D_PENDING_APPROVAL ); } else if
+         * (amount.compareTo(new BigDecimal("80000")) < 0) { // 20.000 ≤ Monto < 80.000 → Comité C
+         * prequalificationGroup.updateStatus( PrequalificationStatus.PRE_COMMITTEE_C_PENDING_APPROVAL ); } else if
+         * (amount.compareTo(new BigDecimal("250000")) <= 0) { // 80.000 ≤ Monto ≤ 250.000 → Comité B
+         * prequalificationGroup.updateStatus( PrequalificationStatus.PRE_COMMITTEE_B_PENDING_APPROVAL ); } else { //
+         * Monto > 250.000 → Comité A prequalificationGroup.updateStatus(
+         * PrequalificationStatus.PRE_COMMITTEE_A_PENDING_APPROVAL ); } }
+         */
+        if ((action.equals("approvepreviouscommitee") || action.equals("approveRenegotiation")) && !nextPhase) {
+
+            PrequalificationStatus lastStatus = PrequalificationStatus
+                    .fromInt(prequalificationData.getLastPrequalificationStatus().getId().intValue());
+
+            prequalificationGroup.updateStatus(lastStatus);
+
+        } else {
+            if (!nextPhase) {
+                prequalificationGroup.updateStatus(withExceptions ? PrequalificationStatus.PRE_COMMITTEE_D_PENDING_APPROVAL_WITH_EXCEPTIONS
+                        : PrequalificationStatus.PRE_COMMITTEE_D_PENDING_APPROVAL);
+            } else {
+                if (PrequalificationStatus.fromInt(prequalificationGroup.getStatus())
+                        .equals(PrequalificationStatus.RENEGOTIATION_AGENCY_LEAD)) {
+                    PrequalificationStatus lastStatus = PrequalificationStatus
+                            .fromInt(prequalificationData.getLastPrequalificationStatus().getId().intValue());
+
+                    prequalificationGroup.updateStatus(lastStatus);
+                }
+                PrequalificationStatus currentStatus = PrequalificationStatus.fromInt(prequalificationGroup.getStatus());
+
+                if (StringUtils.containsIgnoreCase(currentStatus.toString(), "WITH_EXCEPTIONS")) {
+                    withExceptions = true;
+                }
+
+                if (currentStatus == PrequalificationStatus.PRE_COMMITTEE_D_PENDING_APPROVAL
+                        || currentStatus == PrequalificationStatus.PRE_COMMITTEE_D_PENDING_APPROVAL_WITH_EXCEPTIONS) {
+
+                    prequalificationGroup
+                            .updateStatus(withExceptions ? PrequalificationStatus.PRE_COMMITTEE_C_PENDING_APPROVAL_WITH_EXCEPTIONS
+                                    : PrequalificationStatus.PRE_COMMITTEE_C_PENDING_APPROVAL);
+
+                } else if (currentStatus == PrequalificationStatus.PRE_COMMITTEE_C_PENDING_APPROVAL
+                        || currentStatus == PrequalificationStatus.PRE_COMMITTEE_C_PENDING_APPROVAL_WITH_EXCEPTIONS) {
+
+                    prequalificationGroup
+                            .updateStatus(withExceptions ? PrequalificationStatus.PRE_COMMITTEE_B_PENDING_APPROVAL_WITH_EXCEPTIONS
+                                    : PrequalificationStatus.PRE_COMMITTEE_B_PENDING_APPROVAL);
+
+                } else if (currentStatus == PrequalificationStatus.PRE_COMMITTEE_B_PENDING_APPROVAL
+                        || currentStatus == PrequalificationStatus.PRE_COMMITTEE_B_PENDING_APPROVAL_WITH_EXCEPTIONS) {
+
+                    prequalificationGroup
+                            .updateStatus(withExceptions ? PrequalificationStatus.PRE_COMMITTEE_A_PENDING_APPROVAL_WITH_EXCEPTIONS
+                                    : PrequalificationStatus.PRE_COMMITTEE_A_PENDING_APPROVAL);
+
+                }
+            }
+        }
+
+        String comments = command.stringValueOfParameterNamed("comments");
+        PrequalificationStatusLog statusLog = PrequalificationStatusLog.fromJson(appUser, fromStatus, prequalificationGroup.getStatus(),
+                comments, prequalificationGroup, null, withExceptions);
+        this.preQualificationLogRepository.saveAndFlush(statusLog);
+
+        return new CommandProcessingResultBuilder().withCommandId(command.commandId()).withEntityId(prequalificationGroup.getId()).build();
+    }
+
+    @Override
+    public CommandProcessingResult restartFlow(Long entityId, JsonCommand command) {
+        final PrequalificationGroup prequalificationGroup = this.prequalificationGroupRepositoryWrapper
+                .findOneWithNotFoundDetection(entityId);
+
+        PrequalificationStatusLog statusLog = preQualificationStatusLogRepository
+                .findTopByPrequalificationGroupIdAndFromStatusOrderByIdDesc(prequalificationGroup.getId(),
+                        PrequalificationStatus.BLACKLIST_CHECKED.getValue())
+                .copy();
+
+        statusLog.setFromStatus(prequalificationGroup.getStatus());
+
+        this.preQualificationLogRepository.saveAndFlush(statusLog);
+        prequalificationGroup.updateStatus(PrequalificationStatus.fromInt(statusLog.getToStatus()));
+        this.prequalificationGroupRepositoryWrapper.save(prequalificationGroup);
+
+        Loan loan = loanRepositoryWrapper.retrieveByPrequalificationId(prequalificationGroup.getId());
+        if (loan != null && loan.isApproved()) {
+
+            log.info("Rechazando aprobación para pre-calificación con id: {}", prequalificationGroup.getId());
+
+            JsonObject jsonObject = new JsonObject();
+            jsonObject.addProperty("note", loan.getId());
+            final String jsonCommand = jsonObject.toString();
+            final JsonCommand undoCommand = JsonCommand.from(jsonCommand, jsonObject, this.fromApiJsonHelper, null, loan.getId(), null,
+                    null, loan.getClientId(), loan.getId(), null, null, null, null, null, null);
+            this.loanApplicationWritePlatformService.undoApplicationApproval(loan.getId(), undoCommand);
+        } else {
+            log.info("La pre-calificación no tiene crédito relacionado.");
+        }
+
+        return new CommandProcessingResultBuilder().withCommandId(command.commandId())
+                .withResourceIdAsString(loan != null ? loan.getId().toString() : "").withEntityId(prequalificationGroup.getId()).build();
+    }
+
+    private int getCommitteeLevel(PrequalificationStatus status) {
+        switch (status) {
+            case PRE_COMMITTEE_D_PENDING_APPROVAL, PRE_COMMITTEE_D_PENDING_APPROVAL_WITH_EXCEPTIONS:
+                return 1;
+            case PRE_COMMITTEE_C_PENDING_APPROVAL, PRE_COMMITTEE_C_PENDING_APPROVAL_WITH_EXCEPTIONS:
+                return 2;
+            case PRE_COMMITTEE_B_PENDING_APPROVAL, PRE_COMMITTEE_B_PENDING_APPROVAL_WITH_EXCEPTIONS:
+                return 3;
+            case PRE_COMMITTEE_A_PENDING_APPROVAL, PRE_COMMITTEE_A_PENDING_APPROVAL_WITH_EXCEPTIONS:
+                return 4;
+            default:
+                return 0;
+        }
+    }
+
+    @Override
     @Transactional
     public CommandProcessingResult processAnalysisRequest(Long entityId, JsonCommand command) {
         String comments = command.stringValueOfParameterNamed("comments");
         String action = command.stringValueOfParameterNamed("action");
+        final Long reasonCode = command.longValueOfParameterNamed("reasonId");
         AppUser addedBy = this.context.authenticatedUser();
         final PrequalificationGroup prequalificationGroup = this.prequalificationGroupRepositoryWrapper
                 .findOneWithNotFoundDetection(entityId);
@@ -908,6 +1020,68 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         }
         if (action.equals("revalidateHardPolicy")) {
             return revalidateHardPolicy(entityId, command);
+        }
+        // first phase
+        if (action.equals("approvecommiteeWhitExc") || (action.equals("sendtoexception")
+                && (PrequalificationStatus.fromInt(fromStatus).equals(PrequalificationStatus.ANALYSIS_UNIT_PENDING_APPROVAL_WITH_EXCEPTIONS)
+                        || PrequalificationStatus.fromInt(fromStatus).equals(PrequalificationStatus.ANALYSIS_UNIT_PENDING_APPROVAL))
+                && PrequalificationType.fromInt(prequalificationGroup.getPrequalificationType()).equals(PrequalificationType.PAE))) {
+            return sendToFirstPhaseApproveCommitteeD(entityId, command, true, false);
+        }
+        // first phase
+        if (action.equals("approvecommitee") || action.equals("approvepreviouscommitee")) {
+            return sendToFirstPhaseApproveCommitteeD(entityId, command, false, false);
+        }
+        if (action.equals("recommendCommittee")) {
+            return sendToFirstPhaseApproveCommitteeD(entityId, command, false, true);
+        }
+        // send to renegotiation
+        if (action.equals("sendToRenegotiation")) {
+            return sendToRenegotiation(prequalificationGroup, addedBy, command);
+        } // send to renegotiation
+        if (action.equals("approveRenegotiation")) {
+            approveRenegotiation(prequalificationGroup, addedBy, command);
+            GroupPrequalificationData prequalificationData = prequalificationReadPlatformService.retrieveOne(prequalificationGroup.getId());
+
+            PrequalificationStatus lastStatus = PrequalificationStatus
+                    .fromInt(prequalificationData.getLastPrequalificationStatus().getId().intValue());
+            final Long renegotiationId = command.longValueOfParameterNamed("renegotiationId");
+            Renegotiation renegotiation = renegotiationRepository.getRenegotiationById(renegotiationId);
+            BigDecimal amount = renegotiation.getProposedAmount();
+            PrequalificationStatus targetCommittee = null;
+
+            if (amount.compareTo(new BigDecimal("20000")) < 0) {
+                targetCommittee = PrequalificationStatus.PRE_COMMITTEE_D_PENDING_APPROVAL;
+            } else if (amount.compareTo(new BigDecimal("80000")) < 0) {
+                targetCommittee = PrequalificationStatus.PRE_COMMITTEE_C_PENDING_APPROVAL;
+            } else if (amount.compareTo(new BigDecimal("250000")) <= 0) {
+                targetCommittee = PrequalificationStatus.PRE_COMMITTEE_B_PENDING_APPROVAL;
+            } else {
+                targetCommittee = PrequalificationStatus.PRE_COMMITTEE_A_PENDING_APPROVAL;
+            }
+
+            int lastLevel = getCommitteeLevel(lastStatus);
+            int targetLevel = getCommitteeLevel(targetCommittee);
+
+            if (lastLevel == targetLevel /* || lastLevel == targetLevel - 1 */) {
+                action = "approveCommittee";
+            } else {
+                return sendToFirstPhaseApproveCommitteeD(entityId, command, false, true);
+            }
+        }
+        if (action.equals("rejectRenegotiation")) {
+            return rejectRenegotiation(prequalificationGroup, addedBy, command);
+        }
+        if (action.equals("sendtoexception")
+                && (PrequalificationStatus.fromInt(fromStatus).equals(PrequalificationStatus.AGENCY_LEAD_PENDING_APPROVAL)
+                        || PrequalificationStatus.fromInt(fromStatus)
+                                .equals(PrequalificationStatus.AGENCY_LEAD_PENDING_APPROVAL_WITH_EXCEPTIONS))
+                && PrequalificationType.fromInt(prequalificationGroup.getPrequalificationType()).equals(PrequalificationType.PAE)) {
+            return sendForAnalysis(entityId, command, true);
+        }
+
+        if (action.equals("restartflow")) {
+            return restartFlow(entityId, command);
         }
         PrequalificationStatus prequalificationStatus = resolveStatus(action);
         final List<MemberPrequalificationData> memberPrequalificationDataList = new ArrayList<>();
@@ -933,12 +1107,25 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
                 .orElseThrow(() -> new LoanProductNotFoundException(productId));
         final Boolean requireCommitteeApproval = ObjectUtils.defaultIfNull(loanProduct.getRequireCommitteeApproval(), Boolean.FALSE);
         if (prequalificationGroup.isPrequalificationTypeIndividual() && action.equals("approveanalysis") && requireCommitteeApproval) {
-            PrequalificationStatusRange statusRange = resolveIndividualStatusRange(prequalificationGroup, action);
-            prequalificationStatus = PrequalificationStatus.fromInt(statusRange.getStatus());
+            Integer statusRange = resolveIndividualStatusRange(prequalificationGroup, action);
+            prequalificationStatus = PrequalificationStatus.fromInt(statusRange);
 
         }
-        if (prequalificationGroup.isPrequalificationTypeIndividual() && action.equals("approveCommittee")) {
-            prequalificationStatus = resolveCommitteeStatus(prequalificationGroup, action);
+        String reportToPrint = null;
+        Long loanId = null;
+        if ((prequalificationGroup.isPrequalificationTypeIndividual() || prequalificationGroup.isPrequalificationTypePAE())
+                && action.equals("approveCommittee")) {
+            Integer statusRange = resolveIndividualStatusRange(prequalificationGroup, action);
+            prequalificationStatus = PrequalificationStatus.fromInt(statusRange);
+            if (prequalificationStatus.equals(PrequalificationStatus.COMPLETED)) {
+                reportToPrint = "Commitee Approval Report";
+                List<Loan> allLoans = this.loanRepositoryWrapper.retrieveAllByPrequalificationId(entityId);
+                if (allLoans.isEmpty()) {
+                    throw new LoanNotFoundException(loanId);
+                }
+                Loan loan = allLoans.get(0);
+                loanId = loan != null ? loan.getId() : null;
+            }
         }
 
         // check if status has changed after resolving the new status
@@ -949,8 +1136,17 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         prequalificationGroup.updateStatus(prequalificationStatus);
         prequalificationGroup.updateComments(comments);
 
+        CodeValue code = null;
+        if (reasonCode != null) {
+            Optional<CodeValue> codeValue;
+            codeValue = this.codeValueRepository.findById(reasonCode);
+            if (codeValue.isPresent()) {
+                code = codeValue.get();
+            }
+        }
+
         PrequalificationStatusLog newStatusLog = PrequalificationStatusLog.fromJson(addedBy, fromStatus, prequalificationGroup.getStatus(),
-                comments, prequalificationGroup);
+                comments, prequalificationGroup, code, null);
         this.approveOrRejectLoanApplications(prequalificationGroup, prequalificationStatus, memberPrequalificationDataList);
         this.preQualificationLogRepository.saveAndFlush(newStatusLog);
 
@@ -959,6 +1155,145 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
             PrequalificationStatusLog currentStatusLog = currentLogs.get(0);
             currentStatusLog.updateSubStatus(PrequalificationSubStatus.COMPLETED.getValue());
             this.preQualificationLogRepository.save(currentStatusLog);
+        }
+        return new CommandProcessingResultBuilder().withCommandId(command.commandId()).withEntityId(prequalificationGroup.getId())
+                .withReportToPrint(reportToPrint).withLoanId(loanId).build();
+    }
+
+    private CommandProcessingResult approveRenegotiation(PrequalificationGroup prequalificationGroup, AppUser addedBy,
+            JsonCommand command) {
+        Long renegotiationId = command.longValueOfParameterNamed("renegotiationId");
+        Renegotiation renegotiationById = this.renegotiationRepository.getRenegotiationById(renegotiationId);
+        if (renegotiationById == null || !renegotiationById.getPrequalificationGroup().getId().equals(prequalificationGroup.getId())) {
+            throw new RenegotiationNotFoundException(renegotiationId);
+        }
+        // approve renegotiation
+        renegotiationById.setStatus("APPROVED");
+        renegotiationById.setApprovedDate(DateUtils.getLocalDateTimeOfSystem());
+        renegotiationById.setApprovedBy(this.context.authenticatedUser());
+        this.renegotiationRepository.saveRenegotiation(renegotiationById);
+
+        // AFTER APPROVING ONE, CANCEL ALL PENDING RENEGOTIATIONS
+        List<Renegotiation> renegotiationByPrequalificationId = this.renegotiationRepository
+                .getRenegotiationByPrequalificationId(prequalificationGroup.getId());
+        for (Renegotiation renegotiation : renegotiationByPrequalificationId) {
+            if (renegotiation.getStatus().equals("PENDING")) {
+                renegotiation.setStatus("CANCELED");
+                this.renegotiationRepository.saveRenegotiation(renegotiation);
+            }
+        }
+
+        Loan loan = this.loanRepositoryWrapper.retrieveByPrequalificationId(prequalificationGroup.getId());
+
+        final String localeAsString = "en";
+        final String dateFormat = "dd MMMM yyyy";
+        JsonObject jsonObject = new JsonObject();
+        jsonObject.addProperty("locale", localeAsString);
+        jsonObject.addProperty("dateFormat", dateFormat);
+        Locale locale = JsonParserHelper.localeFromString(localeAsString);
+        final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(dateFormat).withLocale(locale);
+        jsonObject.addProperty("productId", loan.getLoanProduct().getId());
+        jsonObject.addProperty("expectedDisbursementDate", loan.getExpectedDisbursedOnLocalDate().format(dateTimeFormatter));
+        jsonObject.addProperty("interestCalculationPeriodType",
+                loan.getLoanProductRelatedDetail().getInterestCalculationPeriodMethod().getValue());
+        jsonObject.addProperty("interestType", loan.getLoanProductRelatedDetail().getInterestMethod().getValue());
+        jsonObject.addProperty("loanType", AccountType.fromInt(loan.getLoanType()).getName());
+        if (renegotiationById.getProposedInterest() != null)
+            jsonObject.addProperty("interestRatePerPeriod", renegotiationById.getProposedInterest());
+        if (renegotiationById.getProposedAmount() != null) jsonObject.addProperty("principal", renegotiationById.getProposedAmount());
+        jsonObject.addProperty("isEqualAmortization", loan.getLoanProductRelatedDetail().isEqualAmortization());
+        jsonObject.addProperty("amortizationType", loan.getLoanProductRelatedDetail().getAmortizationMethod().getValue());
+
+        // loan term and repayment structure
+        if (renegotiationById.getProposedTerm() != null) {
+            final Integer loanTermFrequency = renegotiationById.getProposedTerm();
+            final Integer loanTermFrequencyType = PeriodFrequencyType.MONTHS.getValue();
+            final Integer repaymentEvery = loan.getLoanProductRelatedDetail().getRepayEvery();
+            final Integer repaymentFrequencyType = loan.getLoanProductRelatedDetail().getRepaymentPeriodFrequencyType().getValue();
+
+            jsonObject.addProperty("loanTermFrequency", loanTermFrequency);
+            jsonObject.addProperty("loanTermFrequencyType", loanTermFrequencyType);
+            jsonObject.addProperty("repaymentEvery", repaymentEvery);
+            jsonObject.addProperty("repaymentFrequencyType", repaymentFrequencyType);
+
+            final Integer computedNumberOfRepayments = computeNumberOfRepayments(loanTermFrequency, loanTermFrequencyType, repaymentEvery,
+                    repaymentFrequencyType, loan.getLoanProductRelatedDetail().getNumberOfRepayments());
+            jsonObject.addProperty("numberOfRepayments", computedNumberOfRepayments);
+        }
+
+        // compute number of repayments from term and frequency
+
+        final String jsonCommand = jsonObject.toString();
+        final JsonCommand loancommand = JsonCommand.from(jsonCommand, jsonObject, this.fromApiJsonHelper, null, loan.getId(), null, null,
+                loan.getClientId(), loan.getId(), null, null, null, null, null, null);
+        loancommand.setJsonCommand(jsonObject.toString());
+        this.loanApplicationWritePlatformService.modifyApplication(loan.getId(), loancommand);
+
+        PrequalificationGroupMember prequalificationGroupMember = prequalificationGroup.getMembers().get(0);
+        prequalificationGroupMember.updateApprovedAmount(renegotiationById.getProposedAmount());
+        this.preQualificationMemberRepository.saveAndFlush(prequalificationGroupMember);
+
+        return new CommandProcessingResultBuilder().withCommandId(command.commandId()).withEntityId(prequalificationGroup.getId()).build();
+    }
+
+    /**
+     * Computes the number of repayments using the relationship between loan term and repayment structure. Assumes
+     * loanTermFrequency and repaymentEvery are expressed in the same PeriodFrequencyType. Falls back to the
+     * originalNumberOfRepayments if frequency types differ or inputs are invalid.
+     */
+    private Integer computeNumberOfRepayments(final Integer loanTermFrequency, final Integer loanTermFrequencyType,
+            final Integer repaymentEvery, final Integer repaymentFrequencyType, final Integer originalNumberOfRepayments) {
+        if (loanTermFrequency == null || repaymentEvery == null || repaymentEvery == 0) {
+            return originalNumberOfRepayments;
+        }
+        // Ensure frequency types are consistent with Fineract validation rules
+        if (loanTermFrequencyType != null && repaymentFrequencyType != null && !loanTermFrequencyType.equals(repaymentFrequencyType)) {
+            // Fall back to existing behaviour by not altering the number of repayments when types mismatch
+            return originalNumberOfRepayments;
+        }
+        int computed = loanTermFrequency / repaymentEvery;
+        if (computed <= 0) {
+            computed = 1;
+        }
+        return computed;
+    }
+
+    private CommandProcessingResult rejectRenegotiation(PrequalificationGroup prequalificationGroup, AppUser addedBy, JsonCommand command) {
+        Long renegotiationId = command.longValueOfParameterNamed("renegotiationId");
+        Renegotiation renegotiationById = this.renegotiationRepository.getRenegotiationById(renegotiationId);
+        if (renegotiationById == null || !renegotiationById.getPrequalificationGroup().getId().equals(prequalificationGroup.getId())) {
+            throw new RenegotiationNotFoundException(renegotiationId);
+        }
+        // approve renegotiation
+        renegotiationById.setStatus("REJECTED");
+        renegotiationById.setApprovedDate(DateUtils.getLocalDateTimeOfSystem());
+        renegotiationById.setApprovedBy(this.context.authenticatedUser());
+        this.renegotiationRepository.saveRenegotiation(renegotiationById);
+        return new CommandProcessingResultBuilder().withCommandId(command.commandId()).withEntityId(prequalificationGroup.getId()).build();
+    }
+
+    private CommandProcessingResult sendToRenegotiation(PrequalificationGroup prequalificationGroup, AppUser addedBy, JsonCommand command) {
+        Integer fromStatus = prequalificationGroup.getStatus();
+
+        prequalificationGroup.updateStatus(PrequalificationStatus.RENEGOTIATION_AGENCY_LEAD);
+
+        PrequalificationStatusLog statusLog = PrequalificationStatusLog.fromJson(addedBy, fromStatus, prequalificationGroup.getStatus(),
+                "Renegotiation", prequalificationGroup, null, false);
+        this.preQualificationLogRepository.saveAndFlush(statusLog);
+        JsonElement renegotiationData = command.jsonElement("renegotiationData");
+        JsonObject renegotiationObject = renegotiationData.getAsJsonObject();
+        if (renegotiationObject != null) {
+            final BigDecimal newProposedAmount = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed("proposedAmount",
+                    renegotiationObject);
+            final Integer newProposedTerm = this.fromApiJsonHelper.extractIntegerSansLocaleNamed("proposedTerm", renegotiationObject);
+            final String comments = this.fromApiJsonHelper.extractStringNamed("comments", renegotiationObject);
+            final BigDecimal newProposedInterestRate = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed("proposedInterestRate",
+                    renegotiationObject);
+
+            Renegotiation renegotiation = Renegotiation.create(prequalificationGroup, newProposedInterestRate, newProposedAmount,
+                    newProposedTerm, comments, DateUtils.getLocalDateTimeOfSystem(), addedBy);
+            this.renegotiationRepository.saveRenegotiation(renegotiation);
+            this.prequalificationGroupRepositoryWrapper.saveAndFlush(prequalificationGroup);
         }
         return new CommandProcessingResultBuilder().withCommandId(command.commandId()).withEntityId(prequalificationGroup.getId()).build();
     }
@@ -986,17 +1321,21 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
             final boolean isApproved = PrequalificationStatus.COMPLETED.equals(prequalificationStatus)
                     && (memberPrequalificationData.getIsSelected() || prequalificationGroup.isPrequalificationTypeIndividual());
             final boolean isRejected = PrequalificationStatus.REJECTED.equals(prequalificationStatus)
-                    || (!memberPrequalificationData.getIsSelected() && PrequalificationStatus.COMPLETED.equals(prequalificationStatus)
+                    || (memberPrequalificationData.getIsSelected() != null && !memberPrequalificationData.getIsSelected()
+                            && PrequalificationStatus.COMPLETED.equals(prequalificationStatus)
                             && prequalificationGroup.isPrequalificationTypeGroup());
             final BigDecimal approvedLoanAmount = prequalificationGroupMember.getApprovedAmount();
             final String dpi = prequalificationGroupMember.getDpi();
             List<LoanData> submittedLoans;
             if (prequalificationGroup.isPrequalificationTypeGroup()) {
-                submittedLoans = jdbcTemplate.query(this.groupTypeLoanMapper.schema(), this.groupTypeLoanMapper,
-                        new Object[] { prequalificationId, dpi, prequalificationId });
+                submittedLoans = jdbcTemplate.query(this.groupTypeLoanMapper.schema(), this.groupTypeLoanMapper, prequalificationId, dpi,
+                        prequalificationId);
+            } else if (prequalificationGroup.isPrequalificationTypePAE()) {
+                submittedLoans = jdbcTemplate.query(this.individualTypeLoanMapper.schema(), this.individualTypeLoanMapper,
+                        prequalificationId, PrequalificationType.PAE.getValue(), dpi, prequalificationId);
             } else {
                 submittedLoans = jdbcTemplate.query(this.individualTypeLoanMapper.schema(), this.individualTypeLoanMapper,
-                        new Object[] { prequalificationId, dpi, prequalificationId });
+                        prequalificationId, PrequalificationType.INDIVIDUAL.getValue(), dpi, prequalificationId);
             }
             if (submittedLoans.isEmpty()) {
                 throw new MemberSubmittedLoanNotFoundException(dpi);
@@ -1102,7 +1441,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
                         INNER JOIN m_prequalification_group_members mpgm ON mpg.id = mpgm.group_id
                         INNER JOIN m_client mc ON mc.dpi = mpgm.dpi
                         INNER JOIN m_loan ml ON ml.client_id = mc.id
-                        WHERE mpg.id = ? AND mpg.prequalification_type_enum = 1 AND (ml.client_id = (SELECT mt.id FROM m_client mt WHERE mt.dpi = ?))
+                        WHERE mpg.id = ? AND mpg.prequalification_type_enum = ? AND (ml.client_id = (SELECT mt.id FROM m_client mt WHERE mt.dpi = ?))
                         AND ml.loan_status_id = 100 AND ml.prequalification_id = ?
                     """;
         }
@@ -1156,31 +1495,6 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         this.preQualificationLogRepository.saveAndFlush(prequalificationStatusLog);
     }
 
-    private PrequalificationStatus resolveCommitteeStatus(PrequalificationGroup prequalificationGroup, String action) {
-        // TODO ---CHECK IF THE COMMITTEE IS THE LAST COMMITTEE
-        PrequalificationStatusRange initialStatusRange = resolveIndividualStatusRange(prequalificationGroup, action);
-
-        PrequalificationStatus initialStatus = PrequalificationStatus.fromInt(initialStatusRange.getStatus());
-        PrequalificationStatus currentStatus = PrequalificationStatus.fromInt(prequalificationGroup.getStatus());
-
-        PrequalificationStatus finalStatus = currentStatus;
-        if (initialStatus.getValue().equals(currentStatus.getValue())) {
-            if (currentStatus.equals(PrequalificationStatus.PRE_COMMITTEE_D_PENDING_APPROVAL)) {
-                finalStatus = PrequalificationStatus.PRE_COMMITTEE_C_PENDING_APPROVAL;
-            } else if (currentStatus.equals(PrequalificationStatus.PRE_COMMITTEE_C_PENDING_APPROVAL)) {
-                finalStatus = PrequalificationStatus.PRE_COMMITTEE_B_PENDING_APPROVAL;
-            } else if (currentStatus.equals(PrequalificationStatus.PRE_COMMITTEE_B_PENDING_APPROVAL)) {
-                finalStatus = PrequalificationStatus.PRE_COMMITTEE_A_PENDING_APPROVAL;
-            } else if (currentStatus.equals(PrequalificationStatus.PRE_COMMITTEE_A_PENDING_APPROVAL)) {
-                finalStatus = PrequalificationStatus.COMPLETED;
-            }
-        } else {
-            finalStatus = PrequalificationStatus.COMPLETED;
-        }
-
-        return finalStatus;
-    }
-
     private PrequalificationStatus resolveStatus(String action) {
         PrequalificationStatus status = null;
         if (action.equalsIgnoreCase("sendtoagency")) {
@@ -1193,15 +1507,32 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
             status = PrequalificationStatus.REJECTED;
         } else if (action.equalsIgnoreCase("approveanalysis")) {
             status = PrequalificationStatus.COMPLETED;
+        } else if (action.equalsIgnoreCase("pending")) {
+            status = PrequalificationStatus.PENDING;
+        } else if (action.equalsIgnoreCase("reject")) {
+            status = PrequalificationStatus.REJECTED;
         }
         return status;
     }
 
-    private PrequalificationStatusRange resolveIndividualStatusRange(PrequalificationGroup prequalificationGroup, String action) {
-        PrequalificationStatusRange finalRange = null;
+    private Integer resolveIndividualStatusRange(PrequalificationGroup prequalificationGroup, @NotNull String action) {
 
+        List<PrequalificationStatusLog> statusLogs = this.preQualificationStatusLogRepository
+                .groupStatusLogs(prequalificationGroup.getId());
+        final boolean ignoreExceptions = statusLogs.stream()
+                .anyMatch(statusLog -> PrequalificationStatus.PRE_COMMITTEE_D_PENDING_APPROVAL.getValue().equals(statusLog.getToStatus())
+                        && Boolean.FALSE.equals(statusLog.getWithExceptions()));
+
+        Integer finalStatus = null;
         if (action.equalsIgnoreCase("approveanalysis") || action.equalsIgnoreCase("approveCommittee")) {
-            BigDecimal amount = prequalificationGroup.getTotalRequestedAmount();
+            Integer fromStatus = prequalificationGroup.getStatus();
+
+            List<PrequalificationGroupMember> members = prequalificationGroup.getMembers();
+            BigDecimal totalApprovedAmount = BigDecimal.ZERO;
+            for (PrequalificationGroupMember member : members) {
+                totalApprovedAmount = totalApprovedAmount.add(member.getApprovedAmount());
+            }
+
             PrequalificationChecklistData prequalificationChecklistData = this.prequalificationChecklistReadPlatformService
                     .retrieveHardPolicyValidationResults(prequalificationGroup.getId());
             List<List<String>> rows = prequalificationChecklistData.getMembers().getRows();
@@ -1213,30 +1544,81 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
                     }
                 });
             }
-            Integer errorWarningsCount = redCountRef.get();
+            Integer errorWarningsCount = ignoreExceptions ? 0 : redCountRef.get();
+            final String membersql = "select " + this.committeeApprovalsMapper.schema() + " "
+                    + "WHERE ? BETWEEN c.from_amount AND c.to_amount " + "AND ( " + "    (? > c.limit AND c.condition = 'GREATER_THAN') "
+                    + "    OR (? <= c.limit AND c.condition = 'LESS_THAN') ) ORDER BY cv.code_value desc;";
 
-            List<PrequalificationStatusRange> statusRangeList = this.prequalificationStatusRangeRepository
-                    .findByPrequalificationTypeAndNumberOfErrors(prequalificationGroup.getPrequalificationType(), errorWarningsCount);
+            List<CommitteeApprovalsData> approvalsRequired = this.jdbcTemplate.query(membersql, this.committeeApprovalsMapper,
+                    totalApprovedAmount, errorWarningsCount, errorWarningsCount);
 
-            if (statusRangeList.size() == 1) {
-                finalRange = statusRangeList.get(0);
-            } else {
-                for (PrequalificationStatusRange statusRange : statusRangeList) {
-                    if (amount.compareTo(statusRange.getMinAmount()) >= 0
-                            && (statusRange.getMaxAmount() != null && amount.compareTo(statusRange.getMaxAmount()) <= 0)) {
-                        finalRange = statusRange;
-                        break;
-                    } else if (amount.compareTo(statusRange.getMinAmount()) >= 0 && statusRange.getMaxAmount() == null) {
-                        finalRange = statusRange;
+            approvalsRequired.sort(Comparator.comparing(CommitteeApprovalsData::getCommittee).reversed());
+            finalStatus = PrequalificationStatus.COMPLETED.getValue();
+            if (!approvalsRequired.isEmpty()) {
+                for (CommitteeApprovalsData approvalsData : approvalsRequired) {
+                    Integer committeeRequired = PrequalificationStatus
+                            .resolveCommitteeStatus(approvalsData.getCommittee(), ignoreExceptions).getValue();
+                    if (fromStatus < committeeRequired && notSameGroup(fromStatus, committeeRequired)) {
+                        finalStatus = committeeRequired;
                         break;
                     }
                 }
             }
-
         }
 
-        return finalRange;
+        return finalStatus;
     }
+
+    private boolean notSameGroup(Integer fromStatus, Integer committeeRequired) {
+        String fromPrequal = PrequalificationStatus.fromInt(fromStatus).toString();
+        String toPrequal = PrequalificationStatus.fromInt(committeeRequired).toString();
+
+        String withExceptions = fromPrequal.replace("_WITH_EXCEPTIONS", "");
+        return !withExceptions.equals(toPrequal);
+    }
+
+    // private PrequalificationStatusRange resolveIndividualStatusRangeOld(PrequalificationGroup prequalificationGroup,
+    // String action) {
+    // PrequalificationStatusRange finalRange = null;
+    //
+    // if (action.equalsIgnoreCase("approveanalysis") || action.equalsIgnoreCase("approveCommittee")) {
+    // BigDecimal amount = prequalificationGroup.getTotalRequestedAmount();
+    // PrequalificationChecklistData prequalificationChecklistData = this.prequalificationChecklistReadPlatformService
+    // .retrieveHardPolicyValidationResults(prequalificationGroup.getId());
+    // List<List<String>> rows = prequalificationChecklistData.getMembers().getRows();
+    // AtomicReference<Integer> redCountRef = new AtomicReference<>(0);
+    // for (List<String> innerList : rows) {
+    // innerList.forEach(item -> {
+    // if ("RED".equalsIgnoreCase(item) || "ORANGE".equalsIgnoreCase(item) || "YELLOW".equalsIgnoreCase(item)) {
+    // redCountRef.getAndSet(redCountRef.get() + 1);
+    // }
+    // });
+    // }
+    // Integer errorWarningsCount = redCountRef.get();
+    //
+    // List<PrequalificationStatusRange> statusRangeList = this.prequalificationStatusRangeRepository
+    // .findByPrequalificationTypeAndNumberOfErrors(prequalificationGroup.getPrequalificationType(),
+    // errorWarningsCount);
+    //
+    // if (statusRangeList.size() == 1) {
+    // finalRange = statusRangeList.get(0);
+    // } else {
+    // for (PrequalificationStatusRange statusRange : statusRangeList) {
+    // if (amount.compareTo(statusRange.getMinAmount()) >= 0
+    // && (statusRange.getMaxAmount() != null && amount.compareTo(statusRange.getMaxAmount()) <= 0)) {
+    // finalRange = statusRange;
+    // break;
+    // } else if (amount.compareTo(statusRange.getMinAmount()) >= 0 && statusRange.getMaxAmount() == null) {
+    // finalRange = statusRange;
+    // break;
+    // }
+    // }
+    // }
+    //
+    // }
+    //
+    // return finalRange;
+    // }
 
     private PrequalificationType resolvePrequalificationType(LoanProduct loanProduct) {
         if (loanProduct.getOwnerType() != null) {
@@ -1247,8 +1629,66 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
             if (ownerType.equals(LoanProductOwnerType.GROUP)) {
                 return PrequalificationType.GROUP;
             }
+            if (ownerType.equals(LoanProductOwnerType.PAE)) {
+                return PrequalificationType.PAE;
+            }
         }
         return PrequalificationType.INVALID;
+    }
+
+    private void updateLoanAssociated(JsonCommand jsonCommand) {
+        final Long groupId = jsonCommand.getGroupId();
+        Loan loan = loanRepositoryWrapper.retrieveByPrequalificationId(groupId);
+        if (loan == null) {
+            throw new NotFoundException("Loan with group id " + groupId + " not found");
+        }
+        modify(loan.getId(), jsonCommand);
+    }
+
+    private void modify(Long loanId, JsonCommand command) {
+
+        final BigDecimal rate = command.bigDecimalValueOfParameterNamed("interestRatePerPeriod");
+        final BigDecimal principal = command.bigDecimalValueOfParameterNamed("principal");
+        final Long loanTermFrequency = command.longValueOfParameterNamed("loanTermFrequency");
+
+        CommandSource source = commandSourceRepository.findByLoanIdAndLastModification(loanId);
+        JsonElement element = JsonParser.parseString(source.getCommandAsJson());
+        JsonObject object = element.getAsJsonObject();
+
+        object.addProperty("interestRatePerPeriod", rate);
+        object.addProperty("principal", principal);
+        object.addProperty("loanTermFrequency", loanTermFrequency);
+        object.addProperty("numberOfRepayments", loanTermFrequency);
+        element = JsonParser.parseString(object.toString());
+        JsonCommand jsonCommand = JsonCommand.fromJsonElement(loanId, element, command.getFromApiJsonHelper());
+        jsonCommand.setJsonCommand(object.toString());
+
+        loanApplicationWritePlatformService.modifyApplication(loanId, jsonCommand);
+    }
+
+    @Override
+    public void addExceptionCommentsToPrequalification(Long groupId, String comment, String description) {
+        PrequalificationGroup prequalificationGroup = this.prequalificationGroupRepositoryWrapper.findOneWithNotFoundDetection(groupId);
+        boolean isException = false;
+        if (PrequalificatoinApiConstants.exceptionComments.equalsIgnoreCase(description)) {
+            prequalificationGroup.updateExceptionComments(comment);
+            isException = true;
+        } else {
+            prequalificationGroup.updateComments(comment);
+        }
+        Integer fromStatus = prequalificationGroup.getStatus();
+        Integer toStatus = fromStatus;
+
+        PrequalificationStatusLog lastLog = this.preQualificationStatusLogRepository.findTopByPrequalificationGroupIdOrderByIdDesc(groupId);
+        if (lastLog != null) {
+            fromStatus = lastLog.getFromStatus();
+            toStatus = lastLog.getToStatus();
+        }
+        this.prequalificationGroupRepositoryWrapper.saveAndFlush(prequalificationGroup);
+        AppUser addedBy = this.context.getAuthenticatedUserIfPresent();
+        PrequalificationStatusLog statusLog = PrequalificationStatusLog.fromJson(addedBy, fromStatus, toStatus, comment,
+                prequalificationGroup, null, null, isException);
+        this.preQualificationLogRepository.saveAndFlush(statusLog);
     }
 
 }

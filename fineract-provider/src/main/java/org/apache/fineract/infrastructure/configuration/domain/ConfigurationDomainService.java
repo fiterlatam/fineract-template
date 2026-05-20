@@ -18,6 +18,7 @@
  */
 package org.apache.fineract.infrastructure.configuration.domain;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import org.apache.fineract.infrastructure.cache.domain.CacheType;
 
@@ -133,7 +134,17 @@ public interface ConfigurationDomainService {
 
     Long getMaximumBackDateDaysAllowed();
 
+    Boolean isHierarchyEnabledForAccounting();
+
+    Boolean isRepaymentScheduleRecalculationEnabled();
+
     boolean isRebalanceAllAccounts();
 
+    Boolean isWaiveInterestOnRestructureCredits();
+
+    Boolean isWaiveChargesAndFeesOnRestructureCredits();
+
     Long getMaximumLoginAttempts();
+
+    BigDecimal getMaxLimitAmountForPromissoryNotePae();
 }

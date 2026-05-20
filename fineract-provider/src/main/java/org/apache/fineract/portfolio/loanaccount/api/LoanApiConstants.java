@@ -160,6 +160,7 @@ public interface LoanApiConstants {
     String PREQUALIFICATION_ID = "prequalificationId";
     String CASE_ID = "caseId";
     String LOAN_ADDITIONAL_DATA = "loanAdditionalData";
+    String LOAN_ADDITIONAL_DATA_PAE = "loanAdditionalDataPAE";
     String LOAN_RESOURCE_NAME = "LOAN";
     String loanCycleCompletedParamName = "loanCycleCompleted";
     String rentFeeParamName = "rentFee";
@@ -235,4 +236,7 @@ public interface LoanApiConstants {
     String currentLoansParamName = "currentLoans";
     String businessActivityParamName = "businessActivity";
     String dateOfBirthParamName = "dateOfBirth";
+    String glAccountIdParamName = "glAccountId";
+    String receiptNumberParamName = "receiptNumber";
+    String draftIdParamName = "draftId";
 }

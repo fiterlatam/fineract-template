@@ -34,6 +34,21 @@ public final class PreQualificationsEnumerations {
         return status(PrequalificationStatus.fromInt(statusId));
     }
 
+    public static EnumOptionData status(final String committeeCode) {
+        PrequalificationStatus statusId = switch (committeeCode) {
+            case "A" -> PrequalificationStatus.PRE_COMMITTEE_A_PENDING_APPROVAL;
+            case "B" -> PrequalificationStatus.PRE_COMMITTEE_B_PENDING_APPROVAL;
+            case "C" -> PrequalificationStatus.PRE_COMMITTEE_C_PENDING_APPROVAL;
+            case "D" -> PrequalificationStatus.PRE_COMMITTEE_D_PENDING_APPROVAL;
+            case "A_WITH_EXCEPTION" -> PrequalificationStatus.PRE_COMMITTEE_A_PENDING_APPROVAL_WITH_EXCEPTIONS;
+            case "B_WITH_EXCEPTION" -> PrequalificationStatus.PRE_COMMITTEE_B_PENDING_APPROVAL_WITH_EXCEPTIONS;
+            case "C_WITH_EXCEPTION" -> PrequalificationStatus.PRE_COMMITTEE_C_PENDING_APPROVAL_WITH_EXCEPTIONS;
+            case "D_WITH_EXCEPTION" -> PrequalificationStatus.PRE_COMMITTEE_D_PENDING_APPROVAL_WITH_EXCEPTIONS;
+            default -> PrequalificationStatus.INVALID;
+        };
+        return status(statusId);
+    }
+
     public static EnumOptionData status(final PrequalificationStatus status) {
         new EnumOptionData(PrequalificationStatus.INVALID.getValue().longValue(), PrequalificationStatus.INVALID.getCode(), "INVALID");
 
@@ -89,6 +104,24 @@ public final class PreQualificationsEnumerations {
             case PRE_COMMITTEE_D_PENDING_APPROVAL -> new EnumOptionData(
                     PrequalificationStatus.PRE_COMMITTEE_D_PENDING_APPROVAL.getValue().longValue(),
                     PrequalificationStatus.PRE_COMMITTEE_D_PENDING_APPROVAL.getCode(), "PRE_COMMITTEE_D_PENDING_APPROVAL");
+            case PRE_COMMITTEE_A_PENDING_APPROVAL_WITH_EXCEPTIONS -> new EnumOptionData(
+                    PrequalificationStatus.PRE_COMMITTEE_A_PENDING_APPROVAL_WITH_EXCEPTIONS.getValue().longValue(),
+                    PrequalificationStatus.PRE_COMMITTEE_A_PENDING_APPROVAL_WITH_EXCEPTIONS.getCode(),
+                    "PRE_COMMITTEE_A_PENDING_APPROVAL_WITH_EXCEPTIONS");
+            case PRE_COMMITTEE_B_PENDING_APPROVAL_WITH_EXCEPTIONS -> new EnumOptionData(
+                    PrequalificationStatus.PRE_COMMITTEE_B_PENDING_APPROVAL_WITH_EXCEPTIONS.getValue().longValue(),
+                    PrequalificationStatus.PRE_COMMITTEE_B_PENDING_APPROVAL_WITH_EXCEPTIONS.getCode(),
+                    "PRE_COMMITTEE_B_PENDING_APPROVAL_WITH_EXCEPTIONS");
+            case PRE_COMMITTEE_C_PENDING_APPROVAL_WITH_EXCEPTIONS -> new EnumOptionData(
+                    PrequalificationStatus.PRE_COMMITTEE_C_PENDING_APPROVAL_WITH_EXCEPTIONS.getValue().longValue(),
+                    PrequalificationStatus.PRE_COMMITTEE_C_PENDING_APPROVAL_WITH_EXCEPTIONS.getCode(),
+                    "PRE_COMMITTEE_C_PENDING_APPROVAL_WITH_EXCEPTIONS");
+            case PRE_COMMITTEE_D_PENDING_APPROVAL_WITH_EXCEPTIONS -> new EnumOptionData(
+                    PrequalificationStatus.PRE_COMMITTEE_D_PENDING_APPROVAL_WITH_EXCEPTIONS.getValue().longValue(),
+                    PrequalificationStatus.PRE_COMMITTEE_D_PENDING_APPROVAL_WITH_EXCEPTIONS.getCode(),
+                    "PRE_COMMITTEE_D_PENDING_APPROVAL_WITH_EXCEPTIONS");
+            case RENEGOTIATION_AGENCY_LEAD -> new EnumOptionData(PrequalificationStatus.RENEGOTIATION_AGENCY_LEAD.getValue().longValue(),
+                    PrequalificationStatus.RENEGOTIATION_AGENCY_LEAD.getCode(), "RENEGOTIATION_AGENCY_LEAD");
             default -> new EnumOptionData(PrequalificationStatus.INVALID.getValue().longValue(), PrequalificationStatus.INVALID.getCode(),
                     "INVALID");
         };

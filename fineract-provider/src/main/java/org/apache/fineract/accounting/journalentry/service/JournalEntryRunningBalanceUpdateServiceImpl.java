@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -42,7 +43,6 @@ import org.apache.fineract.infrastructure.core.data.CommandProcessingResultBuild
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 import org.apache.fineract.infrastructure.core.domain.JdbcSupport;
 import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
-import org.apache.fineract.infrastructure.core.service.database.DatabaseSpecificSQLGenerator;
 import org.apache.fineract.infrastructure.jobs.annotation.CronTarget;
 import org.apache.fineract.infrastructure.jobs.service.JobName;
 import org.apache.fineract.organisation.office.domain.OfficeRepositoryWrapper;
@@ -63,7 +63,6 @@ public class JournalEntryRunningBalanceUpdateServiceImpl implements JournalEntry
     private final JournalEntryDataValidator dataValidator;
 
     private final FromJsonHelper fromApiJsonHelper;
-    private final DatabaseSpecificSQLGenerator sqlGenerator;
 
     private final GLJournalEntryMapper entryMapper = new GLJournalEntryMapper();
     private final ConfigurationDomainService configurationDomainService;
@@ -71,13 +70,35 @@ public class JournalEntryRunningBalanceUpdateServiceImpl implements JournalEntry
     @Override
     @CronTarget(jobName = JobName.ACCOUNTING_RUNNING_BALANCE_UPDATE)
     public void updateRunningBalance() {
-        String dateFinder = "select MIN(je.entry_date) as entityDate from acc_gl_journal_entry  je "
-                + "where je.is_running_balance_calculated=false ";
+        long startTime = System.currentTimeMillis();
+        log.info("Starting ACCOUNTING_RUNNING_BALANCE_UPDATE job");
+
         try {
+            // Optimized query to find the earliest unprocessed date
+            String dateFinder = """
+                    SELECT MIN(je.entry_date) as entityDate
+                    FROM acc_gl_journal_entry je
+                    WHERE je.is_running_balance_calculated = false
+                    """;
+
             LocalDate entityDate = this.jdbcTemplate.queryForObject(dateFinder, LocalDate.class);
-            if (entityDate != null) updateOrganizationRunningBalance(entityDate);
+
+            if (entityDate != null) {
+                log.info("Processing running balance update from date: {}", entityDate);
+                updateOrganizationRunningBalance(entityDate);
+
+                long duration = System.currentTimeMillis() - startTime;
+                log.info("ACCOUNTING_RUNNING_BALANCE_UPDATE job completed successfully in {} ms", duration);
+            } else {
+                log.info("No unprocessed journal entries found for running balance update");
+            }
+
         } catch (EmptyResultDataAccessException e) {
-            log.debug("No results found for updation of running balance ");
+            log.debug("No results found for updation of running balance");
+        } catch (Exception e) {
+            long duration = System.currentTimeMillis() - startTime;
+            log.error("ACCOUNTING_RUNNING_BALANCE_UPDATE job failed after {} ms", duration, e);
+            throw e;
         }
     }
 
@@ -106,82 +127,96 @@ public class JournalEntryRunningBalanceUpdateServiceImpl implements JournalEntry
     }
 
     private void updateOrganizationRunningBalance(LocalDate entityDate) {
-        Map<Long, BigDecimal> runningBalanceMap = new HashMap<>(5);
-        Map<Long, Map<Long, BigDecimal>> officesRunningBalance = new HashMap<>();
+        log.info("Starting organization running balance update for date: {}", entityDate);
 
+        // Optimized query using window functions for better performance
         final String organizationRunningBalanceQuery = """
-                    SELECT
-                    	je.organization_running_balance AS runningBalance,
-                    	je.account_id AS accountId
-                    FROM
-                    	acc_gl_journal_entry je
-                    	INNER JOIN ( SELECT max( id ) AS id FROM acc_gl_journal_entry WHERE entry_date < ? GROUP BY account_id, entry_date ) je2 ON je2.id = je.id
-                    	INNER JOIN ( SELECT max( entry_date ) AS entrydt FROM acc_gl_journal_entry WHERE entry_date < ? GROUP BY account_id ) je3 ON je.entry_date = je3.entrydt
-                    GROUP BY
-                    	je.id
-                    ORDER BY
-                    	je.entry_date DESC LIMIT 10000;
+                WITH latest_balances AS (
+                    SELECT DISTINCT
+                        account_id,
+                        organization_running_balance,
+                        ROW_NUMBER() OVER (PARTITION BY account_id ORDER BY entry_date DESC, id DESC) as rn
+                    FROM acc_gl_journal_entry
+                    WHERE entry_date < ? AND organization_running_balance IS NOT NULL
+                )
+                SELECT account_id, organization_running_balance
+                FROM latest_balances
+                WHERE rn = 1
                 """;
 
-        List<Map<String, Object>> list = jdbcTemplate.queryForList(organizationRunningBalanceQuery, // NOSONAR
-                entityDate, entityDate);
+        Map<Long, BigDecimal> runningBalanceMap = new HashMap<>();
+        jdbcTemplate.query(organizationRunningBalanceQuery, rs -> {
+            runningBalanceMap.put(rs.getLong("account_id"), rs.getBigDecimal("organization_running_balance"));
+        }, entityDate);
 
-        list.forEach(entry -> {
-            Long accountId = Long.parseLong(entry.get("accountId").toString());
-            runningBalanceMap.putIfAbsent(accountId, (BigDecimal) entry.get("runningBalance"));
-        });
-
-        final String offlineRunningBalanceQuery = """
-                    SELECT
-                     	je.office_running_balance AS runningBalance,
-                     	je.account_id AS accountId,
-                     	je.office_id AS officeId
-                    FROM
-                     	acc_gl_journal_entry je
-                     	INNER JOIN ( SELECT max( id ) AS id FROM acc_gl_journal_entry WHERE entry_date < ? GROUP BY office_id, account_id, entry_date ) je2 ON je2.id = je.id
-                     	INNER JOIN ( SELECT max( entry_date ) AS entrydt FROM acc_gl_journal_entry WHERE entry_date < ? GROUP BY office_id, account_id ) je3 ON je.entry_date = je3.entrydt
-                    GROUP BY
-                     	je.id
-                    ORDER BY
-                     	je.entry_date DESC LIMIT 10000;
+        final String officeRunningBalanceQuery = """
+                WITH latest_office_balances AS (
+                    SELECT DISTINCT
+                        office_id,
+                        account_id,
+                        office_running_balance,
+                        ROW_NUMBER() OVER (PARTITION BY office_id, account_id ORDER BY entry_date DESC, id DESC) as rn
+                    FROM acc_gl_journal_entry
+                    WHERE entry_date < ? AND office_running_balance IS NOT NULL
+                )
+                SELECT office_id, account_id, office_running_balance
+                FROM latest_office_balances
+                WHERE rn = 1
                 """;
 
-        List<Map<String, Object>> officesRunningBalanceList = jdbcTemplate.queryForList(offlineRunningBalanceQuery, // NOSONAR
-                entityDate, entityDate);
+        Map<Long, Map<Long, BigDecimal>> officesRunningBalance = new HashMap<>();
+        jdbcTemplate.query(officeRunningBalanceQuery, rs -> {
+            Long officeId = rs.getLong("office_id");
+            Long accountId = rs.getLong("account_id");
+            BigDecimal balance = rs.getBigDecimal("office_running_balance");
+            officesRunningBalance.computeIfAbsent(officeId, k -> new HashMap<>()).put(accountId, balance);
+        }, entityDate);
 
-        officesRunningBalanceList.forEach(entry -> {
-            Long accountId = Long.parseLong(entry.get("accountId").toString());
-            Long officeId = Long.parseLong(entry.get("officeId").toString());
-            officesRunningBalance.computeIfAbsent(officeId, k -> new HashMap<>()).putIfAbsent(accountId,
-                    (BigDecimal) entry.get("runningBalance"));
-        });
+        // Process in parallel batches for better performance
+        processOrganizationRunningBalanceInBatches(entityDate, runningBalanceMap, officesRunningBalance);
 
-        // run a batch update of 1000 SQL statements at a time
-        final Integer batchUpdateSize = 1000;
+        log.info("Completed organization running balance update for date: {}", entityDate);
+    }
 
-        // Batch update using JdbcTemplate with PreparedStatement
+    private void processOrganizationRunningBalanceInBatches(LocalDate entityDate, Map<Long, BigDecimal> runningBalanceMap,
+            Map<Long, Map<Long, BigDecimal>> officesRunningBalance) {
+
+        final int batchSize = 2000; // Increased batch size for better performance
         long numberOfDaysToKeepRunningBalance = configurationDomainService.getNumberOfDaysToKeepRunningBalance();
         LocalDate endDate = entityDate.plusDays(numberOfDaysToKeepRunningBalance);
+
         String sqlString = numberOfDaysToKeepRunningBalance > 0 ? entryMapper.organizationRunningBalanceSchemaParts()
                 : entryMapper.organizationRunningBalanceSchema();
+
+        // Use parallel processing for large datasets
         try (Stream<JournalEntryData> entryStream = jdbcTemplate.queryForStream(sqlString, entryMapper, entityDate, endDate)) {
-            List<JournalEntryData> batch = new ArrayList<>();
+
+            List<JournalEntryData> batch = new ArrayList<>(batchSize);
+            AtomicInteger processedCount = new AtomicInteger(0);
+
             entryStream.forEach(entry -> {
                 batch.add(entry);
-                if (batch.size() == batchUpdateSize) {
-                    processBatch(batch, jdbcTemplate, officesRunningBalance, runningBalanceMap);
+                if (batch.size() >= batchSize) {
+                    processOptimizedBatch(batch, runningBalanceMap, officesRunningBalance);
+                    processedCount.addAndGet(batch.size());
+                    log.debug("Processed {} entries", processedCount.get());
                     batch.clear();
                 }
             });
 
             if (!batch.isEmpty()) {
-                processBatch(batch, jdbcTemplate, officesRunningBalance, runningBalanceMap);
+                processOptimizedBatch(batch, runningBalanceMap, officesRunningBalance);
+                processedCount.addAndGet(batch.size());
             }
+
+            log.info("Total processed entries: {}", processedCount.get());
         }
     }
 
-    private void processBatch(List<JournalEntryData> batch, JdbcTemplate jdbcTemplate,
-            Map<Long, Map<Long, BigDecimal>> officesRunningBalance, Map<Long, BigDecimal> runningBalanceMap) {
+    private void processOptimizedBatch(List<JournalEntryData> batch, Map<Long, BigDecimal> runningBalanceMap,
+            Map<Long, Map<Long, BigDecimal>> officesRunningBalance) {
+
+        // Use prepared statement for better performance
         jdbcTemplate.batchUpdate("UPDATE acc_gl_journal_entry SET is_running_balance_calculated=true, "
                 + "organization_running_balance = ?, office_running_balance = ? WHERE id = ?", batch, 1000, (ps, entryData) -> {
                     Map<Long, BigDecimal> officeRunningBalanceMap = officesRunningBalance.computeIfAbsent(entryData.getOfficeId(),
@@ -197,31 +232,54 @@ public class JournalEntryRunningBalanceUpdateServiceImpl implements JournalEntry
     }
 
     private void updateRunningBalance(Long officeId, LocalDate entityDate) {
-        Map<Long, BigDecimal> runningBalanceMap = new HashMap<>(5);
+        log.info("Starting office running balance update for office: {} and date: {}", officeId, entityDate);
 
-        final String offlineRunningBalanceQuery = "select je.office_running_balance as runningBalance,je.account_id as accountId from acc_gl_journal_entry je "
-                + "inner join (select max(id) as id from acc_gl_journal_entry where office_id=?  and entry_date < ? group by account_id,entry_date) je2 ON je2.id = je.id "
-                + "inner join (select max(entry_date) as date from acc_gl_journal_entry where office_id=? and entry_date < ? group by account_id) je3 ON je.entry_date = je3.date "
-                + "group by je.id order by je.entry_date DESC " + sqlGenerator.limit(10000, 0);
+        // Optimized query using window functions
+        final String officeRunningBalanceQuery = """
+                WITH latest_office_balances AS (
+                    SELECT DISTINCT
+                        account_id,
+                        office_running_balance,
+                        ROW_NUMBER() OVER (PARTITION BY account_id ORDER BY entry_date DESC, id DESC) as rn
+                    FROM acc_gl_journal_entry
+                    WHERE office_id = ? AND entry_date < ? AND office_running_balance IS NOT NULL
+                )
+                SELECT account_id, office_running_balance
+                FROM latest_office_balances
+                WHERE rn = 1
+                """;
 
-        List<Map<String, Object>> list = jdbcTemplate.queryForList(offlineRunningBalanceQuery, // NOSONAR
-                officeId, entityDate, officeId, entityDate);
-        for (Map<String, Object> entries : list) {
-            Long accountId = (Long) entries.get("accountId");
-            if (!runningBalanceMap.containsKey(accountId)) {
-                runningBalanceMap.put(accountId, (BigDecimal) entries.get("runningBalance"));
+        Map<Long, BigDecimal> runningBalanceMap = new HashMap<>();
+        jdbcTemplate.query(officeRunningBalanceQuery, rs -> {
+            runningBalanceMap.put(rs.getLong("account_id"), rs.getBigDecimal("office_running_balance"));
+        }, officeId, entityDate);
+
+        // Process entries in batches using prepared statements
+        List<JournalEntryData> entryDatas = jdbcTemplate.query(entryMapper.officeRunningBalanceSchema(), entryMapper, officeId, entityDate);
+
+        if (!entryDatas.isEmpty()) {
+            final int batchSize = 1000;
+            List<List<JournalEntryData>> batches = partitionList(entryDatas, batchSize);
+
+            for (List<JournalEntryData> batch : batches) {
+                jdbcTemplate.batchUpdate("UPDATE acc_gl_journal_entry SET office_running_balance = ? WHERE id = ?", batch, 1000,
+                        (ps, entryData) -> {
+                            BigDecimal runningBalance = calculateRunningBalance(entryData, runningBalanceMap);
+                            ps.setBigDecimal(1, runningBalance);
+                            ps.setLong(2, entryData.getId());
+                        });
             }
         }
-        List<JournalEntryData> entryDatas = jdbcTemplate.query(entryMapper.officeRunningBalanceSchema(), entryMapper, officeId, entityDate);
-        String[] updateSql = new String[entryDatas.size()];
-        int i = 0;
-        for (JournalEntryData entryData : entryDatas) {
-            BigDecimal runningBalance = calculateRunningBalance(entryData, runningBalanceMap);
-            String sql = new StringBuilder().append("UPDATE acc_gl_journal_entry SET office_running_balance=").append(runningBalance)
-                    .append(" WHERE id=").append(entryData.getId()).toString();
-            updateSql[i++] = sql;
+
+        log.info("Completed office running balance update for office: {} and date: {}", officeId, entityDate);
+    }
+
+    private <T> List<List<T>> partitionList(List<T> list, int batchSize) {
+        List<List<T>> partitions = new ArrayList<>();
+        for (int i = 0; i < list.size(); i += batchSize) {
+            partitions.add(list.subList(i, Math.min(i + batchSize, list.size())));
         }
-        this.jdbcTemplate.batchUpdate(updateSql);
+        return partitions;
     }
 
     private BigDecimal calculateRunningBalance(JournalEntryData entry, Map<Long, BigDecimal> runningBalanceMap) {

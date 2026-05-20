@@ -1,0 +1,2046 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements. See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership. The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License. You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied. See the License for the
+    specific language governing permissions and limitations
+    under the License.
+
+-->
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.1.xsd">
+    <!-- ========================================================= -->
+    <!-- Crear m_code tipoCliente si no existe -->
+    <!-- ========================================================= -->
+    <changeSet author="aocampo" id="tipoCliente-01">
+        <preConditions onFail="MARK_RAN">
+
+                <sqlCheck expectedResult="0">
+                    SELECT COUNT(*) FROM m_code WHERE code_name = 'tipoCliente'
+                </sqlCheck>
+
+        </preConditions>
+
+        <insert tableName="m_code">
+            <column name="code_name" value="tipoCliente"/>
+            <column name="is_system_defined" valueBoolean="false"/>
+        </insert>
+    </changeSet>
+
+    <!-- ========================================================= -->
+    <!-- Insertar valores de tipoCliente -->
+    <!-- ========================================================= -->
+    <changeSet author="aocampo" id="tipoCliente-02">
+
+        <!-- Nueva cliente -->
+        <sql>
+            INSERT INTO m_code_value
+            (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory)
+            SELECT c.id, 'Nueva cliente', 'Nueva cliente', 1, 1, 1, 0
+            FROM m_code c
+            WHERE c.code_name = 'tipoCliente'
+            AND NOT EXISTS (
+            SELECT 1 FROM m_code_value v
+            WHERE v.code_id = c.id
+            AND v.code_value = 'Nueva cliente'
+            );
+        </sql>
+
+        <!-- Cliente activa BC -->
+        <sql>
+            INSERT INTO m_code_value
+            (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory)
+            SELECT c.id, 'Cliente activa BC', 'Cliente activa BC', 2, 2, 1, 0
+            FROM m_code c
+            WHERE c.code_name = 'tipoCliente'
+            AND NOT EXISTS (
+            SELECT 1 FROM m_code_value v
+            WHERE v.code_id = c.id
+            AND v.code_value = 'Cliente activa BC'
+            );
+        </sql>
+
+        <!-- Ex cliente BC -->
+        <sql>
+            INSERT INTO m_code_value
+            (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory)
+            SELECT c.id, 'Ex cliente BC', 'Ex cliente BC', 3, 3, 1, 0
+            FROM m_code c
+            WHERE c.code_name = 'tipoCliente'
+            AND NOT EXISTS (
+            SELECT 1 FROM m_code_value v
+            WHERE v.code_id = c.id
+            AND v.code_value = 'Ex cliente BC'
+            );
+        </sql>
+
+        <!-- Ex cliente PAE -->
+        <sql>
+            INSERT INTO m_code_value
+            (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory)
+            SELECT c.id, 'Ex cliente PAE', 'Ex cliente PAE', 4, 4, 1, 0
+            FROM m_code c
+            WHERE c.code_name = 'tipoCliente'
+            AND NOT EXISTS (
+            SELECT 1 FROM m_code_value v
+            WHERE v.code_id = c.id
+            AND v.code_value = 'Ex cliente PAE'
+            );
+        </sql>
+
+        <!-- Cliente activa PAE (recrédito) -->
+        <sql>
+            INSERT INTO m_code_value
+            (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory)
+            SELECT c.id, 'Cliente activa PAE (recrédito)', 'Cliente activa PAE (recrédito)', 5, 5, 1, 0
+            FROM m_code c
+            WHERE c.code_name = 'tipoCliente'
+            AND NOT EXISTS (
+            SELECT 1 FROM m_code_value v
+            WHERE v.code_id = c.id
+            AND v.code_value = 'Cliente activa PAE (recrédito)'
+            );
+        </sql>
+
+    </changeSet>
+
+    <!-- ========================================================= -->
+    <!-- Crear m_code loanPurposeOptions si no existe -->
+    <!-- ========================================================= -->
+    <changeSet author="aocampo" id="loanPurposeOptions-01">
+        <preConditions onFail="MARK_RAN">
+
+                <sqlCheck expectedResult="0">
+                    SELECT COUNT(*) FROM m_code WHERE code_name = 'loanPurposeOptions'
+                </sqlCheck>
+
+        </preConditions>
+
+        <insert tableName="m_code">
+            <column name="code_name" value="loanPurposeOptions"/>
+            <column name="is_system_defined" valueBoolean="false"/>
+        </insert>
+    </changeSet>
+
+    <!-- ========================================================= -->
+    <!-- Insertar valores de loanPurposeOptions -->
+    <!-- ========================================================= -->
+    <changeSet author="aocampo" id="loanPurposeOptions-02">
+
+        <sql>
+            INSERT INTO m_code_value
+            (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory)
+            SELECT c.id, 'Capital de trabajo', 'Capital de trabajo', 1, 1, 1, 0
+            FROM m_code c
+            WHERE c.code_name = 'loanPurposeOptions'
+            AND NOT EXISTS (
+            SELECT 1 FROM m_code_value v
+            WHERE v.code_id = c.id
+            AND v.code_value = 'Capital de trabajo'
+            );
+        </sql>
+
+        <sql>
+            INSERT INTO m_code_value
+            (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory)
+            SELECT c.id, 'Activos fijos', 'Activos fijos', 2, 2, 1, 0
+            FROM m_code c
+            WHERE c.code_name = 'loanPurposeOptions'
+            AND NOT EXISTS (
+            SELECT 1 FROM m_code_value v
+            WHERE v.code_id = c.id
+            AND v.code_value = 'Activos fijos'
+            );
+        </sql>
+
+        <sql>
+            INSERT INTO m_code_value
+            (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory)
+            SELECT c.id, 'Consolidación de deudas', 'Consolidación de deudas', 3, 3, 1, 0
+            FROM m_code c
+            WHERE c.code_name = 'loanPurposeOptions'
+            AND NOT EXISTS (
+            SELECT 1 FROM m_code_value v
+            WHERE v.code_id = c.id
+            AND v.code_value = 'Consolidación de deudas'
+            );
+        </sql>
+
+        <sql>
+            INSERT INTO m_code_value
+            (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory)
+            SELECT c.id, 'Mejora de infraestructura de negocio', 'Mejora de infraestructura de negocio', 4, 4, 1, 0
+            FROM m_code c
+            WHERE c.code_name = 'loanPurposeOptions'
+            AND NOT EXISTS (
+            SELECT 1 FROM m_code_value v
+            WHERE v.code_id = c.id
+            AND v.code_value = 'Mejora de infraestructura de negocio'
+            );
+        </sql>
+
+        <sql>
+            INSERT INTO m_code_value
+            (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory)
+            SELECT c.id, 'Mejora de vivienda', 'Mejora de vivienda', 5, 5, 1, 0
+            FROM m_code c
+            WHERE c.code_name = 'loanPurposeOptions'
+            AND NOT EXISTS (
+            SELECT 1 FROM m_code_value v
+            WHERE v.code_id = c.id
+            AND v.code_value = 'Mejora de vivienda'
+            );
+        </sql>
+
+        <sql>
+            INSERT INTO m_code_value
+            (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory)
+            SELECT c.id, 'Actividad complementaria', 'Actividad complementaria', 6, 6, 1, 0
+            FROM m_code c
+            WHERE c.code_name = 'loanPurposeOptions'
+            AND NOT EXISTS (
+            SELECT 1 FROM m_code_value v
+            WHERE v.code_id = c.id
+            AND v.code_value = 'Actividad complementaria'
+            );
+        </sql>
+
+        <sql>
+            INSERT INTO m_code_value
+            (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory)
+            SELECT c.id, 'Cancelación de créditos vigentes', 'Cancelación de créditos vigentes', 7, 7, 1, 0
+            FROM m_code c
+            WHERE c.code_name = 'loanPurposeOptions'
+            AND NOT EXISTS (
+            SELECT 1 FROM m_code_value v
+            WHERE v.code_id = c.id
+            AND v.code_value = 'Cancelación de créditos vigentes'
+            );
+        </sql>
+
+        <sql>
+            INSERT INTO m_code_value
+            (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory)
+            SELECT c.id, 'Otro', 'Otro', 8, 8, 1, 0
+            FROM m_code c
+            WHERE c.code_name = 'loanPurposeOptions'
+            AND NOT EXISTS (
+            SELECT 1 FROM m_code_value v
+            WHERE v.code_id = c.id
+            AND v.code_value = 'Otro'
+            );
+        </sql>
+
+    </changeSet>
+
+    <!-- ========================================================= -->
+    <!-- classificationOptions -->
+    <!-- ========================================================= -->
+    <changeSet author="aocampo" id="classificationOptions-01">
+        <preConditions onFail="MARK_RAN">
+
+                <sqlCheck expectedResult="0">
+                    SELECT COUNT(*) FROM m_code WHERE code_name = 'classificationOptions'
+                </sqlCheck>
+
+        </preConditions>
+        <insert tableName="m_code">
+            <column name="code_name" value="classificationOptions"/>
+            <column name="is_system_defined" valueBoolean="false"/>
+        </insert>
+    </changeSet>
+
+    <changeSet author="aocampo" id="classificationOptions-02">
+
+        <sql>
+            INSERT INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory)
+            SELECT c.id, 'Agricultura', 'Agricultura', 1, 1, 1, 0
+            FROM m_code c
+            WHERE c.code_name = 'classificationOptions'
+            AND NOT EXISTS (SELECT 1 FROM m_code_value v WHERE v.code_id=c.id AND v.code_value='Agricultura');
+        </sql>
+
+        <sql>
+            INSERT INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory)
+            SELECT c.id, 'Alimentos', 'Alimentos', 2, 2, 1, 0
+            FROM m_code c
+            WHERE c.code_name='classificationOptions'
+            AND NOT EXISTS (SELECT 1 FROM m_code_value v WHERE v.code_id=c.id AND v.code_value='Alimentos');
+        </sql>
+
+        <sql>
+            INSERT INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory)
+            SELECT c.id, 'Animales', 'Animales', 3, 3, 1, 0
+            FROM m_code c
+            WHERE c.code_name='classificationOptions'
+            AND NOT EXISTS (SELECT 1 FROM m_code_value v WHERE v.code_id=c.id AND v.code_value='Animales');
+        </sql>
+
+        <sql>
+            INSERT INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory)
+            SELECT c.id, 'Artesanías', 'Artesanías', 4, 4, 1, 0
+            FROM m_code c
+            WHERE c.code_name='classificationOptions'
+            AND NOT EXISTS (SELECT 1 FROM m_code_value v WHERE v.code_id=c.id AND v.code_value='Artesanías');
+        </sql>
+
+        <sql>
+            INSERT INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory)
+            SELECT c.id, 'Comercio', 'Comercio', 5, 5, 1, 0
+            FROM m_code c
+            WHERE c.code_name='classificationOptions'
+            AND NOT EXISTS (SELECT 1 FROM m_code_value v WHERE v.code_id=c.id AND v.code_value='Comercio');
+        </sql>
+
+        <sql>
+            INSERT INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory)
+            SELECT c.id, 'Ganadería', 'Ganadería', 6, 6, 1, 0
+            FROM m_code c
+            WHERE c.code_name='classificationOptions'
+            AND NOT EXISTS (SELECT 1 FROM m_code_value v WHERE v.code_id=c.id AND v.code_value='Ganadería');
+        </sql>
+
+        <sql>
+            INSERT INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory)
+            SELECT c.id, 'Otros', 'Otros', 7, 7, 1, 0
+            FROM m_code c
+            WHERE c.code_name='classificationOptions'
+            AND NOT EXISTS (SELECT 1 FROM m_code_value v WHERE v.code_id=c.id AND v.code_value='Otros');
+        </sql>
+
+        <sql>
+            INSERT INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory)
+            SELECT c.id, 'Producción', 'Producción', 8, 8, 1, 0
+            FROM m_code c
+            WHERE c.code_name='classificationOptions'
+            AND NOT EXISTS (SELECT 1 FROM m_code_value v WHERE v.code_id=c.id AND v.code_value='Producción');
+        </sql>
+
+        <sql>
+            INSERT INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory)
+            SELECT c.id, 'Servicios', 'Servicios', 9, 9, 1, 0
+            FROM m_code c
+            WHERE c.code_name='classificationOptions'
+            AND NOT EXISTS (SELECT 1 FROM m_code_value v WHERE v.code_id=c.id AND v.code_value='Servicios');
+        </sql>
+
+        <sql>
+            INSERT INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory)
+            SELECT c.id, 'Textiles', 'Textiles', 10, 10, 1, 0
+            FROM m_code c
+            WHERE c.code_name='classificationOptions'
+            AND NOT EXISTS (SELECT 1 FROM m_code_value v WHERE v.code_id=c.id AND v.code_value='Textiles');
+        </sql>
+
+    </changeSet>
+
+
+    <!-- ========================================================= -->
+    <!-- nacionalidad -->
+    <!-- ========================================================= -->
+    <changeSet author="aocampo" id="nacionalidad-01">
+        <preConditions onFail="MARK_RAN">
+
+                <sqlCheck expectedResult="0">
+                    SELECT COUNT(*) FROM m_code WHERE code_name = 'nacionalidad'
+                </sqlCheck>
+
+        </preConditions>
+        <insert tableName="m_code">
+            <column name="code_name" value="nacionalidad"/>
+            <column name="is_system_defined" valueBoolean="false"/>
+        </insert>
+    </changeSet>
+
+    <changeSet author="aocampo" id="nacionalidad-02">
+
+        <sql>
+            INSERT INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory)
+            SELECT c.id, 'Extranjera', 'Extranjera', 1, 1, 1, 0
+            FROM m_code c
+            WHERE c.code_name='nacionalidad'
+            AND NOT EXISTS (SELECT 1 FROM m_code_value v WHERE v.code_id=c.id AND v.code_value='Extranjera');
+        </sql>
+
+        <sql>
+            INSERT INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory)
+            SELECT c.id, 'Guatemalteca', 'Guatemalteca', 2, 2, 1, 0
+            FROM m_code c
+            WHERE c.code_name='nacionalidad'
+            AND NOT EXISTS (SELECT 1 FROM m_code_value v WHERE v.code_id=c.id AND v.code_value='Guatemalteca');
+        </sql>
+
+    </changeSet>
+
+
+    <!-- ========================================================= -->
+    <!-- antiguedadNegocio -->
+    <!-- ========================================================= -->
+    <changeSet author="aocampo" id="antiguedadNegocio-01">
+        <preConditions onFail="MARK_RAN">
+
+                <sqlCheck expectedResult="0">
+                    SELECT COUNT(*) FROM m_code WHERE code_name = 'antiguedadNegocio'
+                </sqlCheck>
+
+        </preConditions>
+        <insert tableName="m_code">
+            <column name="code_name" value="antiguedadNegocio"/>
+            <column name="is_system_defined" valueBoolean="false"/>
+        </insert>
+    </changeSet>
+
+    <changeSet author="aocampo" id="antiguedadNegocio-02">
+
+        <sql>
+            INSERT INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory)
+            SELECT c.id, '&lt; 12 meses', '&lt; 12 meses', 1, 1, 1, 0
+            FROM m_code c
+            WHERE c.code_name='antiguedadNegocio'
+            AND NOT EXISTS (SELECT 1 FROM m_code_value v WHERE v.code_id=c.id AND v.code_value='&lt; 12 meses');
+        </sql>
+
+        <sql>
+            INSERT INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory)
+            SELECT c.id, '12 - 24 meses', '12 - 24 meses', 2, 2, 1, 0
+            FROM m_code c
+            WHERE c.code_name='antiguedadNegocio'
+            AND NOT EXISTS (SELECT 1 FROM m_code_value v WHERE v.code_id=c.id AND v.code_value='12 - 24 meses');
+        </sql>
+
+        <sql>
+            INSERT INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory)
+            SELECT c.id, '24 - 36 meses', '24 - 36 meses', 3, 3, 1, 0
+            FROM m_code c
+            WHERE c.code_name='antiguedadNegocio'
+            AND NOT EXISTS (SELECT 1 FROM m_code_value v WHERE v.code_id=c.id AND v.code_value='24 - 36 meses');
+        </sql>
+
+        <sql>
+            INSERT INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory)
+            SELECT c.id, '36 - 48 meses', '36 - 48 meses', 4, 4, 1, 0
+            FROM m_code c
+            WHERE c.code_name='antiguedadNegocio'
+            AND NOT EXISTS (SELECT 1 FROM m_code_value v WHERE v.code_id=c.id AND v.code_value='36 - 48 meses');
+        </sql>
+
+        <sql>
+            INSERT INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory)
+            SELECT c.id, '&gt; 48 meses', '&gt; 48 meses', 5, 5, 1, 0
+            FROM m_code c
+            WHERE c.code_name='antiguedadNegocio'
+            AND NOT EXISTS (SELECT 1 FROM m_code_value v WHERE v.code_id=c.id AND v.code_value='&gt; 48 meses');
+        </sql>
+
+    </changeSet>
+
+
+    <!-- ========================================================= -->
+    <!-- Ldepartamento -->
+    <!-- ========================================================= -->
+    <changeSet author="aocampo" id="Ldepartamento-01">
+        <preConditions onFail="MARK_RAN">
+
+                <sqlCheck expectedResult="0">
+                    SELECT COUNT(*) FROM m_code WHERE code_name = 'Ldepartamento'
+                </sqlCheck>
+
+        </preConditions>
+        <insert tableName="m_code">
+            <column name="code_name" value="Ldepartamento"/>
+            <column name="is_system_defined" valueBoolean="false"/>
+        </insert>
+    </changeSet>
+
+    <changeSet author="aocampo" id="Ldepartamento-02">
+
+        <sql>
+            INSERT INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory)
+            SELECT c.id,'Alta Verapaz','Alta Verapaz',1,1,1,0
+            FROM m_code c
+            WHERE c.code_name='Ldepartamento'
+            AND NOT EXISTS (SELECT 1 FROM m_code_value v WHERE v.code_id=c.id AND v.code_value='Alta Verapaz');
+        </sql>
+
+        <sql>
+            INSERT INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory)
+            SELECT c.id,'Baja Verapaz','Baja Verapaz',2,2,1,0
+            FROM m_code c
+            WHERE c.code_name='Ldepartamento'
+            AND NOT EXISTS (SELECT 1 FROM m_code_value v WHERE v.code_id=c.id AND v.code_value='Baja Verapaz');
+        </sql>
+
+        <sql>
+            INSERT INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory)
+            SELECT c.id,'Chimaltenango','Chimaltenango',3,3,1,0
+            FROM m_code c
+            WHERE c.code_name='Ldepartamento'
+            AND NOT EXISTS (SELECT 1 FROM m_code_value v WHERE v.code_id=c.id AND v.code_value='Chimaltenango');
+        </sql>
+
+        <sql>
+            INSERT INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory)
+            SELECT c.id,'Chiquimula','Chiquimula',4,4,1,0
+            FROM m_code c
+            WHERE c.code_name='Ldepartamento'
+            AND NOT EXISTS (SELECT 1 FROM m_code_value v WHERE v.code_id=c.id AND v.code_value='Chiquimula');
+        </sql>
+
+        <sql>
+            INSERT INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory)
+            SELECT c.id,'El Progreso','El Progreso',5,5,1,0
+            FROM m_code c
+            WHERE c.code_name='Ldepartamento'
+            AND NOT EXISTS (SELECT 1 FROM m_code_value v WHERE v.code_id=c.id AND v.code_value='El Progreso');
+        </sql>
+
+        <sql>
+            INSERT INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory)
+            SELECT c.id,'Escuintla','Escuintla',6,6,1,0
+            FROM m_code c
+            WHERE c.code_name='Ldepartamento'
+            AND NOT EXISTS (SELECT 1 FROM m_code_value v WHERE v.code_id=c.id AND v.code_value='Escuintla');
+        </sql>
+
+        <sql>
+            INSERT INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory)
+            SELECT c.id,'Guatemala','Guatemala',7,7,1,0
+            FROM m_code c
+            WHERE c.code_name='Ldepartamento'
+            AND NOT EXISTS (SELECT 1 FROM m_code_value v WHERE v.code_id=c.id AND v.code_value='Guatemala');
+        </sql>
+
+        <sql>
+            INSERT INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory)
+            SELECT c.id,'Huehuetenango','Huehuetenango',8,8,1,0
+            FROM m_code c
+            WHERE c.code_name='Ldepartamento'
+            AND NOT EXISTS (SELECT 1 FROM m_code_value v WHERE v.code_id=c.id AND v.code_value='Huehuetenango');
+        </sql>
+
+        <sql>
+            INSERT INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory)
+            SELECT c.id,'Izabal','Izabal',9,9,1,0
+            FROM m_code c
+            WHERE c.code_name='Ldepartamento'
+            AND NOT EXISTS (SELECT 1 FROM m_code_value v WHERE v.code_id=c.id AND v.code_value='Izabal');
+        </sql>
+
+        <sql>
+            INSERT INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory)
+            SELECT c.id,'Jalapa','Jalapa',10,10,1,0
+            FROM m_code c
+            WHERE c.code_name='Ldepartamento'
+            AND NOT EXISTS (SELECT 1 FROM m_code_value v WHERE v.code_id=c.id AND v.code_value='Jalapa');
+        </sql>
+
+        <sql>
+            INSERT INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory)
+            SELECT c.id,'Jutiapa','Jutiapa',11,11,1,0
+            FROM m_code c
+            WHERE c.code_name='Ldepartamento'
+            AND NOT EXISTS (SELECT 1 FROM m_code_value v WHERE v.code_id=c.id AND v.code_value='Jutiapa');
+        </sql>
+
+        <sql>
+            INSERT INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory)
+            SELECT c.id,'Petén','Petén',12,12,1,0
+            FROM m_code c
+            WHERE c.code_name='Ldepartamento'
+            AND NOT EXISTS (SELECT 1 FROM m_code_value v WHERE v.code_id=c.id AND v.code_value='Petén');
+        </sql>
+
+        <sql>
+            INSERT INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory)
+            SELECT c.id,'Quetzaltenango','Quetzaltenango',13,13,1,0
+            FROM m_code c
+            WHERE c.code_name='Ldepartamento'
+            AND NOT EXISTS (SELECT 1 FROM m_code_value v WHERE v.code_id=c.id AND v.code_value='Quetzaltenango');
+        </sql>
+
+        <sql>
+            INSERT INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory)
+            SELECT c.id,'Quiché','Quiché',14,14,1,0
+            FROM m_code c
+            WHERE c.code_name='Ldepartamento'
+            AND NOT EXISTS (SELECT 1 FROM m_code_value v WHERE v.code_id=c.id AND v.code_value='Quiché');
+        </sql>
+
+        <sql>
+            INSERT INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory)
+            SELECT c.id,'Retalhuleu','Retalhuleu',15,15,1,0
+            FROM m_code c
+            WHERE c.code_name='Ldepartamento'
+            AND NOT EXISTS (SELECT 1 FROM m_code_value v WHERE v.code_id=c.id AND v.code_value='Retalhuleu');
+        </sql>
+
+        <sql>
+            INSERT INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory)
+            SELECT c.id,'Sacatepéquez','Sacatepéquez',16,16,1,0
+            FROM m_code c
+            WHERE c.code_name='Ldepartamento'
+            AND NOT EXISTS (SELECT 1 FROM m_code_value v WHERE v.code_id=c.id AND v.code_value='Sacatepéquez');
+        </sql>
+
+        <sql>
+            INSERT INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory)
+            SELECT c.id,'San Marcos','San Marcos',17,17,1,0
+            FROM m_code c
+            WHERE c.code_name='Ldepartamento'
+            AND NOT EXISTS (SELECT 1 FROM m_code_value v WHERE v.code_id=c.id AND v.code_value='San Marcos');
+        </sql>
+
+        <sql>
+            INSERT INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory)
+            SELECT c.id,'Santa Rosa','Santa Rosa',18,18,1,0
+            FROM m_code c
+            WHERE c.code_name='Ldepartamento'
+            AND NOT EXISTS (SELECT 1 FROM m_code_value v WHERE v.code_id=c.id AND v.code_value='Santa Rosa');
+        </sql>
+
+        <sql>
+            INSERT INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory)
+            SELECT c.id,'Sololá','Sololá',19,19,1,0
+            FROM m_code c
+            WHERE c.code_name='Ldepartamento'
+            AND NOT EXISTS (SELECT 1 FROM m_code_value v WHERE v.code_id=c.id AND v.code_value='Sololá');
+        </sql>
+
+        <sql>
+            INSERT INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory)
+            SELECT c.id,'Suchitepéquez','Suchitepéquez',20,20,1,0
+            FROM m_code c
+            WHERE c.code_name='Ldepartamento'
+            AND NOT EXISTS (SELECT 1 FROM m_code_value v WHERE v.code_id=c.id AND v.code_value='Suchitepéquez');
+        </sql>
+
+        <sql>
+            INSERT INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory)
+            SELECT c.id,'Totonicapán','Totonicapán',21,21,1,0
+            FROM m_code c
+            WHERE c.code_name='Ldepartamento'
+            AND NOT EXISTS (SELECT 1 FROM m_code_value v WHERE v.code_id=c.id AND v.code_value='Totonicapán');
+        </sql>
+
+        <sql>
+            INSERT INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory)
+            SELECT c.id,'Zacapa','Zacapa',22,22,1,0
+            FROM m_code c
+            WHERE c.code_name='Ldepartamento'
+            AND NOT EXISTS (SELECT 1 FROM m_code_value v WHERE v.code_id=c.id AND v.code_value='Zacapa');
+        </sql>
+
+    </changeSet>
+
+
+    <!-- ========================================================= -->
+    <!-- YesNo -->
+    <!-- ========================================================= -->
+    <changeSet author="aocampo" id="YesNo-01">
+        <preConditions onFail="MARK_RAN">
+
+                <sqlCheck expectedResult="0">
+                    SELECT COUNT(*) FROM m_code WHERE code_name = 'YesNo'
+                </sqlCheck>
+
+        </preConditions>
+        <insert tableName="m_code">
+            <column name="code_name" value="YesNo"/>
+            <column name="is_system_defined" valueBoolean="false"/>
+        </insert>
+    </changeSet>
+
+    <changeSet author="aocampo" id="YesNo-02">
+
+        <sql>
+            INSERT INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory)
+            SELECT c.id,'SI','SI',1,1,1,0
+            FROM m_code c WHERE c.code_name='YesNo'
+            AND NOT EXISTS (SELECT 1 FROM m_code_value v WHERE v.code_id=c.id AND v.code_value='SI');
+        </sql>
+
+        <sql>
+            INSERT INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory)
+            SELECT c.id,'NO','NO',2,2,1,0
+            FROM m_code c WHERE c.code_name='YesNo'
+            AND NOT EXISTS (SELECT 1 FROM m_code_value v WHERE v.code_id=c.id AND v.code_value='NO');
+        </sql>
+
+    </changeSet>
+
+
+    <!-- ===================== guarantee ========================= -->
+    <changeSet author="aocampo" id="guarantee-02">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">SELECT COUNT(*) FROM m_code WHERE code_name='guarantee'</sqlCheck>
+        </preConditions>
+        <insert tableName="m_code">
+            <column name="code_name" value="guarantee"/>
+            <column name="is_system_defined" valueBoolean="false"/>
+        </insert>
+    </changeSet>
+
+    <changeSet author="aocampo" id="guarantee-03">
+
+        <sql>
+            INSERT INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory)
+            SELECT c.id,'Un fiador','Un fiador',1,1,1,0
+            FROM m_code c WHERE c.code_name='guarantee'
+            AND NOT EXISTS (SELECT 1 FROM m_code_value v WHERE v.code_id=c.id AND v.code_value='Un fiador');
+        </sql>
+
+        <sql>
+            INSERT INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory)
+            SELECT c.id,'Dos fiadores','Dos fiadores',2,2,1,0
+            FROM m_code c WHERE c.code_name='guarantee'
+            AND NOT EXISTS (SELECT 1 FROM m_code_value v WHERE v.code_id=c.id AND v.code_value='Dos fiadores');
+        </sql>
+
+        <sql>
+            INSERT INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory)
+            SELECT c.id,'Fiador Moral','Fiador Moral',3,3,1,0
+            FROM m_code c WHERE c.code_name='guarantee'
+            AND NOT EXISTS (SELECT 1 FROM m_code_value v WHERE v.code_id=c.id AND v.code_value='Fiador Moral');
+        </sql>
+
+        <sql>
+            INSERT INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory)
+            SELECT c.id,'Hipoteca','Hipoteca',7,7,1,0
+            FROM m_code c WHERE c.code_name='guarantee'
+            AND NOT EXISTS (SELECT 1 FROM m_code_value v WHERE v.code_id=c.id AND v.code_value='Hipoteca');
+        </sql>
+
+    </changeSet>
+
+
+    <!-- ===================== gender ============================= -->
+    <changeSet author="aocampo" id="gender-01">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">SELECT COUNT(*) FROM m_code WHERE code_name='gender'</sqlCheck>
+        </preConditions>
+        <insert tableName="m_code">
+            <column name="code_name" value="gender"/>
+            <column name="is_system_defined" valueBoolean="false"/>
+        </insert>
+    </changeSet>
+
+    <changeSet author="aocampo" id="gender-02">
+
+        <sql>
+            INSERT INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory)
+            SELECT c.id,'Masculino','Masculino',1,1,1,0
+            FROM m_code c WHERE c.code_name='gender'
+            AND NOT EXISTS (SELECT 1 FROM m_code_value v WHERE v.code_id=c.id AND v.code_value='Masculino');
+        </sql>
+
+        <sql>
+            INSERT INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory)
+            SELECT c.id,'Femenino','Femenino',2,2,1,0
+            FROM m_code c WHERE c.code_name='gender'
+            AND NOT EXISTS (SELECT 1 FROM m_code_value v WHERE v.code_id=c.id AND v.code_value='Femenino');
+        </sql>
+
+    </changeSet>
+
+
+    <!-- ===================== loanSubject ======================== -->
+    <changeSet author="aocampo" id="loanSubject-01">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">SELECT COUNT(*) FROM m_code WHERE code_name='loanSubject'</sqlCheck>
+        </preConditions>
+        <insert tableName="m_code">
+            <column name="code_name" value="loanSubject"/>
+            <column name="is_system_defined" valueBoolean="false"/>
+        </insert>
+    </changeSet>
+
+    <changeSet author="aocampo" id="loanSubject-02">
+
+        <sql>
+            INSERT INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory)
+            SELECT c.id,'Natural','Natural',1,1,1,0
+            FROM m_code c WHERE c.code_name='loanSubject'
+            AND NOT EXISTS (SELECT 1 FROM m_code_value v WHERE v.code_id=c.id AND v.code_value='Natural');
+        </sql>
+
+        <sql>
+            INSERT INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory)
+            SELECT c.id,'Juridica','Juridica',2,2,1,0
+            FROM m_code c WHERE c.code_name='loanSubject'
+            AND NOT EXISTS (SELECT 1 FROM m_code_value v WHERE v.code_id=c.id AND v.code_value='Juridica');
+        </sql>
+
+        <sql>
+            INSERT INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory)
+            SELECT c.id,'Ambulante','Ambulante',3,3,1,0
+            FROM m_code c WHERE c.code_name='loanSubject'
+            AND NOT EXISTS (SELECT 1 FROM m_code_value v WHERE v.code_id=c.id AND v.code_value='Ambulante');
+        </sql>
+
+    </changeSet>
+
+
+    <!-- ===================== marketMeta ========================= -->
+    <changeSet author="aocampo" id="marketMeta-01">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">SELECT COUNT(*) FROM m_code WHERE code_name='marketMeta'</sqlCheck>
+        </preConditions>
+        <insert tableName="m_code">
+            <column name="code_name" value="marketMeta"/>
+            <column name="is_system_defined" valueBoolean="false"/>
+        </insert>
+    </changeSet>
+
+    <changeSet author="aocampo" id="marketMeta-02">
+
+        <sql>
+            INSERT INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory)
+            SELECT c.id,'Extranjero','Extranjero',1,1,1,0
+            FROM m_code c
+            WHERE c.code_name='marketMeta'
+            AND NOT EXISTS (SELECT 1 FROM m_code_value v WHERE v.code_id=c.id AND v.code_value='Extranjero');
+        </sql>
+
+        <sql>
+            INSERT INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory)
+            SELECT c.id,'Urbano','Urbano',2,2,1,0
+            FROM m_code c
+            WHERE c.code_name='marketMeta'
+            AND NOT EXISTS (SELECT 1 FROM m_code_value v WHERE v.code_id=c.id AND v.code_value='Urbano');
+        </sql>
+
+        <sql>
+            INSERT INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory)
+            SELECT c.id,'Peri urbano','Peri urbano',3,3,1,0
+            FROM m_code c
+            WHERE c.code_name='marketMeta'
+            AND NOT EXISTS (SELECT 1 FROM m_code_value v WHERE v.code_id=c.id AND v.code_value='Peri urbano');
+        </sql>
+
+        <sql>
+            INSERT INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory)
+            SELECT c.id,'Rural','Rural',4,4,1,0
+            FROM m_code c
+            WHERE c.code_name='marketMeta'
+            AND NOT EXISTS (SELECT 1 FROM m_code_value v WHERE v.code_id=c.id AND v.code_value='Rural');
+        </sql>
+
+    </changeSet>
+
+    <!-- ===================== housingType ======================== -->
+    <changeSet author="aocampo" id="housingType-01">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">SELECT COUNT(*) FROM m_code WHERE code_name='housingType'</sqlCheck>
+        </preConditions>
+        <insert tableName="m_code">
+            <column name="code_name" value="housingType"/>
+            <column name="is_system_defined" valueBoolean="false"/>
+        </insert>
+    </changeSet>
+
+    <changeSet author="aocampo" id="housingType-02">
+
+        <sql>
+            INSERT INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory)
+            SELECT c.id,'Alquilada','Alquilada',1,1,1,0
+            FROM m_code c
+            WHERE c.code_name='housingType'
+            AND NOT EXISTS (SELECT 1 FROM m_code_value v WHERE v.code_id=c.id AND v.code_value='Alquilada');
+        </sql>
+
+        <sql>
+            INSERT INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory)
+            SELECT c.id,'Pagándola','Pagándola',2,2,1,0
+            FROM m_code c
+            WHERE c.code_name='housingType'
+            AND NOT EXISTS (SELECT 1 FROM m_code_value v WHERE v.code_id=c.id AND v.code_value='Pagándola');
+        </sql>
+
+        <sql>
+            INSERT INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory)
+            SELECT c.id,'Propia','Propia',3,3,1,0
+            FROM m_code c
+            WHERE c.code_name='housingType'
+            AND NOT EXISTS (SELECT 1 FROM m_code_value v WHERE v.code_id=c.id AND v.code_value='Propia');
+        </sql>
+
+        <sql>
+            INSERT INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory)
+            SELECT c.id,'Familiar','Familiar',4,4,1,0
+            FROM m_code c
+            WHERE c.code_name='housingType'
+            AND NOT EXISTS (SELECT 1 FROM m_code_value v WHERE v.code_id=c.id AND v.code_value='Familiar');
+        </sql>
+
+    </changeSet>
+
+
+    <!-- ===================== dependents ========================= -->
+    <changeSet author="aocampo" id="dependents-01">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">SELECT COUNT(*) FROM m_code WHERE code_name='dependents'</sqlCheck>
+        </preConditions>
+        <insert tableName="m_code">
+            <column name="code_name" value="dependents"/>
+            <column name="is_system_defined" valueBoolean="false"/>
+        </insert>
+    </changeSet>
+
+    <changeSet author="aocampo" id="dependents-02">
+
+        <sql>
+            INSERT INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory)
+            SELECT c.id,'2+ Dependientes','2+ Dependientes',1,1,1,0
+            FROM m_code c
+            WHERE c.code_name='dependents'
+            AND NOT EXISTS (SELECT 1 FROM m_code_value v WHERE v.code_id=c.id AND v.code_value='2+ Dependientes');
+        </sql>
+
+        <sql>
+            INSERT INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory)
+            SELECT c.id,'1 Dependiente','1 Dependiente',2,2,1,0
+            FROM m_code c
+            WHERE c.code_name='dependents'
+            AND NOT EXISTS (SELECT 1 FROM m_code_value v WHERE v.code_id=c.id AND v.code_value='1 Dependiente');
+        </sql>
+
+        <sql>
+            INSERT INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory)
+            SELECT c.id,'No dependientes','No dependientes',3,3,1,0
+            FROM m_code c
+            WHERE c.code_name='dependents'
+            AND NOT EXISTS (SELECT 1 FROM m_code_value v WHERE v.code_id=c.id AND v.code_value='No dependientes');
+        </sql>
+
+    </changeSet>
+
+
+    <!-- ===================== yearsOperating ===================== -->
+    <changeSet author="aocampo" id="yearsOperating-01">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">SELECT COUNT(*) FROM m_code WHERE code_name='yearsOperating'</sqlCheck>
+        </preConditions>
+        <insert tableName="m_code">
+            <column name="code_name" value="yearsOperating"/>
+            <column name="is_system_defined" valueBoolean="false"/>
+        </insert>
+    </changeSet>
+
+    <changeSet author="aocampo" id="yearsOperating-02">
+
+        <sql>
+            INSERT INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory)
+            SELECT c.id,'&lt; 36 meses - No aplica','&lt; 36 meses - No aplica',1,1,1,0
+            FROM m_code c WHERE c.code_name='yearsOperating'
+            AND NOT EXISTS (SELECT 1 FROM m_code_value v WHERE v.code_id=c.id AND v.code_value='&lt; 36 meses - No aplica');
+        </sql>
+
+        <sql>
+            INSERT INTO m_code_value (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory)
+            SELECT c.id,'&gt; 36 meses - Aplica','&gt; 36 meses - Aplica',2,2,1,0
+            FROM m_code c WHERE c.code_name='yearsOperating'
+            AND NOT EXISTS (SELECT 1 FROM m_code_value v WHERE v.code_id=c.id AND v.code_value='&gt; 36 meses - Aplica');
+        </sql>
+
+    </changeSet>
+
+    <!-- ===================== professionGuarantor ========================= -->
+    <changeSet author="aocampo" id="professionGuarantor-01">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">
+                SELECT COUNT(*) FROM m_code WHERE code_name = 'professionGuarantor'
+            </sqlCheck>
+        </preConditions>
+
+        <insert tableName="m_code">
+            <column name="code_name" value="professionGuarantor"/>
+            <column name="is_system_defined" valueBoolean="false"/>
+        </insert>
+    </changeSet>
+
+    <changeSet author="aocampo" id="professionGuarantor-02">
+
+        <sql>
+            INSERT INTO m_code_value
+            (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory)
+            SELECT c.id, 'Empleado(a)', 'Empleado(a)', 1, 1, 1, 0
+            FROM m_code c
+            WHERE c.code_name = 'professionGuarantor'
+            AND NOT EXISTS (
+            SELECT 1 FROM m_code_value v
+            WHERE v.code_id = c.id
+            AND v.code_value = 'Empleado(a)'
+            );
+        </sql>
+
+        <sql>
+            INSERT INTO m_code_value
+            (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory)
+            SELECT c.id, 'Empresario', 'Empresario', 2, 2, 1, 0
+            FROM m_code c
+            WHERE c.code_name = 'professionGuarantor'
+            AND NOT EXISTS (
+            SELECT 1 FROM m_code_value v
+            WHERE v.code_id = c.id
+            AND v.code_value = 'Empresario'
+            );
+        </sql>
+
+    </changeSet>
+
+    <!-- ===================== readWrite ========================= -->
+    <changeSet author="aocampo" id="readWrite-01">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">
+                SELECT COUNT(*) FROM m_code WHERE code_name = 'readWrite'
+            </sqlCheck>
+        </preConditions>
+
+        <insert tableName="m_code">
+            <column name="code_name" value="readWrite"/>
+            <column name="is_system_defined" valueBoolean="false"/>
+        </insert>
+    </changeSet>
+
+    <changeSet author="aocampo" id="readWrite-02">
+
+        <sql>
+            INSERT INTO m_code_value
+            (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory)
+            SELECT c.id, 'No', 'No', 1, 1, 1, 0
+            FROM m_code c
+            WHERE c.code_name = 'readWrite'
+            AND NOT EXISTS (
+            SELECT 1 FROM m_code_value v
+            WHERE v.code_id = c.id
+            AND v.code_value = 'No'
+            );
+        </sql>
+
+        <sql>
+            INSERT INTO m_code_value
+            (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory)
+            SELECT c.id, 'Nivel intermedio o mínimo', 'Nivel intermedio o mínimo', 2, 2, 1, 0
+            FROM m_code c
+            WHERE c.code_name = 'readWrite'
+            AND NOT EXISTS (
+            SELECT 1 FROM m_code_value v
+            WHERE v.code_id = c.id
+            AND v.code_value = 'Nivel intermedio o mínimo'
+            );
+        </sql>
+
+        <sql>
+            INSERT INTO m_code_value
+            (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory)
+            SELECT c.id, 'Si', 'Si', 3, 3, 1, 0
+            FROM m_code c
+            WHERE c.code_name = 'readWrite'
+            AND NOT EXISTS (
+            SELECT 1 FROM m_code_value v
+            WHERE v.code_id = c.id
+            AND v.code_value = 'Si'
+            );
+        </sql>
+
+    </changeSet>
+
+    <!-- ===================== chargeProductsWithoutAssistance ========================= -->
+    <changeSet author="aocampo" id="chargeProductsWithoutAssistance-01">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">
+                SELECT COUNT(*) FROM m_code WHERE code_name = 'chargeProductsWithoutAssistance'
+            </sqlCheck>
+        </preConditions>
+
+        <insert tableName="m_code">
+            <column name="code_name" value="chargeProductsWithoutAssistance"/>
+            <column name="is_system_defined" valueBoolean="false"/>
+        </insert>
+    </changeSet>
+
+    <changeSet author="aocampo" id="chargeProductsWithoutAssistance-02">
+
+        <sql>
+            INSERT INTO m_code_value
+            (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory)
+            SELECT c.id, 'Habilidad limitada', 'Habilidad limitada', 1, 1, 1, 0
+            FROM m_code c
+            WHERE c.code_name = 'chargeProductsWithoutAssistance'
+            AND NOT EXISTS (
+            SELECT 1 FROM m_code_value v
+            WHERE v.code_id = c.id
+            AND v.code_value = 'Habilidad limitada'
+            );
+        </sql>
+
+        <sql>
+            INSERT INTO m_code_value
+            (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory)
+            SELECT c.id, 'Habilidad relativa cuenta con ayuda de otras personas',
+            'Habilidad relativa cuenta con ayuda de otras personas',
+            2, 2, 1, 0
+            FROM m_code c
+            WHERE c.code_name = 'chargeProductsWithoutAssistance'
+            AND NOT EXISTS (
+            SELECT 1 FROM m_code_value v
+            WHERE v.code_id = c.id
+            AND v.code_value = 'Habilidad relativa cuenta con ayuda de otras personas'
+            );
+        </sql>
+
+        <sql>
+            INSERT INTO m_code_value
+            (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory)
+            SELECT c.id, 'Si, no requiere ayuda', 'Si, no requiere ayuda', 3, 3, 1, 0
+            FROM m_code c
+            WHERE c.code_name = 'chargeProductsWithoutAssistance'
+            AND NOT EXISTS (
+            SELECT 1 FROM m_code_value v
+            WHERE v.code_id = c.id
+            AND v.code_value = 'Si, no requiere ayuda'
+            );
+        </sql>
+
+    </changeSet>
+
+    <!-- ===================== additionalBusiness ========================= -->
+    <changeSet author="aocampo" id="additionalBusiness-01">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">
+                SELECT COUNT(*) FROM m_code WHERE code_name = 'additionalBusiness'
+            </sqlCheck>
+        </preConditions>
+
+        <insert tableName="m_code">
+            <column name="code_name" value="additionalBusiness"/>
+            <column name="is_system_defined" valueBoolean="false"/>
+        </insert>
+    </changeSet>
+
+    <changeSet author="aocampo" id="additionalBusiness-02">
+
+        <sql>
+            INSERT INTO m_code_value
+            (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory)
+            SELECT c.id, 'No negocios adicionales', 'No negocios adicionales', 1, 1, 1, 0
+            FROM m_code c
+            WHERE c.code_name = 'additionalBusiness'
+            AND NOT EXISTS (
+            SELECT 1 FROM m_code_value v
+            WHERE v.code_id = c.id
+            AND v.code_value = 'No negocios adicionales'
+            );
+        </sql>
+
+        <sql>
+            INSERT INTO m_code_value
+            (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory)
+            SELECT c.id, 'Si, un negocio adicional', 'Si, un negocio adicional', 2, 2, 1, 0
+            FROM m_code c
+            WHERE c.code_name = 'additionalBusiness'
+            AND NOT EXISTS (
+            SELECT 1 FROM m_code_value v
+            WHERE v.code_id = c.id
+            AND v.code_value = 'Si, un negocio adicional'
+            );
+        </sql>
+
+        <sql>
+            INSERT INTO m_code_value
+            (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory)
+            SELECT c.id, 'Si, más de un negocio adicional',
+            'Si, más de un negocio adicional',
+            3, 3, 1, 0
+            FROM m_code c
+            WHERE c.code_name = 'additionalBusiness'
+            AND NOT EXISTS (
+            SELECT 1 FROM m_code_value v
+            WHERE v.code_id = c.id
+            AND v.code_value = 'Si, más de un negocio adicional'
+            );
+        </sql>
+
+    </changeSet>
+
+    <!-- ===================== businessRegistration ========================= -->
+    <changeSet author="aocampo" id="businessRegistration-01">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">
+                SELECT COUNT(*) FROM m_code WHERE code_name = 'businessRegistration'
+            </sqlCheck>
+        </preConditions>
+
+        <insert tableName="m_code">
+            <column name="code_name" value="businessRegistration"/>
+            <column name="is_system_defined" valueBoolean="false"/>
+        </insert>
+    </changeSet>
+
+    <changeSet author="aocampo" id="businessRegistration-02">
+
+        <sql>
+            INSERT INTO m_code_value
+            (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory)
+            SELECT c.id, 'No', 'No', 1, 1, 1, 0
+            FROM m_code c
+            WHERE c.code_name = 'businessRegistration'
+            AND NOT EXISTS (
+            SELECT 1 FROM m_code_value v
+            WHERE v.code_id = c.id
+            AND v.code_value = 'No'
+            );
+        </sql>
+
+        <sql>
+            INSERT INTO m_code_value
+            (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory)
+            SELECT c.id, 'Si, mantiene algún registro de sus operaciones',
+            'Si, mantiene algún registro de sus operaciones',
+            2, 2, 1, 0
+            FROM m_code c
+            WHERE c.code_name = 'businessRegistration'
+            AND NOT EXISTS (
+            SELECT 1 FROM m_code_value v
+            WHERE v.code_id = c.id
+            AND v.code_value = 'Si, mantiene algún registro de sus operaciones'
+            );
+        </sql>
+
+        <sql>
+            INSERT INTO m_code_value
+            (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory)
+            SELECT c.id, 'Si, mantiene registros detallados',
+            'Si, mantiene registros detallados',
+            3, 3, 1, 0
+            FROM m_code c
+            WHERE c.code_name = 'businessRegistration'
+            AND NOT EXISTS (
+            SELECT 1 FROM m_code_value v
+            WHERE v.code_id = c.id
+            AND v.code_value = 'Si, mantiene registros detallados'
+            );
+        </sql>
+
+    </changeSet>
+
+    <!-- ===================== salariedEmployees ========================= -->
+    <changeSet author="aocampo" id="salariedEmployees-01">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">
+                SELECT COUNT(*) FROM m_code WHERE code_name = 'salariedEmployees'
+            </sqlCheck>
+        </preConditions>
+
+        <insert tableName="m_code">
+            <column name="code_name" value="salariedEmployees"/>
+            <column name="is_system_defined" valueBoolean="false"/>
+        </insert>
+    </changeSet>
+
+    <changeSet author="aocampo" id="salariedEmployees-02">
+
+        <sql>
+            INSERT INTO m_code_value
+            (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory)
+            SELECT c.id, 'Ningún empleado', 'Ningún empleado', 1, 1, 1, 0
+            FROM m_code c
+            WHERE c.code_name = 'salariedEmployees'
+            AND NOT EXISTS (
+            SELECT 1 FROM m_code_value v
+            WHERE v.code_id = c.id
+            AND v.code_value = 'Ningún empleado'
+            );
+        </sql>
+
+        <sql>
+            INSERT INTO m_code_value
+            (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory)
+            SELECT c.id, '1-3 empleados', '1-3 empleados', 2, 2, 1, 0
+            FROM m_code c
+            WHERE c.code_name = 'salariedEmployees'
+            AND NOT EXISTS (
+            SELECT 1 FROM m_code_value v
+            WHERE v.code_id = c.id
+            AND v.code_value = '1-3 empleados'
+            );
+        </sql>
+
+        <sql>
+            INSERT INTO m_code_value
+            (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory)
+            SELECT c.id, 'Más de 3 empleados', 'Más de 3 empleados', 3, 3, 1, 0
+            FROM m_code c
+            WHERE c.code_name = 'salariedEmployees'
+            AND NOT EXISTS (
+            SELECT 1 FROM m_code_value v
+            WHERE v.code_id = c.id
+            AND v.code_value = 'Más de 3 empleados'
+            );
+        </sql>
+
+    </changeSet>
+
+    <!-- ===================== loansInstitutions ========================= -->
+    <changeSet author="aocampo" id="loansInstitutions-01">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">
+                SELECT COUNT(*) FROM m_code WHERE code_name = 'loansInstitutions'
+            </sqlCheck>
+        </preConditions>
+
+        <insert tableName="m_code">
+            <column name="code_name" value="loansInstitutions"/>
+            <column name="is_system_defined" valueBoolean="false"/>
+        </insert>
+    </changeSet>
+
+    <changeSet author="aocampo" id="loansInstitutions-02">
+
+        <sql>
+            INSERT INTO m_code_value
+            (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory)
+            SELECT c.id, 'No tiene experiencia', 'No tiene experiencia', 1, 1, 1, 0
+            FROM m_code c
+            WHERE c.code_name = 'loansInstitutions'
+            AND NOT EXISTS (
+            SELECT 1 FROM m_code_value v
+            WHERE v.code_id = c.id
+            AND v.code_value = 'No tiene experiencia'
+            );
+        </sql>
+
+        <sql>
+            INSERT INTO m_code_value
+            (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory)
+            SELECT c.id, 'Tiene experiencia', 'Tiene experiencia', 2, 2, 1, 0
+            FROM m_code c
+            WHERE c.code_name = 'loansInstitutions'
+            AND NOT EXISTS (
+            SELECT 1 FROM m_code_value v
+            WHERE v.code_id = c.id
+            AND v.code_value = 'Tiene experiencia'
+            );
+        </sql>
+
+    </changeSet>
+
+    <!-- ===================== growthPlans ========================= -->
+    <changeSet author="aocampo" id="growthPlans-01">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">
+                SELECT COUNT(*) FROM m_code WHERE code_name = 'growthPlans'
+            </sqlCheck>
+        </preConditions>
+        <insert tableName="m_code">
+            <column name="code_name" value="growthPlans"/>
+            <column name="is_system_defined" valueBoolean="false"/>
+        </insert>
+    </changeSet>
+
+    <changeSet author="aocampo" id="growthPlans-02">
+        <sql>
+            INSERT INTO m_code_value
+            (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory)
+            SELECT c.id,
+            'Tiene dificultad para explicar sus planes y acciones para lograrlo',
+            'Tiene dificultad para explicar sus planes y acciones para lograrlo',
+            1, 1, 1, 0
+            FROM m_code c
+            WHERE c.code_name = 'growthPlans'
+            AND NOT EXISTS (
+            SELECT 1 FROM m_code_value v
+            WHERE v.code_id = c.id
+            AND v.code_value = 'Tiene dificultad para explicar sus planes y acciones para lograrlo'
+            );
+        </sql>
+
+        <sql>
+            INSERT INTO m_code_value
+            (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory)
+            SELECT c.id,
+            'Explica sus planes con claridad y posibles acciones para lograrlo',
+            'Explica sus planes con claridad y posibles acciones para lograrlo',
+            2, 2, 1, 0
+            FROM m_code c
+            WHERE c.code_name = 'growthPlans'
+            AND NOT EXISTS (
+            SELECT 1 FROM m_code_value v
+            WHERE v.code_id = c.id
+            AND v.code_value = 'Explica sus planes con claridad y posibles acciones para lograrlo'
+            );
+        </sql>
+    </changeSet>
+
+    <!-- ===================== learning ========================= -->
+    <changeSet author="aocampo" id="learning-01">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">
+                SELECT COUNT(*) FROM m_code WHERE code_name = 'learning'
+            </sqlCheck>
+        </preConditions>
+        <insert tableName="m_code">
+            <column name="code_name" value="learning"/>
+            <column name="is_system_defined" valueBoolean="false"/>
+        </insert>
+    </changeSet>
+
+    <changeSet author="aocampo" id="learning-02">
+        <sql>
+            INSERT INTO m_code_value
+            (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory)
+            SELECT c.id,
+            'No, no puede articular aprendizajes útiles o pasados y objetivos de aprendizajes futuros',
+            'No, no puede articular aprendizajes útiles o pasados y objetivos de aprendizajes futuros',
+            1, 0, 1, 0
+            FROM m_code c
+            WHERE c.code_name = 'learning'
+            AND NOT EXISTS (
+            SELECT 1 FROM m_code_value v
+            WHERE v.code_id = c.id
+            AND v.code_value = 'No, no puede articular aprendizajes útiles o pasados y objetivos de aprendizajes futuros'
+            );
+        </sql>
+
+        <sql>
+            INSERT INTO m_code_value
+            (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory)
+            SELECT c.id,
+            'Si, puede articular aprendizajes útiles o pasados y objetivos de aprendizaje futuros',
+            'Si, puede articular aprendizajes útiles o pasados y objetivos de aprendizaje futuros',
+            2, 1, 1, 0
+            FROM m_code c
+            WHERE c.code_name = 'learning'
+            AND NOT EXISTS (
+            SELECT 1 FROM m_code_value v
+            WHERE v.code_id = c.id
+            AND v.code_value = 'Si, puede articular aprendizajes útiles o pasados y objetivos de aprendizaje futuros'
+            );
+        </sql>
+    </changeSet>
+    <!-- ===================== techniques ========================= -->
+    <changeSet author="aocampo" id="techniques-01">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">
+                SELECT COUNT(*) FROM m_code WHERE code_name = 'techniques'
+            </sqlCheck>
+        </preConditions>
+        <insert tableName="m_code">
+            <column name="code_name" value="techniques"/>
+            <column name="is_system_defined" valueBoolean="false"/>
+        </insert>
+    </changeSet>
+
+    <changeSet author="aocampo" id="techniques-02">
+        <sql>
+            INSERT INTO m_code_value
+            (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory)
+            SELECT c.id,
+            'No, no ha aplicado conocimientos o técnicas nuevas',
+            'No, no ha aplicado conocimientos o técnicas nuevas',
+            1, 1, 1, 0
+            FROM m_code c
+            WHERE c.code_name = 'techniques'
+            AND NOT EXISTS (
+            SELECT 1 FROM m_code_value v
+            WHERE v.code_id = c.id
+            AND v.code_value = 'No, no ha aplicado conocimientos o técnicas nuevas'
+            );
+        </sql>
+
+        <sql>
+            INSERT INTO m_code_value
+            (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory)
+            SELECT c.id,
+            'Si, ha aplicado conocimientos o técnicas nuevas',
+            'Si, ha aplicado conocimientos o técnicas nuevas',
+            2, 2, 1, 0
+            FROM m_code c
+            WHERE c.code_name = 'techniques'
+            AND NOT EXISTS (
+            SELECT 1 FROM m_code_value v
+            WHERE v.code_id = c.id
+            AND v.code_value = 'Si, ha aplicado conocimientos o técnicas nuevas'
+            );
+        </sql>
+    </changeSet>
+
+    <!-- ===================== contingency ========================= -->
+    <changeSet author="aocampo" id="contingency-01">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">
+                SELECT COUNT(*) FROM m_code WHERE code_name = 'contingency'
+            </sqlCheck>
+        </preConditions>
+        <insert tableName="m_code">
+            <column name="code_name" value="contingency"/>
+            <column name="is_system_defined" valueBoolean="false"/>
+        </insert>
+    </changeSet>
+
+    <changeSet author="aocampo" id="contingency-02">
+        <sql>
+            INSERT INTO m_code_value
+            (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory)
+            SELECT c.id,
+            'No puede articular criterios para el manejo de efectivo',
+            'No puede articular criterios para el manejo de efectivo',
+            1, 1, 1, 0
+            FROM m_code c
+            WHERE c.code_name = 'contingency'
+            AND NOT EXISTS (
+            SELECT 1 FROM m_code_value v
+            WHERE v.code_id = c.id
+            AND v.code_value = 'No puede articular criterios para el manejo de efectivo'
+            );
+        </sql>
+
+        <sql>
+            INSERT INTO m_code_value
+            (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory)
+            SELECT c.id,
+            'Si, tiene criterios para el manejo de efectivo, y tiene un plan para pagar el crédito',
+            'Si, tiene criterios para el manejo de efectivo, y tiene un plan para pagar el crédito',
+            2, 2, 1, 0
+            FROM m_code c
+            WHERE c.code_name = 'contingency'
+            AND NOT EXISTS (
+            SELECT 1 FROM m_code_value v
+            WHERE v.code_id = c.id
+            AND v.code_value = 'Si, tiene criterios para el manejo de efectivo, y tiene un plan para pagar el crédito'
+            );
+        </sql>
+    </changeSet>
+
+    <!-- ===================== distributeCash ========================= -->
+    <changeSet author="aocampo" id="distributeCash-01">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">
+                SELECT COUNT(*) FROM m_code WHERE code_name = 'distributeCash'
+            </sqlCheck>
+        </preConditions>
+        <insert tableName="m_code">
+            <column name="code_name" value="distributeCash"/>
+            <column name="is_system_defined" valueBoolean="false"/>
+        </insert>
+    </changeSet>
+
+    <changeSet author="aocampo" id="distributeCash-02">
+        <sql>
+            INSERT INTO m_code_value
+            (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory)
+            SELECT c.id,
+            'No puede articular criterios para el manejo de efectivo',
+            'No puede articular criterios para el manejo de efectivo',
+            1, 1, 1, 0
+            FROM m_code c
+            WHERE c.code_name = 'distributeCash'
+            AND NOT EXISTS (
+            SELECT 1 FROM m_code_value v
+            WHERE v.code_id = c.id
+            AND v.code_value = 'No puede articular criterios para el manejo de efectivo'
+            );
+        </sql>
+
+        <sql>
+            INSERT INTO m_code_value
+            (code_id, code_value, code_description, order_position, code_score, is_active, is_mandatory)
+            SELECT c.id,
+            'Si, tiene criterios para el manejo de efectivo, y tiene un plan para pagar el crédito',
+            'Si, tiene criterios para el manejo de efectivo, y tiene un plan para pagar el crédito',
+            2, 2, 1, 0
+            FROM m_code c
+            WHERE c.code_name = 'distributeCash'
+            AND NOT EXISTS (
+            SELECT 1 FROM m_code_value v
+            WHERE v.code_id = c.id
+            AND v.code_value = 'Si, tiene criterios para el manejo de efectivo, y tiene un plan para pagar el crédito'
+            );
+        </sql>
+    </changeSet>
+
+    <changeSet author="aocampo" id="005-create-p_solicitante-datatable">
+        <createTable tableName="p_solicitante">
+            <column name="loan_id" type="bigint">
+                <constraints primaryKey="true"/>
+            </column>
+            <column name="tipoCliente_cd_tipo_cliente" type="integer"/>
+            <column name="primer_nombre" type="varchar(100)"/>
+            <column name="segundo_nombre" type="varchar(100)"/>
+            <column name="otros_nombres" type="varchar(100)"/>
+            <column name="primer_apellido" type="varchar(100)"/>
+            <column name="segundo_apellido" type="varchar(100)"/>
+            <column name="apellido_casada" type="varchar(100)"/>
+            <column name="DPI" type="integer"/>
+            <column name="fecha_vencimiento_DPI" type="DATE"/>
+            <column name="codigo_cliente" type="VARCHAR(255)"/>
+            <column name="id_externo" type="VARCHAR(255)"/>
+            <column name="classificationOptions_cd_actividad_economica_principal" type="integer"/>
+            <column name="cuota" type="integer"/>
+            <column name="plazo" type="integer"/>
+            <column name="fecha_nacimiento" type="DATE"/>
+            <column name="edad" type="smallint"/>
+            <column name="nacionalidad_cd_nacionalidad" type="integer"/>
+            <column name="antiguedadNegocio_cd_antiguedad_negocio" type="integer"/>
+            <column name="numero_telefonico" type="varchar(255)"/>
+            <column name="direccion_notificaciones" type="TEXT"/>
+            <column name="Ldepartamento_cd_departamento" type="integer"/>
+            <column name="YesNo_cd_dispuesta_capacitaciones" type="VARCHAR(100)"/>
+            <column name="ubicacion_negocio" type="TEXT"/>
+            <column name="guarantee_cd_garantia" type="integer"/>
+            <column name="Gender_cd_genero" type="integer"/>
+            <column name="loanSubject_cd_sujeto_credito" type="integer"/>
+            <column name="marketMeta_cd_mercado_meta" type="integer"/>
+            <column name="housingType_cd_tipo_vivienda" type="integer"/>
+            <column name="YesNo_cd_esposo_propietario_garantia" type="integer"/>
+            <column name="YesNo_cd_negocio_familiar_participacion_esposo" type="integer"/>
+            <column name="cantidad_creditos_vigentes_PA" type="smallint"/>
+            <column name="record_crediticio_PDA" type="smallint"/>
+            <column name="dependents_cd_dependientes" type="integer"/>
+            <column name="readWrite_cd_puede_leer_escribir" type="integer"/>
+            <column name="chargeProductsWithoutAssistance_cd_puede_cobrar" type="integer"/>
+            <column name="additionalBusiness_cd_negocios_adicionales" type="integer"/>
+            <column name="cantidad_negocios_adicionales" type="smallint"/>
+            <column name="classificationOptions_cd_actividad_economica_secundaria" type="integer"/>
+            <column name="salariedEmployees_cd_empleados_asalariados" type="integer"/>
+            <column name="loansInstitutions_cd_creditos_PA" type="integer"/>
+            <column name="businessRegistration_cd_registro_negocio" type="integer"/>
+            <column name="registros_de_negocio" type="TEXT"/>
+            <column name="growthPlans_cd_planes_crecimiento" type="integer"/>
+            <column name="leadershipRole_roles_liderazgo" type="integer"/>
+            <column name="learning_cd_nuevas_clientas" type="integer"/>
+            <column name="techniques_cd_clientas_actuales_pdA" type="integer"/>
+            <column name="contingency_cd_plan_contingencia" type="integer"/>
+            <column name="contingency_cd_efectivo" type="integer"/>
+            <column name="monto_ventas_mensuales" type="DECIMAL(19,6)"/>
+            <column name="costo_ventas_totales" type="DECIMAL(19,6)"/>
+            <column name="total_gastos_negocio" type="DECIMAL(19,6)"/>
+            <column name="total_gastos_familiares" type="DECIMAL(19,6)"/>
+            <column name="cuotas_prestamos_externos" type="DECIMAL(19,6)"/>
+            <column name="pago_credito_pdA" type="DECIMAL(19,6)"/>
+            <column name="diferencia_ingresos_gastos" type="DECIMAL(19,6)"/>
+            <column name="disponible_pagar_cuota" type="DECIMAL(19,6)"/>
+            <column name="YesNo_cd_conoce_ingresos" type="integer"/>
+            <column name="YesNo_cd_conoce_precios_venta_compra" type="integer"/>
+            <column name="YesNo_cd_conoce_frecuencia_compra_inventario" type="integer"/>
+            <column name="YesNo_cd_conoce_proveedores_costos_lugar" type="integer"/>
+            <column name="YesNo_cd_maneja_negocio" type="integer"/>
+            <column name="YesNo_cd_ingresos_familiar_dependen_negocio" type="integer"/>
+            <column name="YesNo_cd_negocio_inscrito_RTU" type="integer"/>
+            <column name="YesNo_cd_patente_comercio_nombre_cliente" type="integer"/>
+            <column name="YesNo_cd_facturas_recibos_de_compra_cliente" type="integer"/>
+            <column name="YesNo_cd_tarjeta_salud_cliente" type="integer"/>
+            <column name="YesNo_cd_deudas_consolidar_meses_enes_mayusculas" type="integer"/>
+            <column name="YesNo_cd_deuda_comprar_mayor_50_prestamo" type="integer"/>
+            <column name="YesNo_cd_monto_prestamo_mayor_Q250K" type="integer"/>
+            <column name="YesNo_cd_deuda_comprar_prestamista_inst" type="integer"/>
+            <column name="YesNo_cd_propiedad_negocio_falsa" type="integer"/>
+            <column name="YesNo_cd_referencias_personales_falsas" type="integer"/>
+            <column name="YesNo_cd_referencias_comerciales_falsas" type="integer"/>
+            <column name="YesNo_cd_relacion_laboral_falsa" type="integer"/>
+            <column name="YesNo_cd_denuncias_judiciales_civiles_penales" type="integer"/>
+            <column name="YesNo_cd_es_policia_militar_abogado" type="integer"/>
+            <column name="YesNo_cd_solicitante_rechazada_o_morosa_PA" type="integer"/>
+            <column name="YesNo_cd_deuda_vencida_mayor_30_dias" type="integer"/>
+            <column name="YesNo_cd_asesores_credito_supervisor_fiador" type="integer"/>
+            <column name="YesNo_cd_lider_agencia_fiador" type="integer"/>
+            <column name="YesNo_cd_solicitante_familiar_colaborador_PDA" type="integer"/>
+            <column name="created_at" type="DATETIME"/>
+            <column name="updated_at" type="DATETIME"/>
+        </createTable>
+
+        <createIndex indexName="idx_p_solicitante_loan_id" tableName="p_solicitante">
+            <column name="loan_id"/>
+        </createIndex>
+
+        <addForeignKeyConstraint constraintName="fk_p_solicitante_loan_id"
+                                 baseTableName="p_solicitante"
+                                 baseColumnNames="loan_id"
+                                 referencedTableName="m_loan"
+                                 referencedColumnNames="id"
+                                 onDelete="NO ACTION"
+                                 onUpdate="NO ACTION"/>
+    </changeSet>
+    <changeSet author="aocampo" id="004-insert-p_solicitante">
+        <insert tableName="x_registered_table">
+            <column name="registered_table_name" value="p_solicitante"/>
+            <column name="application_table_name" value="m_loan"/>
+            <column name="category" value="100"/>
+        </insert>
+    </changeSet>
+
+    <changeSet author="aocampo" id="006-create-p_fiador-datatable">
+        <createTable tableName="p_fiador">
+            <column name="loan_id" type="bigint">
+                <constraints primaryKey="true"/>
+            </column>
+            <column name="guarantee_cd_tipo_fiador_tercero" type="integer"/>
+            <column name="professionGuarantor_cd_profesion_fiador" type="integer"/>
+            <column name="primer_nombre" type="varchar(100)"/>
+            <column name="segundo_nombre" type="varchar(100)"/>
+            <column name="otros_nombres" type="varchar(100)"/>
+            <column name="primer_apellido" type="varchar(100)"/>
+            <column name="segundo_apellido" type="varchar(100)"/>
+            <column name="apellido_casada" type="varchar(100)"/>
+            <column name="DPI_fiador_tercero" type="integer"/>
+            <column name="fecha_vencimiento_DPI" type="DATE"/>
+            <column name="direccion_notificaciones" type="TEXT"/>
+            <column name="fecha_nacimiento" type="DATE"/>
+            <column name="edad" type="smallint"/>
+            <column name="nacionalidad_cd_nacionalidad" type="integer"/>
+            <column name="numero_telefonico" type="varchar(255)"/>
+            <column name="readWrite_cd_puede_leer_escribir" type="integer"/>
+            <column name="classificationOptions_cd_actividad_economica" type="integer"/>
+            <column name="nombre_empresa" type="varchar(255)"/>
+            <column name="yearsOperating_cd_years_operando" type="integer"/>
+            <column name="YesNo_cd_dispuesto_firmar_solicitud_titulo" type="integer"/>
+            <column name="YesNo_cd_conoce_ingresos" type="integer"/>
+            <column name="YesNo_cd_conoce_precios_venta_compra" type="integer"/>
+            <column name="YesNo_cd_conoce_frecuencia_compra_inventario" type="integer"/>
+            <column name="YesNo_cd_conoce_proveedores_costos_lugar" type="integer"/>
+            <column name="YesNo_cd_maneja_negocio" type="integer"/>
+            <column name="YesNo_cd_negocio_inscrito_RTU" type="integer"/>
+            <column name="YesNo_cd_patente_comercio_nombre_cliente" type="integer"/>
+            <column name="YesNo_cd_facturas_recibos_de_compra_cliente" type="integer"/>
+            <column name="YesNo_cd_tarjeta_salud_cliente" type="integer"/>
+            <column name="monto_ventas_mensuales" type="DECIMAL(19,6)"/>
+            <column name="costo_ventas_totales" type="DECIMAL(19,6)"/>
+            <column name="total_gastos_negocio" type="DECIMAL(19,6)"/>
+            <column name="total_gastos_familiares" type="DECIMAL(19,6)"/>
+            <column name="cuotas_prestamos_externos" type="DECIMAL(19,6)"/>
+            <column name="diferencia_ingresos_gastos" type="DECIMAL(19,6)"/>
+            <column name="disponible_pagar_cuota" type="DECIMAL(19,6)"/>
+            <column name="couta_nuevo_credito_pae" type="DECIMAL(19,6)"/>
+            <column name="fecha_ingreso_empleo_actual" type="DATE"/>
+            <column name="ingresos" type="DECIMAL(19,6)"/>
+            <column name="cuotas_prestamos" type="DECIMAL(19,6)"/>
+            <column name="disponible" type="DECIMAL(19,6)"/>
+            <column name="created_at" type="DATETIME"/>
+            <column name="updated_at" type="DATETIME"/>
+        </createTable>
+
+        <createIndex indexName="idx_p_fiador_loan_id" tableName="p_fiador">
+            <column name="loan_id"/>
+        </createIndex>
+
+        <addForeignKeyConstraint constraintName="fk_p_fiador_loan_id"
+                                 baseTableName="p_fiador"
+                                 baseColumnNames="loan_id"
+                                 referencedTableName="m_loan"
+                                 referencedColumnNames="id"
+                                 onDelete="NO ACTION"
+                                 onUpdate="NO ACTION"/>
+    </changeSet>
+    <changeSet author="aocampo" id="006-insert-p_fiador">
+        <insert tableName="x_registered_table">
+            <column name="registered_table_name" value="p_fiador"/>
+            <column name="application_table_name" value="m_loan"/>
+            <column name="category" value="100"/>
+        </insert>
+    </changeSet>
+
+
+    <changeSet author="aocampo" id="006-create-p_garante-datatable">
+        <createTable tableName="p_garante">
+            <column name="loan_id" type="bigint">
+                <constraints primaryKey="true"/>
+            </column>
+            <column name="guarantee_cd_tipo_garantia" type="integer"/>
+            <column name="valor_garantia" type="DECIMAL(19,6)"/>
+            <column name="created_at" type="DATETIME"/>
+            <column name="updated_at" type="DATETIME"/>
+        </createTable>
+
+        <createIndex indexName="idx_p_garante_loan_id" tableName="p_garante">
+            <column name="loan_id"/>
+        </createIndex>
+
+        <addForeignKeyConstraint constraintName="fk_p_garante_loan_id"
+                                 baseTableName="p_garante"
+                                 baseColumnNames="loan_id"
+                                 referencedTableName="m_loan"
+                                 referencedColumnNames="id"
+                                 onDelete="NO ACTION"
+                                 onUpdate="NO ACTION"/>
+    </changeSet>
+    <changeSet author="aocampo" id="006-insert-p_garante">
+        <insert tableName="x_registered_table">
+            <column name="registered_table_name" value="p_garante"/>
+            <column name="application_table_name" value="m_loan"/>
+            <column name="category" value="100"/>
+        </insert>
+    </changeSet>
+
+
+    <changeSet author="aocampo" id="006-create-p_destino-datatable">
+        <createTable tableName="p_destino">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+            <column name="loan_id" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+            <column name="loanPurposeOptions_cd_destino" type="integer"/>
+            <column name="monto" type="DECIMAL(19,6)"/>
+            <column name="created_at" type="DATETIME"/>
+            <column name="updated_at" type="DATETIME"/>
+        </createTable>
+
+        <createIndex indexName="idx_p_destino_loan_id" tableName="p_destino">
+            <column name="loan_id"/>
+        </createIndex>
+
+        <addForeignKeyConstraint constraintName="fk_p_destino_loan_id"
+                                 baseTableName="p_destino"
+                                 baseColumnNames="loan_id"
+                                 referencedTableName="m_loan"
+                                 referencedColumnNames="id"
+                                 onDelete="NO ACTION"
+                                 onUpdate="NO ACTION"/>
+    </changeSet>
+    <changeSet author="aocampo" id="006-insert-p_destino">
+        <insert tableName="x_registered_table">
+            <column name="registered_table_name" value="p_destino"/>
+            <column name="application_table_name" value="m_loan"/>
+            <column name="category" value="100"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="insert-client-datatables-permissions-id" author="aocampo">
+
+        <insert tableName="m_permission">
+            <column name="grouping" value="datatable"/>
+            <column name="code" value="CREATE_p_solicitante"/>
+            <column name="entity_name" value="CREATE_p_solicitante"/>
+            <column name="action_name" value="CREATE"/>
+            <column name="can_maker_checker" valueBoolean="false"/>
+        </insert>
+
+        <insert tableName="m_permission">
+            <column name="grouping" value="datatable"/>
+            <column name="code" value="READ_p_solicitante"/>
+            <column name="entity_name" value="READ_p_solicitante"/>
+            <column name="action_name" value="READ"/>
+            <column name="can_maker_checker" valueBoolean="false"/>
+        </insert>
+
+        <insert tableName="m_permission">
+            <column name="grouping" value="datatable"/>
+            <column name="code" value="UPDATE_p_solicitante"/>
+            <column name="entity_name" value="UPDATE_p_solicitante"/>
+            <column name="action_name" value="UPDATE"/>
+            <column name="can_maker_checker" valueBoolean="false"/>
+        </insert>
+
+        <insert tableName="m_permission">
+            <column name="grouping" value="datatable"/>
+            <column name="code" value="CREATE_p_garante"/>
+            <column name="entity_name" value="CREATE_p_garante"/>
+            <column name="action_name" value="CREATE"/>
+            <column name="can_maker_checker" valueBoolean="false"/>
+        </insert>
+
+        <insert tableName="m_permission">
+            <column name="grouping" value="datatable"/>
+            <column name="code" value="READ_p_garante"/>
+            <column name="entity_name" value="READ_p_garante"/>
+            <column name="action_name" value="READ"/>
+            <column name="can_maker_checker" valueBoolean="false"/>
+        </insert>
+
+        <insert tableName="m_permission">
+            <column name="grouping" value="datatable"/>
+            <column name="code" value="UPDATE_p_garante"/>
+            <column name="entity_name" value="UPDATE_p_garante"/>
+            <column name="action_name" value="UPDATE"/>
+            <column name="can_maker_checker" valueBoolean="false"/>
+        </insert>
+
+        <insert tableName="m_permission">
+            <column name="grouping" value="datatable"/>
+            <column name="code" value="CREATE_p_fiador"/>
+            <column name="entity_name" value="CREATE_p_fiador"/>
+            <column name="action_name" value="CREATE"/>
+            <column name="can_maker_checker" valueBoolean="false"/>
+        </insert>
+
+        <insert tableName="m_permission">
+            <column name="grouping" value="datatable"/>
+            <column name="code" value="READ_p_fiador"/>
+            <column name="entity_name" value="READ_p_fiador"/>
+            <column name="action_name" value="READ"/>
+            <column name="can_maker_checker" valueBoolean="false"/>
+        </insert>
+
+        <insert tableName="m_permission">
+            <column name="grouping" value="datatable"/>
+            <column name="code" value="UPDATE_p_fiador"/>
+            <column name="entity_name" value="UPDATE_p_fiador"/>
+            <column name="action_name" value="UPDATE"/>
+            <column name="can_maker_checker" valueBoolean="false"/>
+        </insert>
+
+        <insert tableName="m_permission">
+            <column name="grouping" value="datatable"/>
+            <column name="code" value="CREATE_p_destino"/>
+            <column name="entity_name" value="CREATE_p_destino"/>
+            <column name="action_name" value="CREATE"/>
+            <column name="can_maker_checker" valueBoolean="false"/>
+        </insert>
+
+        <insert tableName="m_permission">
+            <column name="grouping" value="datatable"/>
+            <column name="code" value="READ_p_destino"/>
+            <column name="entity_name" value="READ_p_destino"/>
+            <column name="action_name" value="READ"/>
+            <column name="can_maker_checker" valueBoolean="false"/>
+        </insert>
+
+        <insert tableName="m_permission">
+            <column name="grouping" value="datatable"/>
+            <column name="code" value="UPDATE_p_destino"/>
+            <column name="entity_name" value="UPDATE_p_destino"/>
+            <column name="action_name" value="UPDATE"/>
+            <column name="can_maker_checker" valueBoolean="false"/>
+        </insert>
+
+    </changeSet>
+
+    <changeSet id="1773341938903-1" author="brian">
+        <!--        alter table p_solicitante modify DPI to varchar type-->
+        <modifyDataType tableName="p_solicitante" columnName="DPI" newDataType="varchar(50)"/>
+        <modifyDataType tableName="p_fiador" columnName="DPI_fiador_tercero" newDataType="varchar(50)"/>
+    </changeSet>
+
+    <changeSet id="1775665199574-1" author="brian">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="p_fiador" columnName="DPI_fiador_tercero"/>
+            </not>
+        </preConditions>
+        <sql>
+            ALTER TABLE p_fiador
+                MODIFY COLUMN `DPI_fiador_tercero` varchar(255) NULL DEFAULT NULL;
+        </sql>
+    </changeSet>
+
+    <changeSet id="1775665199574-2" author="brian">
+        <preConditions onFail="MARK_RAN">
+                <columnExists tableName="p_destino" columnName="loanPurposeOptions_cd_destino"/>
+        </preConditions>
+        <sql>
+            ALTER TABLE `p_destino`
+                CHANGE COLUMN `loanPurposeOptions_cd_destino` `loanPurposeOptionsPAE_cd_destino` int NULL DEFAULT NULL;
+        </sql>
+    </changeSet>
+
+    <changeSet id="15042026_1" author="brian">
+        <preConditions onFail="MARK_RAN">
+                <columnExists tableName="p_solicitante" columnName="record_crediticio_PDA"/>
+        </preConditions>
+        <sql>
+            ALTER TABLE `p_solicitante`
+                CHANGE COLUMN `record_crediticio_PDA` `pda_options_pae_cd_record_crediticio_PDA` integer;
+        </sql>
+    </changeSet>
+    <changeSet id="15042026_2" author="brian">
+        <preConditions onFail="MARK_RAN">
+                <columnExists tableName="p_solicitante" columnName="leadershipRole_roles_liderazgo"/>
+        </preConditions>
+        <sql>
+            ALTER TABLE `p_solicitante`
+                CHANGE COLUMN `leadershipRole_roles_liderazgo` `roles_liderazgo_pae_cd_leadershipRole_roles_liderazgo` integer;
+        </sql>
+    </changeSet>
+
+    <changeSet id="17042026_1" author="brian">
+        <preConditions onFail="MARK_RAN">
+                <columnExists tableName="p_solicitante" columnName="Monto_de_creditos_retener"/>
+        </preConditions>
+        <sql>
+            ALTER TABLE p_solicitante
+                MODIFY COLUMN Monto_de_creditos_retener decimal(10,0) AFTER classificationOptions_cd_actividad_economica_principal;
+        </sql>
+    </changeSet>
+
+    <changeSet id="17042026_2" author="brian">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="p_solicitante" columnName="Monto_de_creditos_retener"/>
+            </not>
+        </preConditions>
+        <sql>
+            ALTER TABLE p_solicitante
+                ADD COLUMN Monto_de_creditos_retener decimal(10,0) AFTER classificationOptions_cd_actividad_economica_principal;
+        </sql>
+    </changeSet>
+
+    <changeSet id="17042026_3" author="brian">
+        <preConditions onFail="MARK_RAN">
+            <columnExists tableName="p_solicitante" columnName="municipio"/>
+        </preConditions>
+        <sql>
+            ALTER TABLE p_solicitante
+                MODIFY COLUMN municipio varchar(100) AFTER Ldepartamento_cd_departamento;
+        </sql>
+    </changeSet>
+
+    <changeSet id="17042026_4" author="brian">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="p_solicitante" columnName="municipio"/>
+            </not>
+        </preConditions>
+        <sql>
+            ALTER TABLE p_solicitante
+                ADD COLUMN municipio varchar(100) AFTER Ldepartamento_cd_departamento;
+        </sql>
+    </changeSet>
+
+    <changeSet id="27042026_4" author="brian">
+        <preConditions onFail="MARK_RAN">
+                <columnExists tableName="p_garantia" columnName="creditRecordPDAOptions_cd_antiguedad_negocio"/>
+        </preConditions>
+        <sql>
+            ALTER TABLE p_garantia
+                DROP COLUMN creditRecordPDAOptions_cd_antiguedad_negocio;
+        </sql>
+    </changeSet>
+
+    <changeSet id="28042026_1" author="brian">
+        <preConditions onFail="MARK_RAN">
+                <columnExists tableName="p_solicitante" columnName="YesNo_cd_deudas_consolidar_meses_enes_mayusculas"/>
+        </preConditions>
+        <sql>
+            ALTER TABLE p_solicitante
+                DROP COLUMN  YesNo_cd_deudas_consolidar_meses_enes_mayusculas,
+                DROP COLUMN  YesNo_cd_deuda_comprar_mayor_50_prestamo,
+                DROP COLUMN  YesNo_cd_deuda_comprar_prestamista_inst,
+                DROP COLUMN  YesNo_cd_monto_prestamo_mayor_Q250K;
+        </sql>
+    </changeSet>
+
+    <changeSet id="29042026_1" author="brian">
+        <preConditions onFail="MARK_RAN">
+                <columnExists tableName="p_solicitante" columnName="guarantee_cd_garantia"/>
+        </preConditions>
+        <sql>
+            ALTER TABLE p_solicitante
+                DROP COLUMN  guarantee_cd_garantia;
+        </sql>
+    </changeSet>
+
+</databaseChangeLog>

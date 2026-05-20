@@ -21,7 +21,7 @@ package org.apache.fineract.portfolio.loanproduct.domain;
 public enum LoanProductOwnerType {
 
     INVALID(0, "LoanProductOwnerType.invalid"), INDIVIDUAL(1, "LoanProductOwnerType.individual"), GROUP(2,
-            "LoanProductOwnerType.group"), CENTER(3, "LoanProductOwnerType.center");
+            "LoanProductOwnerType.group"), CENTER(3, "LoanProductOwnerType.center"), PAE(4, "LoanProductOwnerType.center");
 
     private final Integer value;
     private final String code;
@@ -44,6 +44,7 @@ public enum LoanProductOwnerType {
             case 1 -> LoanProductOwnerType.INDIVIDUAL;
             case 2 -> LoanProductOwnerType.GROUP;
             case 3 -> LoanProductOwnerType.CENTER;
+            case 4 -> LoanProductOwnerType.PAE;
             default -> LoanProductOwnerType.INVALID;
         };
     }

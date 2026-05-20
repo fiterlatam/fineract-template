@@ -91,6 +91,7 @@ import org.apache.fineract.organisation.monetary.data.CurrencyData;
 import org.apache.fineract.organisation.office.domain.OfficeHierarchyLevel;
 import org.apache.fineract.organisation.prequalification.data.GroupPrequalificationData;
 import org.apache.fineract.organisation.prequalification.data.LoanAdditionalData;
+import org.apache.fineract.organisation.prequalification.data.LoanAdditionalDataPAE;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationType;
 import org.apache.fineract.organisation.staff.data.StaffData;
 import org.apache.fineract.portfolio.account.PortfolioAccountType;
@@ -152,6 +153,7 @@ import org.apache.fineract.portfolio.loanproduct.LoanProductConstants;
 import org.apache.fineract.portfolio.loanproduct.data.LoanProductData;
 import org.apache.fineract.portfolio.loanproduct.data.TransactionProcessingStrategyData;
 import org.apache.fineract.portfolio.loanproduct.domain.InterestMethod;
+import org.apache.fineract.portfolio.loanproduct.domain.LoanProductOwnerType;
 import org.apache.fineract.portfolio.loanproduct.service.LoanDropdownReadPlatformService;
 import org.apache.fineract.portfolio.loanproduct.service.LoanProductReadPlatformService;
 import org.apache.fineract.portfolio.note.data.NoteData;
@@ -451,7 +453,15 @@ public class LoansApiResource {
         } else if (templateType.equals("groupAdditionals")) {
             Collection<CodeValueData> loanCycleCompletedOptions = this.codeValueReadPlatformService
                     .retrieveCodeValuesByCode("loanCycleCompletedOptions");
-            Collection<CodeValueData> loanPurposeOptions = this.codeValueReadPlatformService.retrieveCodeValuesByCode("loanPurposeOptions");
+            String loanPurposeOptionsToUse = "loanPurposeOptions";
+            if (productId != null) {
+                LoanProductData product = newLoanAccount.getProduct();
+                if (product.getOwnerTypeOption().getId().equals(LoanProductOwnerType.PAE.getValue())) {
+                    loanPurposeOptionsToUse = "loanPurposeOptionsPAE";
+                }
+            }
+            Collection<CodeValueData> loanPurposeOptions = this.codeValueReadPlatformService
+                    .retrieveCodeValuesByCode(loanPurposeOptionsToUse);
             Collection<CodeValueData> businessEvolutionOptions = this.codeValueReadPlatformService
                     .retrieveCodeValuesByCode("businessEvolutionOptions");
             Collection<CodeValueData> yesnoOptions = this.codeValueReadPlatformService.retrieveCodeValuesByCode("yesnoOptions");
@@ -671,6 +681,7 @@ public class LoansApiResource {
         final Long prequalificationId = loanBasicDetails.getPrequalificationId();
         final GroupPrequalificationData prequalificationData = loanBasicDetails.getPrequalificationData();
         final LoanAdditionalData loanAdditionalData = loanBasicDetails.getLoanAdditionalData();
+        final LoanAdditionalDataPAE loanAdditionalDataPAE = loanBasicDetails.getLoanAdditionalDataPae();
         if (loanBasicDetails.isInterestRecalculationEnabled()) {
             Collection<CalendarData> interestRecalculationCalendarDatas = this.calendarReadPlatformService.retrieveCalendarsByEntity(
                     loanBasicDetails.getInterestRecalculationDetailId(), CalendarEntityType.LOAN_RECALCULATION_REST_DETAIL.getValue(),
@@ -772,8 +783,7 @@ public class LoansApiResource {
                     this.calculationPlatformService.updateFutureSchedule(repaymentSchedule, loanId);
                 }
 
-                if (associationParameters.contains(DataTableApiConstant.originalScheduleAssociateParamName)
-                        && loanBasicDetails.isInterestRecalculationEnabled() && loanBasicDetails.isActive()) {
+                if (associationParameters.contains(DataTableApiConstant.originalScheduleAssociateParamName)) {
                     mandatoryResponseParameters.add(DataTableApiConstant.originalScheduleAssociateParamName);
                     LoanScheduleData loanScheduleData = this.loanScheduleHistoryReadPlatformService.retrieveRepaymentArchiveSchedule(loanId,
                             repaymentScheduleRelatedData, disbursementData);
@@ -944,6 +954,7 @@ public class LoansApiResource {
         loanAccount.setPrequalificationId(prequalificationId);
         loanAccount.setPrequalificationData(prequalificationData);
         loanAccount.setLoanAdditionalData(loanAdditionalData);
+        loanAccount.setLoanAdditionalDataPAE(loanAdditionalDataPAE);
         final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(uriInfo.getQueryParameters(),
                 mandatoryResponseParameters);
         return this.toApiJsonSerializer.serialize(settings, loanAccount, this.loanDataParameters);
@@ -1259,4 +1270,15 @@ public class LoansApiResource {
                 uploadedInputStream, fileDetail, locale, dateFormat);
         return this.toApiJsonSerializer.serialize(importDocumentId);
     }
+
+    @GET
+    @Path("promissorytemplate/{loanId}")
+    @Consumes({ MediaType.APPLICATION_JSON })
+    @Produces({ MediaType.APPLICATION_JSON })
+    public String getPromissoryTemplate(@PathParam("loanId") final Long loanId, @Context final UriInfo uriInfo) {
+        this.context.authenticatedUser().validateHasReadPermission(this.resourceNameForPermissions);
+        Map<String, Object> data = this.loanReadPlatformService.retrieveBasicDataForLoanPromissoryTemplate(loanId);
+        return this.toApiJsonSerializer.serialize(data);
+    }
+
 }

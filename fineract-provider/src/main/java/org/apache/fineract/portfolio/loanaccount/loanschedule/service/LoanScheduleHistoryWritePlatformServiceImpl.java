@@ -50,7 +50,8 @@ public class LoanScheduleHistoryWritePlatformServiceImpl implements LoanSchedule
 
     @Override
     public List<LoanRepaymentScheduleHistory> createLoanScheduleArchive(
-            List<LoanRepaymentScheduleInstallment> repaymentScheduleInstallments, Loan loan, LoanRescheduleRequest loanRescheduleRequest) {
+            List<LoanRepaymentScheduleInstallment> repaymentScheduleInstallments, Loan loan, LoanRescheduleRequest loanRescheduleRequest,
+            Boolean savePenaltyAccrualsToSchedule) {
         Integer version = this.loanScheduleHistoryReadPlatformService.fetchCurrentVersionNumber(loan.getId()) + 1;
         final MonetaryCurrency currency = loan.getCurrency();
         final List<LoanRepaymentScheduleHistory> loanRepaymentScheduleHistoryList = new ArrayList<>();
@@ -71,7 +72,11 @@ public class LoanScheduleHistoryWritePlatformServiceImpl implements LoanSchedule
             final BigDecimal principal = repaymentScheduleInstallment.getPrincipal(currency).getAmount();
             final BigDecimal interestCharged = repaymentScheduleInstallment.getInterestCharged(currency).getAmount();
             final BigDecimal feeChargesCharged = repaymentScheduleInstallment.getFeeChargesCharged(currency).getAmount();
-            final BigDecimal penaltyCharges = repaymentScheduleInstallment.getPenaltyChargesCharged(currency).getAmount();
+            BigDecimal penaltyCharges = BigDecimal.ZERO;
+
+            if (savePenaltyAccrualsToSchedule) {
+                penaltyCharges = repaymentScheduleInstallment.getPenaltyChargesCharged(currency).getAmount();
+            }
 
             LocalDateTime createdOnDate = null;
             if (repaymentScheduleInstallment.getCreatedDate().isPresent()) {
@@ -98,9 +103,9 @@ public class LoanScheduleHistoryWritePlatformServiceImpl implements LoanSchedule
 
     @Override
     public void createAndSaveLoanScheduleArchive(List<LoanRepaymentScheduleInstallment> repaymentScheduleInstallments, Loan loan,
-            LoanRescheduleRequest loanRescheduleRequest) {
+            LoanRescheduleRequest loanRescheduleRequest, Boolean saveAccruals) {
         List<LoanRepaymentScheduleHistory> loanRepaymentScheduleHistoryList = createLoanScheduleArchive(repaymentScheduleInstallments, loan,
-                loanRescheduleRequest);
+                loanRescheduleRequest, saveAccruals);
         this.loanRepaymentScheduleHistoryRepository.saveAll(loanRepaymentScheduleHistoryList);
 
     }

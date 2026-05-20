@@ -100,6 +100,7 @@ public final class CommitteeCommandFromApiJsonDeserializer {
 
         final String[] users = this.fromApiJsonHelper.extractArrayNamed(CommitteeConstants.CommitteeSupportedParameters.USERS.getValue(),
                 element);
+
         baseDataValidator.reset().parameter(CommitteeConstants.CommitteeSupportedParameters.USERS.getValue()).value(users).arrayNotEmpty();
 
         throwExceptionIfValidationWarningsExist(dataValidationErrors);

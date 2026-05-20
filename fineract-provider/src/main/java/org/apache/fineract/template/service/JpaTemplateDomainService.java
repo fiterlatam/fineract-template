@@ -78,7 +78,7 @@ public class JpaTemplateDomainService implements TemplateDomainService {
         // FIXME - handle cases where data integrity constraints are fired from
         // database when saving.
 
-        final Template template = findOneById(templateId);
+        Template template = findOneById(templateId);
         template.setName(command.stringValueOfParameterNamed(PROPERTY_NAME));
         template.setText(command.stringValueOfParameterNamed(PROPERTY_TEXT));
         template.setEntity(TemplateEntity.values()[command.integerValueSansLocaleOfParameterNamed(PROPERTY_ENTITY)]);
@@ -96,13 +96,14 @@ public class JpaTemplateDomainService implements TemplateDomainService {
 
         final JsonArray array = command.arrayOfParameterNamed("mappers");
         final List<TemplateMapper> mappersList = new ArrayList<>();
-        for (final JsonElement element : array) {
-            mappersList.add(new TemplateMapper(element.getAsJsonObject().get("mappersorder").getAsInt(),
-                    element.getAsJsonObject().get("mapperskey").getAsString(),
-                    element.getAsJsonObject().get("mappersvalue").getAsString()));
+        if (array != null) {
+            for (final JsonElement element : array) {
+                mappersList.add(new TemplateMapper(element.getAsJsonObject().get("mappersorder").getAsInt(),
+                        element.getAsJsonObject().get("mapperskey").getAsString(),
+                        element.getAsJsonObject().get("mappersvalue").getAsString()));
+            }
+            template.setMappers(mappersList);
         }
-        template.setMappers(mappersList);
-
         this.templateRepository.saveAndFlush(template);
 
         return new CommandProcessingResultBuilder().withCommandId(command.commandId()).withEntityId(template.getId()).build();

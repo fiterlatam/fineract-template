@@ -159,8 +159,53 @@
     <include file="parts/FS_001_FIX_GROUP_MEETING_DATES.xml" relativeToChangelogFile="true"/>
     <include file="parts/FS_002_FIX_REPORTS_PERFORMANCE.xml" relativeToChangelogFile="true"/>
     <include file="parts/FS_037_ADD_PERMISSION_SAVINGS_ACCOUNT_REBALANCING.xml" relativeToChangelogFile="true"/>
+    <include file="parts/0136_FBR-724-OVERDUE_LOAN_CHARGE.xml" relativeToChangelogFile="true"/>
     <include file="parts/0139-FSF-95_AddConfigurationForRunningBalancesUpdate.xml" relativeToChangelogFile="true"/>
     <include file="parts/0140-ACCOUNTING_MANUAL_ENTRTIES CONFIGURATION.xml" relativeToChangelogFile="true"/>
+    <include file="parts/FS_182_FIX_RESCHEDULED_LOANS_REPORT.xml" relativeToChangelogFile="true"/>
     <include file="parts/0148-FBR_ADD_2FA_CONFIGURATIONS.xml" relativeToChangelogFile="true"/>
+    <include file="parts/0149-PUENTE_AL_EXITO_COMMITTEE_APPROVAL_LIMITS.xml" relativeToChangelogFile="true"/>
+    <include file="parts/PUE_01_11_25_add_new_column_to_prequalification_tables.xml" relativeToChangelogFile="true"/>
+    <include file="parts/PUE_04_11_25_add_new_code_rejected_prequalification.xml" relativeToChangelogFile="true"/>
+    <include file="parts/PUE_05_11_25_add_new_colum_prequalification_log.xml" relativeToChangelogFile="true"/>
+    <include file="parts/PUE_06_11_25_add_new_report_loans_rejected.xml" relativeToChangelogFile="true"/>
+    <include file="parts/PUE_07_11_25_add_new_column_prequalification_log.xml" relativeToChangelogFile="true"/>
+    <include file="parts/PUE_08_11_25_Add_committees_permissions.xml" relativeToChangelogFile="true"/>
+    <include file="parts/0150-PUENTE_AL_EXITO_RENEGOTIATIONS.xml" relativeToChangelogFile="true"/>
+    <include file="parts/PUE_20_11_25_add_limit_amount_settings.xml" relativeToChangelogFile="true"/>
+    <include file="parts/PUE_27_11_25_ADD_PAE_REQUIRED_GUARANTEES.xml" relativeToChangelogFile="true"/>
+    <include file="parts/PUE_28_11_25_ADD_PAE_REQUIRED_DOCUMENTS.xml" relativeToChangelogFile="true"/>
+    <include file="parts/0137_FBR-723-LOAN_FORECLOSURE_CONFIGS.xml" relativeToChangelogFile="true"/>
+    <include file="parts/0138_FBR-726-CHECK_REASSIGNMENT_CONFIGURATION.xml" relativeToChangelogFile="true"/>
+    <include file="parts/0141-FBR-725_ADD_MAKER_CHECKER_PERMISSION_FOR_GL_CLOSURE.xml" relativeToChangelogFile="true"/>
+    <include file="parts/0142-FBR-745_RESTRUCTURE_WITH_EXTENSION.xml" relativeToChangelogFile="true"/>
+    <include file="parts/0143-FBR-720_CONFIGURE_PRODUCT_INTEREST_WAIVER.xml" relativeToChangelogFile="true"/>
+    <include file="parts/0144-FBR-1.2.1_ADD_REPAYMENT_SCHEDULE_RECALCULATION_CONFIG.xml" relativeToChangelogFile="true"/>
+    <include file="parts/0145-FBR-1.2.1_MAINTAIN_LOAN_TOPUP_DATAILS_ON_TRANSACTIONS.xml" relativeToChangelogFile="true"/>
+    <include file="parts/0146-FBR-1.2.1_MAINTAIN_RESCTURE_REQUEST_ID_LOAN.xml" relativeToChangelogFile="true"/>
+    <include file="parts/0147-FBR-1.2.1_ACCOUNTING_CLOSURE_OFFICE_HIERARCHY.xml" relativeToChangelogFile="true"/>
+    <include file="parts/PUE_29_12_2025_ADD_DATATABLES_AND_DATACODES.xml" relativeToChangelogFile="true"/>
+    <include file="parts/PUE_01_20_2026_add_new_column_to_prequalification_status_log_tables.xml" relativeToChangelogFile="true"/>
+    <include file="parts/PUE_21_01_2026_UPDATE_FIADOR_DATACODE.xml" relativeToChangelogFile="true"/>
+    <include file="parts/PUE_27_01_2026_ADD_ENTITY_DATATABLE_CHECKS_140_FIELDS.xml" relativeToChangelogFile="true"/>
+    <include file="parts/PUE_04_02_2026_ADD_META_DATA_DOCUMENTS.xml" relativeToChangelogFile="true"/>
+    <include file="parts/PUE_03_02_2026_CREATE_LOAN_DRAFT_STRUCTURE.xml" relativeToChangelogFile="true"/>
+    <include file="parts/PUE_05_01_2026_add_new_table_templates.xml" relativeToChangelogFile="true"/>
+    <include file="parts/PUE_10_02_2026_add_columns_to_p_destino_dtt.xml" relativeToChangelogFile="true"/>
+    <include file="parts/PUE_11_02_2026_add_column_to_user_table.xml" relativeToChangelogFile="true"/>
+    <include file="parts/PUE_12_02_26_update_limit_amount_pae_settings.xml" relativeToChangelogFile="true"/>
+    <include file="parts/PUE_12_02_2026_add_columns_to_p_garante.xml" relativeToChangelogFile="true"/>
+    <include file="parts/PUE_17_02_26_add_promissory_note_permissions.xml" relativeToChangelogFile="true"/>
+    <include file="parts/PUE_2026_02_23_ADD_COMCARE_INTEGRATION_CONFIGURATIONS.xml" relativeToChangelogFile="true"/>
+    <include file="parts/PUE_19_02_2026_MULTIPLE_DATATABLES_FIADOR_GARANTE.xml" relativeToChangelogFile="true"/>
+    <include file="parts/PUE_19_02_2026_GARANTIA_DATACODE_UPDATE.xml" relativeToChangelogFile="true"/>
+    <include file="parts/PUE_2026_02_25_ADD_PREQUALIFICATION_COMMAND_PROCESSING_PERMISSIONS.xml" relativeToChangelogFile="true"/>
+    <include file="parts/PUE_24_02_26_insert_template.xml" relativeToChangelogFile="true"/>
+    <include file="parts/PUE_2026_02_26_ADD_COLUMNS_TO_DATATABLES.xml" relativeToChangelogFile="true"/>
+    <include file="parts/PUE_2026_03_02_ADD_LOAN_PURPOSES_PAE.xml" relativeToChangelogFile="true"/>
+    <include file="parts/PUE_2026_03_03_ADD_PAE_COMMCARE_INTEGRATION.xml" relativeToChangelogFile="true"/>
+    <include file="parts/PUE_2026_03_11_ADD_PAE_APPROVECOMMITEEWHITEXC_permmissions.xml" relativeToChangelogFile="true"/>
+    <include file="parts/PUE_2026_03_23_update_municipio_departamento_templates.xml" relativeToChangelogFile="true"/>
     <include file="parts/PUE_2026_04_22_INDEX_JOURNAL_ENTRIES_TABLE.xml" relativeToChangelogFile="true"/>
+    <include file="parts/PUE_2026_04_29_DECIMAL_FIELD_UPDATES.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>

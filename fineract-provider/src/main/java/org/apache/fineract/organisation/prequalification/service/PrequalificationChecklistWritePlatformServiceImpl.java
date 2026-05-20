@@ -137,9 +137,12 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
                 if (prequalificationGroup.isPrequalificationTypeGroup()) {
                     submittedLoans = jdbcTemplate.query(this.groupTypeLoanMapper.schema(), this.groupTypeLoanMapper, prequalificationId,
                             clientData.getDpi(), prequalificationId);
+                } else if (prequalificationGroup.isPrequalificationTypePAE()) {
+                    submittedLoans = jdbcTemplate.query(this.individualTypeLoanMapper.schema(), this.individualTypeLoanMapper,
+                            prequalificationId, PrequalificationType.PAE.getValue(), clientData.getDpi(), prequalificationId);
                 } else {
                     submittedLoans = jdbcTemplate.query(this.individualTypeLoanMapper.schema(), this.individualTypeLoanMapper,
-                            prequalificationId, clientData.getDpi(), prequalificationId);
+                            prequalificationId, PrequalificationType.INDIVIDUAL.getValue(), clientData.getDpi(), prequalificationId);
                 }
                 if (submittedLoans.isEmpty()) {
                     throw new MemberSubmittedLoanNotFoundException(clientData.getDpi());
@@ -203,9 +206,9 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
             statusLog.updateSubStatus(PrequalificationSubStatus.IN_PROGRESS.getValue());
 
         } else {
-            statusLog = PrequalificationStatusLog.fromJson(appUser, fromStatus, prequalificationGroup.getStatus(), null,
-                    prequalificationGroup);
             prequalificationGroup.updateStatus(PrequalificationStatus.HARD_POLICY_CHECKED);
+            statusLog = PrequalificationStatusLog.fromJson(appUser, fromStatus, prequalificationGroup.getStatus(), null,
+                    prequalificationGroup, null, null);
         }
         this.prequalificationGroupRepositoryWrapper.saveAndFlush(prequalificationGroup);
         this.validationChecklistResultRepository.saveAll(validationChecklistResults);

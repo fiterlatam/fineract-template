@@ -57,6 +57,7 @@ import org.apache.fineract.accounting.producttoaccountmapping.domain.PortfolioPr
 import org.apache.fineract.accounting.producttoaccountmapping.domain.ProductToGLAccountMapping;
 import org.apache.fineract.accounting.producttoaccountmapping.domain.ProductToGLAccountMappingRepository;
 import org.apache.fineract.accounting.producttoaccountmapping.exception.ProductToGLAccountMappingNotFoundException;
+import org.apache.fineract.infrastructure.configuration.domain.ConfigurationDomainService;
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 import org.apache.fineract.infrastructure.core.exception.PlatformDataIntegrityException;
 import org.apache.fineract.organisation.monetary.data.CurrencyData;
@@ -76,6 +77,7 @@ import org.apache.fineract.portfolio.savings.domain.SavingsAccountTransaction;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccountTransactionRepository;
 import org.apache.fineract.portfolio.shareaccounts.data.ShareAccountTransactionEnumData;
 import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -100,11 +102,15 @@ public class AccountingProcessorHelper {
     private final SavingsAccountTransactionRepository savingsAccountTransactionRepository;
     private final AccountTransfersReadPlatformService accountTransfersReadPlatformService;
     private final ChargeRepositoryWrapper chargeRepositoryWrapper;
+    private final ConfigurationDomainService configurationDomainService;
+    private final JdbcTemplate jdbcTemplate;
 
     public LoanDTO populateLoanDtoFromMap(final Map<String, Object> accountingBridgeData, final boolean cashBasedAccountingEnabled,
             final boolean upfrontAccrualBasedAccountingEnabled, final boolean periodicAccrualBasedAccountingEnabled) {
         final Long loanId = (Long) accountingBridgeData.get("loanId");
         final Long loanProductId = (Long) accountingBridgeData.get("loanProductId");
+        final Long glAccountId = (Long) accountingBridgeData.get("glAccountId");
+        final boolean isForeClosure = Boolean.TRUE.equals(accountingBridgeData.get("isForeClosure"));
         final Long officeId = (Long) accountingBridgeData.get("officeId");
         final CurrencyData currencyData = (CurrencyData) accountingBridgeData.get("currency");
         final List<LoanTransactionDTO> newLoanTransactions = new ArrayList<>();
@@ -121,12 +127,20 @@ public class AccountingProcessorHelper {
             final BigDecimal amount = (BigDecimal) map.get("amount");
             final BigDecimal principal = (BigDecimal) map.get("principalPortion");
             final BigDecimal interest = (BigDecimal) map.get("interestPortion");
+            final BigDecimal incomeInterest = (BigDecimal) map.get("incomeInterestPortion");
+            final BigDecimal receivableInterest = (BigDecimal) map.get("receivableInterestPortion");
             final BigDecimal fees = (BigDecimal) map.get("feeChargesPortion");
             final BigDecimal penalties = (BigDecimal) map.get("penaltyChargesPortion");
             final BigDecimal overPayments = (BigDecimal) map.get("overPaymentPortion");
+            final BigDecimal loanTopupAmount = (BigDecimal) map.get("loanTopupAmount");
+            final BigDecimal netAccruedInterest = (BigDecimal) map.get("netAccruedInterest");
             final boolean reversed = (Boolean) map.get("reversed");
+            boolean postAccountingForWaivers = true;
+            if (map.containsKey("postAccountingForWaivers") && map.get("postAccountingForWaivers") != null) {
+                postAccountingForWaivers = (Boolean) map.get("postAccountingForWaivers");
+            }
             final Long paymentTypeId = (Long) map.get("paymentTypeId");
-            final Long glAccountId = (Long) map.get("glAccountId");
+            final Long transactionGlAccountId = (Long) map.get("glAccountId");
 
             final List<ChargePaymentDTO> feePaymentDetails = new ArrayList<>();
             final List<ChargePaymentDTO> penaltyPaymentDetails = new ArrayList<>();
@@ -153,9 +167,12 @@ public class AccountingProcessorHelper {
                         PortfolioAccountType.LOAN);
             }
             final LoanTransactionDTO transaction = new LoanTransactionDTO(transactionOfficeId, paymentTypeId, transactionId,
-                    transactionDate, transactionType, amount, principal, interest, fees, penalties, overPayments, reversed,
-                    penaltyPaymentDetails, feePaymentDetails, isAccountTransfer);
-            transaction.setGlAccountId(glAccountId);
+                    transactionDate, transactionType, amount, principal, interest, incomeInterest, receivableInterest, fees, penalties,
+                    overPayments, reversed, penaltyPaymentDetails, feePaymentDetails, isAccountTransfer);
+            transaction.setGlAccountId(transactionGlAccountId != null ? transactionGlAccountId : glAccountId);
+            transaction.setLoanTopupAmount(loanTopupAmount != null ? loanTopupAmount : BigDecimal.ZERO);
+            transaction.setPostAccountingForWaivers(postAccountingForWaivers);
+            transaction.setNetAccruedInterest(netAccruedInterest);
             Boolean isLoanToLoanTransfer = (Boolean) accountingBridgeData.get("isLoanToLoanTransfer");
             if (isLoanToLoanTransfer != null && isLoanToLoanTransfer) {
                 transaction.setLoanToLoanTransfer(true);
@@ -360,6 +377,41 @@ public class AccountingProcessorHelper {
                 transactionId, transactionDate, amount, fundSourceGlAccountId);
     }
 
+    public void createAccrualBasedJournalEntriesAndReversalsForLoan(final Office office, final String currencyCode,
+            final Integer accountTypeToBeDebited, final Integer accountTypeToBeCredited, final Long loanProductId, final Long paymentTypeId,
+            final Long loanId, final String transactionId, final LocalDate transactionDate, final BigDecimal amount,
+            final Boolean isReversal, final Long fundSourceGlAccountId, BigDecimal loanTopupAmount) {
+        BigDecimal transactionAmount = amount;
+        if (loanTopupAmount != null) {
+
+        }
+        int accountTypeToDebitId = accountTypeToBeDebited;
+        int accountTypeToCreditId = accountTypeToBeCredited;
+        // reverse debits and credits for reversals
+        if (isReversal) {
+            accountTypeToDebitId = accountTypeToBeCredited;
+            accountTypeToCreditId = accountTypeToBeDebited;
+        }
+        createJournalEntriesForLoan(office, currencyCode, accountTypeToDebitId, accountTypeToCreditId, loanProductId, paymentTypeId, loanId,
+                transactionId, transactionDate, amount, fundSourceGlAccountId);
+    }
+
+    public void createAccrualBasedJournalEntriesAndReversalsForLoan(final Office office, final String currencyCode,
+            final Integer accountTypeToBeDebited, final Integer accountTypeToBeCredited, final Long loanProductId, final Long paymentTypeId,
+            final Long loanId, final String transactionId, final LocalDate transactionDate, final BigDecimal amount,
+            final Boolean isReversal, final Long fundSourceGlAccountId, BigDecimal principalPortion, BigDecimal feesPortion,
+            BigDecimal loanTopupAmount) {
+        int accountTypeToDebitId = accountTypeToBeDebited;
+        int accountTypeToCreditId = accountTypeToBeCredited;
+        // reverse debits and credits for reversals
+        if (isReversal) {
+            accountTypeToDebitId = accountTypeToBeCredited;
+            accountTypeToCreditId = accountTypeToBeDebited;
+        }
+        createJournalEntriesForLoan(office, currencyCode, accountTypeToDebitId, accountTypeToCreditId, loanProductId, paymentTypeId, loanId,
+                transactionId, transactionDate, amount, fundSourceGlAccountId, principalPortion, feesPortion, loanTopupAmount);
+    }
+
     /**
      * Convenience method that creates a pair of related Debits and Credits for Accrual Based accounting.
      *
@@ -424,11 +476,12 @@ public class AccountingProcessorHelper {
         }
 
         if (totalAmount.compareTo(totalCreditedAmount) != 0) {
+
             throw new PlatformDataIntegrityException(
-                    "Meltdown in advanced accounting...sum of all charges is not equal to the fee charge for a transaction for loan: "
-                            + loanId,
-                    "Meltdown in advanced accounting...sum of all charges is not equal to the fee charge for a transaction for loan: "
-                            + loanId,
+                    "Meltdown in advanced accounting...sum of all charges is not equal to the fee charge for a transactions for loan: "
+                            + loanId + " Amount:" + totalAmount + "CR-Amount:" + totalCreditedAmount,
+                    "Meltdown in advanced accounting...sum of all charges is not equal to the fee charge for a transactions for loan: "
+                            + loanId + " Amount:" + totalAmount + "CR-Amount:" + totalCreditedAmount,
                     totalCreditedAmount, totalAmount);
         }
     }
@@ -514,6 +567,22 @@ public class AccountingProcessorHelper {
                 transactionId, transactionDate, amount, fundSourceGlAccountId);
     }
 
+    public void createCashBasedJournalEntriesAndReversalsForLoan(final Office office, final String currencyCode,
+            final Integer accountTypeToBeDebited, final Integer accountTypeToBeCredited, final Long loanProductId, final Long paymentTypeId,
+            final Long loanId, final String transactionId, final LocalDate transactionDate, final BigDecimal amount,
+            final Boolean isReversal, final Long fundSourceGlAccountId, BigDecimal principalPortion, BigDecimal chargesPortion,
+            BigDecimal loanTopupAmount) {
+        int accountTypeToDebitId = accountTypeToBeDebited;
+        int accountTypeToCreditId = accountTypeToBeCredited;
+        // reverse debits and credits for reversals
+        if (isReversal) {
+            accountTypeToDebitId = accountTypeToBeCredited;
+            accountTypeToCreditId = accountTypeToBeDebited;
+        }
+        createJournalEntriesForLoan(office, currencyCode, accountTypeToDebitId, accountTypeToCreditId, loanProductId, paymentTypeId, loanId,
+                transactionId, transactionDate, amount, fundSourceGlAccountId, principalPortion, chargesPortion, loanTopupAmount);
+    }
+
     public void createCreditJournalEntryOrReversalForLoan(final Office office, final String currencyCode,
             final CashAccountsForLoan accountMappingType, final Long loanProductId, final Long paymentTypeId, final Long loanId,
             final String transactionId, final LocalDate transactionDate, final BigDecimal amount, final Boolean isReversal) {
@@ -551,6 +620,34 @@ public class AccountingProcessorHelper {
         return this.closureRepository.getLatestGLClosureByBranch(officeId);
     }
 
+    public List<GLClosure> getLatestClosureByOfficeIds(final long officeId) {
+        String retrieveAllOfficeIds = """
+                WITH RECURSIVE hierarchy_parts AS (
+                               SELECT
+                                 TRIM(BOTH '.' FROM hierarchy) AS h,
+                                 SUBSTRING_INDEX(TRIM(BOTH '.' FROM hierarchy), '.', 1) AS id_part,
+                                 1 AS level
+                               FROM m_office
+                               WHERE id = ?
+
+                               UNION ALL
+
+                               SELECT
+                                 h,
+                                 SUBSTRING_INDEX(SUBSTRING_INDEX(h, '.', level + 1), '.', -1),
+                                 level + 1
+                               FROM hierarchy_parts
+                               WHERE level < LENGTH(h) - LENGTH(REPLACE(h, '.', '')) + 1
+                             )
+
+                             SELECT CAST(id_part AS UNSIGNED) AS id
+                             FROM hierarchy_parts;
+                """;
+        // return a list of office ids in the hierarchy
+        List<Long> officeIds = this.jdbcTemplate.queryForList(retrieveAllOfficeIds, Long.class, officeId);
+        return this.closureRepository.findGLClosuresByOfficeIds(officeIds);
+    }
+
     public Office getOfficeById(final long officeId) {
         return this.officeRepositoryWrapper.findOneWithNotFoundDetection(officeId);
     }
@@ -572,6 +669,45 @@ public class AccountingProcessorHelper {
         }
         createDebitJournalEntryForLoan(office, currencyCode, debitAccount, loanId, transactionId, transactionDate, amount);
         createCreditJournalEntryForLoan(office, currencyCode, creditAccount, loanId, transactionId, transactionDate, amount);
+    }
+
+    private void createJournalEntriesForLoan(final Office office, final String currencyCode, final int accountTypeToDebitId,
+            final int accountTypeToCreditId, final Long loanProductId, final Long paymentTypeId, final Long loanId,
+            final String transactionId, final LocalDate transactionDate, final BigDecimal amount, final Long fundSourceGlAccountId,
+            BigDecimal principalPortion, BigDecimal chargesPortion, BigDecimal loanTopupAmount) {
+        GLAccount debitAccount = getLinkedGLAccountForLoanProduct(loanProductId, accountTypeToDebitId, paymentTypeId);
+        if (fundSourceGlAccountId != null
+                && List.of(AccrualAccountsForLoan.FUND_SOURCE.getValue(), FinancialActivity.ASSET_TRANSFER.getValue())
+                        .contains(accountTypeToDebitId)) {
+            debitAccount = this.accountRepositoryWrapper.findOneWithNotFoundDetection(fundSourceGlAccountId);
+        }
+        GLAccount creditAccount = getLinkedGLAccountForLoanProduct(loanProductId, accountTypeToCreditId, paymentTypeId);
+        if (fundSourceGlAccountId != null
+                && List.of(AccrualAccountsForLoan.FUND_SOURCE.getValue(), FinancialActivity.ASSET_TRANSFER.getValue())
+                        .contains(accountTypeToCreditId)) {
+            creditAccount = this.accountRepositoryWrapper.findOneWithNotFoundDetection(fundSourceGlAccountId);
+        }
+        createDebitJournalEntryForLoan(office, currencyCode, debitAccount, loanId, transactionId, transactionDate, amount);
+        if ((chargesPortion == null || chargesPortion.compareTo(BigDecimal.ZERO) <= 0)
+                && (loanTopupAmount == null || loanTopupAmount.compareTo(BigDecimal.ZERO) <= 0)) {
+            createCreditJournalEntryForLoan(office, currencyCode, creditAccount, loanId, transactionId, transactionDate, amount);
+        } else {
+            if (chargesPortion != null && chargesPortion.compareTo(BigDecimal.ZERO) > 0) {
+                GLAccount feesReceivableGL = getLinkedGLAccountForLoanProduct(loanProductId,
+                        AccrualAccountsForLoan.INCOME_FROM_FEES.getValue(), paymentTypeId);
+                createCreditJournalEntryForLoan(office, currencyCode, feesReceivableGL, loanId, transactionId, transactionDate,
+                        chargesPortion);
+
+            }
+            if (loanTopupAmount != null && loanTopupAmount.compareTo(BigDecimal.ZERO) > 0) {
+                GLAccount suspenseAccount = getLinkedGLAccountForLoanProduct(loanProductId,
+                        AccrualAccountsForLoan.TRANSFERS_SUSPENSE.getValue(), paymentTypeId);
+                createCreditJournalEntryForLoan(office, currencyCode, suspenseAccount, loanId, transactionId, transactionDate,
+                        loanTopupAmount);
+            }
+
+            createCreditJournalEntryForLoan(office, currencyCode, creditAccount, loanId, transactionId, transactionDate, principalPortion);
+        }
     }
 
     private void createJournalEntriesForSavings(final Office office, final String currencyCode, final int accountTypeToDebitId,

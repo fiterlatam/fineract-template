@@ -33,7 +33,7 @@ public enum PrequalificationStatus {
                                             "prequalification.status.expired"), COMPLETED(900,
                                                     "prequalification.status.completed"), CONSENT_ADDED(701,
                                                             "prequalification.status.concent.added"), AGENCY_LEAD_PENDING_APPROVAL(902,
-                                                                    "prequalification.status.pending.approval"), PREQUALIFICATION_UPDATE_REQUESTED(
+                                                                    "prequalification.status.agency.pending.approval"), PREQUALIFICATION_UPDATE_REQUESTED(
                                                                             903,
                                                                             "prequalification.status.update.requested"), AGENCY_LEAD_PENDING_APPROVAL_WITH_EXCEPTIONS(
                                                                                     904,
@@ -51,9 +51,19 @@ public enum PrequalificationStatus {
                                                                                                                                     1005,
                                                                                                                                     "prequalification.status.committee.b.pending.approval"), PRE_COMMITTEE_A_PENDING_APPROVAL(
                                                                                                                                             1006,
-                                                                                                                                            "prequalification.status.committee.a.pending.approval"), INVALID(
-                                                                                                                                                    0,
-                                                                                                                                                    "prequalification.status.invalid");
+                                                                                                                                            "prequalification.status.committee.a.pending.approval.with.exceptions"), PRE_COMMITTEE_D_PENDING_APPROVAL_WITH_EXCEPTIONS(
+                                                                                                                                                    911,
+                                                                                                                                                    "prequalification.status.pre.committee.d.pending.approval.with.exceptions"), PRE_COMMITTEE_C_PENDING_APPROVAL_WITH_EXCEPTIONS(
+                                                                                                                                                            912,
+                                                                                                                                                            "prequalification.status.pre.committee.c.pending.approval.with.exceptions"), PRE_COMMITTEE_B_PENDING_APPROVAL_WITH_EXCEPTIONS(
+                                                                                                                                                                    913,
+                                                                                                                                                                    "prequalification.status.committee.b.pending.approval.with.exceptions"), PRE_COMMITTEE_A_PENDING_APPROVAL_WITH_EXCEPTIONS(
+                                                                                                                                                                            914,
+                                                                                                                                                                            "prequalification.status.committee.a.pending.approval"), INVALID(
+                                                                                                                                                                                    0,
+                                                                                                                                                                                    "prequalification.status.invalid"), RENEGOTIATION_AGENCY_LEAD(
+                                                                                                                                                                                            1007,
+                                                                                                                                                                                            "prequalification.status.renegotiations");
 
     private final Integer value;
     private final String code;
@@ -119,6 +129,21 @@ public enum PrequalificationStatus {
             case 1006:
                 enumeration = PrequalificationStatus.PRE_COMMITTEE_A_PENDING_APPROVAL;
             break;
+            case 1007:
+                enumeration = PrequalificationStatus.RENEGOTIATION_AGENCY_LEAD;
+            break;
+            case 911:
+                enumeration = PrequalificationStatus.PRE_COMMITTEE_D_PENDING_APPROVAL_WITH_EXCEPTIONS;
+            break;
+            case 912:
+                enumeration = PrequalificationStatus.PRE_COMMITTEE_C_PENDING_APPROVAL_WITH_EXCEPTIONS;
+            break;
+            case 913:
+                enumeration = PrequalificationStatus.PRE_COMMITTEE_B_PENDING_APPROVAL_WITH_EXCEPTIONS;
+            break;
+            case 914:
+                enumeration = PrequalificationStatus.PRE_COMMITTEE_A_PENDING_APPROVAL_WITH_EXCEPTIONS;
+            break;
         }
         return enumeration;
     }
@@ -174,12 +199,44 @@ public enum PrequalificationStatus {
             clientStatus = PrequalificationStatus.PRE_COMMITTEE_D_PENDING_APPROVAL;
         } else if (status.equalsIgnoreCase(PrequalificationStatus.PRE_COMMITTEE_A_PENDING_APPROVAL.toString())) {
             clientStatus = PrequalificationStatus.PRE_COMMITTEE_A_PENDING_APPROVAL;
+        } else if (status.equalsIgnoreCase(PrequalificationStatus.PRE_COMMITTEE_B_PENDING_APPROVAL_WITH_EXCEPTIONS.toString())) {
+            clientStatus = PrequalificationStatus.PRE_COMMITTEE_B_PENDING_APPROVAL_WITH_EXCEPTIONS;
+        } else if (status.equalsIgnoreCase(PrequalificationStatus.PRE_COMMITTEE_C_PENDING_APPROVAL_WITH_EXCEPTIONS.toString())) {
+            clientStatus = PrequalificationStatus.PRE_COMMITTEE_C_PENDING_APPROVAL_WITH_EXCEPTIONS;
+        } else if (status.equalsIgnoreCase(PrequalificationStatus.PRE_COMMITTEE_D_PENDING_APPROVAL_WITH_EXCEPTIONS.toString())) {
+            clientStatus = PrequalificationStatus.PRE_COMMITTEE_D_PENDING_APPROVAL_WITH_EXCEPTIONS;
+        } else if (status.equalsIgnoreCase(PrequalificationStatus.PRE_COMMITTEE_A_PENDING_APPROVAL_WITH_EXCEPTIONS.toString())) {
+            clientStatus = PrequalificationStatus.PRE_COMMITTEE_A_PENDING_APPROVAL_WITH_EXCEPTIONS;
+        } else if (status.equalsIgnoreCase(PrequalificationStatus.RENEGOTIATION_AGENCY_LEAD.toString())) {
+            clientStatus = PrequalificationStatus.RENEGOTIATION_AGENCY_LEAD;
         } else {
             clientStatus = PrequalificationStatus.INVALID;
         }
 
         return clientStatus;
 
+    }
+
+    public static PrequalificationStatus resolveCommitteeStatus(String committee, boolean ignoreExceptions) {
+        if (StringUtils.hasLength(committee)) {
+            switch (committee.toUpperCase()) {
+                case "A":
+                    return ignoreExceptions ? PrequalificationStatus.PRE_COMMITTEE_A_PENDING_APPROVAL
+                            : PrequalificationStatus.PRE_COMMITTEE_A_PENDING_APPROVAL_WITH_EXCEPTIONS;
+                case "B":
+                    return ignoreExceptions ? PrequalificationStatus.PRE_COMMITTEE_B_PENDING_APPROVAL
+                            : PrequalificationStatus.PRE_COMMITTEE_B_PENDING_APPROVAL_WITH_EXCEPTIONS;
+                case "C":
+                    return ignoreExceptions ? PrequalificationStatus.PRE_COMMITTEE_C_PENDING_APPROVAL
+                            : PrequalificationStatus.PRE_COMMITTEE_C_PENDING_APPROVAL_WITH_EXCEPTIONS;
+                case "D":
+                    return ignoreExceptions ? PrequalificationStatus.PRE_COMMITTEE_D_PENDING_APPROVAL
+                            : PrequalificationStatus.PRE_COMMITTEE_D_PENDING_APPROVAL_WITH_EXCEPTIONS;
+                default:
+                    return PrequalificationStatus.INVALID;
+            }
+        }
+        return null;
     }
 
     // public boolean hasStateOf(final ClientIdentifierStatus state) {

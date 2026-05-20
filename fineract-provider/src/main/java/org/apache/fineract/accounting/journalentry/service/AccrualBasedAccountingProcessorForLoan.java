@@ -50,6 +50,10 @@ public class AccrualBasedAccountingProcessorForLoan implements AccountingProcess
             final LocalDate transactionDate = loanTransactionDTO.getTransactionDate();
             this.helper.checkForBranchClosures(latestGLClosure, transactionDate);
 
+            // if transaction is waiver for Friendship bridge, dont post accounting for interest waivers
+            if (!loanTransactionDTO.getPostAccountingForWaivers()) {
+                continue;
+            }
             /** Handle Disbursements **/
             if (loanTransactionDTO.getTransactionType().isDisbursement()) {
                 createJournalEntriesForDisbursements(loanDTO, loanTransactionDTO, office);
@@ -87,7 +91,10 @@ public class AccrualBasedAccountingProcessorForLoan implements AccountingProcess
             }
 
             /** Handle Write Offs, waivers and their reversals **/
-            else if ((loanTransactionDTO.getTransactionType().isWriteOff() || loanTransactionDTO.getTransactionType().isWaiveInterest()
+            else if ((loanTransactionDTO.getTransactionType().isWriteOff()
+                    || ((loanTransactionDTO.getTransactionType().isWaiveInterest()
+                            || loanTransactionDTO.getTransactionType().isWaiveInterestLoanTopup())
+                            && loanTransactionDTO.getPostAccountingForWaivers())
                     || loanTransactionDTO.getTransactionType().isWaiveCharges())) {
                 createJournalEntriesForRepaymentsAndWriteOffs(loanDTO, loanTransactionDTO, office, true, false);
             }
@@ -118,6 +125,9 @@ public class AccrualBasedAccountingProcessorForLoan implements AccountingProcess
         final String transactionId = loanTransactionDTO.getTransactionId();
         final LocalDate transactionDate = loanTransactionDTO.getTransactionDate();
         final BigDecimal disbursalAmount = loanTransactionDTO.getAmount();
+        final BigDecimal principal = loanTransactionDTO.getPrincipal();
+        final BigDecimal loanTopupAmount = loanTransactionDTO.getLoanTopupAmount();
+        final BigDecimal disbursementCharges = loanTransactionDTO.getFees();
         final boolean isReversed = loanTransactionDTO.isReversed();
         final Long paymentTypeId = loanTransactionDTO.getPaymentTypeId();
         final Long fundSourceGlAccountId = loanTransactionDTO.getGlAccountId();
@@ -134,7 +144,8 @@ public class AccrualBasedAccountingProcessorForLoan implements AccountingProcess
         } else {
             this.helper.createAccrualBasedJournalEntriesAndReversalsForLoan(office, currencyCode,
                     AccrualAccountsForLoan.LOAN_PORTFOLIO.getValue(), AccrualAccountsForLoan.FUND_SOURCE.getValue(), loanProductId,
-                    paymentTypeId, loanId, transactionId, transactionDate, disbursalAmount, isReversed, fundSourceGlAccountId);
+                    paymentTypeId, loanId, transactionId, transactionDate, disbursalAmount, isReversed, fundSourceGlAccountId, principal,
+                    disbursementCharges, loanTopupAmount);
         }
 
     }
@@ -184,6 +195,9 @@ public class AccrualBasedAccountingProcessorForLoan implements AccountingProcess
         final LocalDate transactionDate = loanTransactionDTO.getTransactionDate();
         final BigDecimal principalAmount = loanTransactionDTO.getPrincipal();
         final BigDecimal interestAmount = loanTransactionDTO.getInterest();
+        final BigDecimal accruedInterest = loanTransactionDTO.getNetAccruedInterest();
+        final BigDecimal receivableInterest = loanTransactionDTO.getReceivableInterest();
+        final BigDecimal incomeInterest = loanTransactionDTO.getIncomeInterest();
         final BigDecimal feesAmount = loanTransactionDTO.getFees();
         final BigDecimal penaltiesAmount = loanTransactionDTO.getPenalties();
         final BigDecimal overPaymentAmount = loanTransactionDTO.getOverPayment();
@@ -205,13 +219,74 @@ public class AccrualBasedAccountingProcessorForLoan implements AccountingProcess
         // handle interest payment of writeOff (and reversals)
         if (interestAmount != null && !(interestAmount.compareTo(BigDecimal.ZERO) == 0)) {
             totalDebitAmount = totalDebitAmount.add(interestAmount);
-            GLAccount account = this.helper.getLinkedGLAccountForLoanProduct(loanProductId,
-                    AccrualAccountsForLoan.INTEREST_RECEIVABLE.getValue(), paymentTypeId);
-            if (accountMap.containsKey(account)) {
-                BigDecimal amount = accountMap.get(account).add(interestAmount);
-                accountMap.put(account, amount);
+
+            if ((accruedInterest != null && accruedInterest.compareTo(BigDecimal.ZERO) > 0)
+                    && (receivableInterest != null && receivableInterest.compareTo(BigDecimal.ZERO) > 0)) {
+                GLAccount incomeAccount = this.helper.getLinkedGLAccountForLoanProduct(loanProductId,
+                        AccrualAccountsForLoan.INTEREST_RECEIVABLE.getValue(), paymentTypeId);
+                if (accountMap.containsKey(incomeAccount)) {
+                    BigDecimal amount = accountMap.get(incomeAccount).add(accruedInterest);
+                    accountMap.put(incomeAccount, amount);
+                } else {
+                    accountMap.put(incomeAccount, accruedInterest);
+                }
+                GLAccount receivableAccount = this.helper.getLinkedGLAccountForLoanProduct(loanProductId,
+                        AccrualAccountsForLoan.INTEREST_ON_LOANS.getValue(), paymentTypeId);
+                BigDecimal netReceivableInterest = receivableInterest.subtract(accruedInterest);
+                if (netReceivableInterest.compareTo(BigDecimal.ZERO) > 0) {
+                    if (accountMap.containsKey(receivableAccount)) {
+                        BigDecimal amount = accountMap.get(receivableAccount).add(netReceivableInterest);
+                        accountMap.put(receivableAccount, amount);
+                    } else {
+                        accountMap.put(receivableAccount, netReceivableInterest);
+                    }
+                }
             } else {
-                accountMap.put(account, interestAmount);
+                if (receivableInterest != null && receivableInterest.compareTo(BigDecimal.ZERO) > 0) {
+                    GLAccount account = this.helper.getLinkedGLAccountForLoanProduct(loanProductId,
+                            AccrualAccountsForLoan.INTEREST_ON_LOANS.getValue(), paymentTypeId);
+                    if (accountMap.containsKey(account)) {
+                        BigDecimal amount = accountMap.get(account).add(receivableInterest);
+                        accountMap.put(account, amount);
+                    } else {
+                        accountMap.put(account, receivableInterest);
+                    }
+
+                    if (incomeInterest == null && interestAmount.subtract(receivableInterest).compareTo(BigDecimal.ZERO) > 0) {
+                        GLAccount incomeAccount = this.helper.getLinkedGLAccountForLoanProduct(loanProductId,
+                                AccrualAccountsForLoan.INTEREST_RECEIVABLE.getValue(), paymentTypeId);
+                        BigDecimal amount = interestAmount.subtract(receivableInterest);
+                        if (accountMap.containsKey(incomeAccount)) {
+                            BigDecimal totalAmount = accountMap.get(incomeAccount).add(amount);
+                            accountMap.put(incomeAccount, totalAmount);
+                        } else {
+                            accountMap.put(incomeAccount, amount);
+                        }
+                    }
+                }
+                if (incomeInterest != null && incomeInterest.compareTo(BigDecimal.ZERO) > 0) {
+                    GLAccount account = this.helper.getLinkedGLAccountForLoanProduct(loanProductId,
+                            AccrualAccountsForLoan.INTEREST_RECEIVABLE.getValue(), paymentTypeId);
+                    if (accountMap.containsKey(account)) {
+                        BigDecimal amount = accountMap.get(account).add(incomeInterest);
+                        accountMap.put(account, amount);
+                    } else {
+                        accountMap.put(account, incomeInterest);
+                    }
+
+                    if (receivableInterest == null && interestAmount.subtract(incomeInterest).compareTo(BigDecimal.ZERO) > 0) {
+                        GLAccount incomeAccount = this.helper.getLinkedGLAccountForLoanProduct(loanProductId,
+                                AccrualAccountsForLoan.INTEREST_ON_LOANS.getValue(), paymentTypeId);
+                        BigDecimal amount = interestAmount.subtract(incomeInterest);
+                        if (accountMap.containsKey(incomeAccount)) {
+                            BigDecimal totalAmount = accountMap.get(incomeAccount).add(amount);
+                            accountMap.put(incomeAccount, totalAmount);
+                        } else {
+                            accountMap.put(incomeAccount, amount);
+                        }
+                    }
+                }
+
             }
         }
 
@@ -220,7 +295,7 @@ public class AccrualBasedAccountingProcessorForLoan implements AccountingProcess
 
             totalDebitAmount = totalDebitAmount.add(feesAmount);
 
-            if (isIncomeFromFee) {
+            if (isIncomeFromFee || loanTransactionDTO.getTransactionType().isRepayment()) {
                 this.helper.createCreditJournalEntryOrReversalForLoanCharges(office, currencyCode,
                         AccrualAccountsForLoan.INCOME_FROM_FEES.getValue(), loanProductId, loanId, transactionId, transactionDate,
                         feesAmount, isReversal, loanTransactionDTO.getFeePayments());
@@ -287,10 +362,10 @@ public class AccrualBasedAccountingProcessorForLoan implements AccountingProcess
                         AccrualAccountsForLoan.LOSSES_WRITTEN_OFF.getValue(), loanProductId, paymentTypeId, loanId, transactionId,
                         transactionDate, totalDebitAmount, isReversal, fundSourceGlAccountId);
             } else {
-                if (loanTransactionDTO.isLoanToLoanTransfer()) {
-                    this.helper.createDebitJournalEntryOrReversalForLoan(office, currencyCode, FinancialActivity.ASSET_TRANSFER.getValue(),
-                            loanProductId, paymentTypeId, loanId, transactionId, transactionDate, totalDebitAmount, isReversal,
-                            fundSourceGlAccountId);
+                if (loanTransactionDTO.isLoanToLoanTransfer() || loanTransactionDTO.getTransactionType().isLoanTopupPayment()) {
+                    this.helper.createDebitJournalEntryOrReversalForLoan(office, currencyCode,
+                            AccrualAccountsForLoan.TRANSFERS_SUSPENSE.getValue(), loanProductId, paymentTypeId, loanId, transactionId,
+                            transactionDate, totalDebitAmount, isReversal, fundSourceGlAccountId);
                 } else if (loanTransactionDTO.isAccountTransfer()) {
                     this.helper.createDebitJournalEntryOrReversalForLoan(office, currencyCode,
                             FinancialActivity.LIABILITY_TRANSFER.getValue(), loanProductId, paymentTypeId, loanId, transactionId,

@@ -22,6 +22,7 @@ import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
@@ -37,6 +38,8 @@ import org.apache.fineract.portfolio.client.service.ClientReadPlatformService;
 import org.apache.fineract.portfolio.group.service.GroupReadPlatformService;
 import org.apache.fineract.portfolio.loanaccount.data.LoanApplicationTimelineData;
 import org.apache.fineract.portfolio.loanaccount.data.LoanStatusEnumData;
+import org.apache.fineract.portfolio.loanapplicationdraft.data.LoanApplicationDraftData;
+import org.apache.fineract.portfolio.loanapplicationdraft.service.LoanApplicationDraftReadPlatformService;
 import org.apache.fineract.portfolio.loanproduct.service.LoanEnumerations;
 import org.apache.fineract.portfolio.savings.data.SavingsAccountApplicationTimelineData;
 import org.apache.fineract.portfolio.savings.data.SavingsAccountStatusEnumData;
@@ -56,16 +59,18 @@ public class AccountDetailsReadPlatformServiceJpaRepositoryImpl implements Accou
     private final JdbcTemplate jdbcTemplate;
     private final ClientReadPlatformService clientReadPlatformService;
     private final GroupReadPlatformService groupReadPlatformService;
+    private final LoanApplicationDraftReadPlatformService loanApplicationDraftReadPlatformService;
     private final ColumnValidator columnValidator;
 
     @Autowired
     public AccountDetailsReadPlatformServiceJpaRepositoryImpl(final ClientReadPlatformService clientReadPlatformService,
-            final JdbcTemplate jdbcTemplate, final GroupReadPlatformService groupReadPlatformService,
-            final ColumnValidator columnValidator) {
+            final JdbcTemplate jdbcTemplate, final GroupReadPlatformService groupReadPlatformService, final ColumnValidator columnValidator,
+            final LoanApplicationDraftReadPlatformService loanApplicationDraftReadPlatformService) {
         this.clientReadPlatformService = clientReadPlatformService;
         this.jdbcTemplate = jdbcTemplate;
         this.groupReadPlatformService = groupReadPlatformService;
         this.columnValidator = columnValidator;
+        this.loanApplicationDraftReadPlatformService = loanApplicationDraftReadPlatformService;
     }
 
     @Override
@@ -88,7 +93,9 @@ public class AccountDetailsReadPlatformServiceJpaRepositoryImpl implements Accou
         final List<ShareAccountSummaryData> shareAccounts = retrieveShareAccountDetails(clientId);
         final List<GuarantorAccountSummaryData> guarantorloanAccounts = retrieveGuarantorLoanAccountDetails(guarantorWhereClause,
                 new Object[] { clientId });
-        return new AccountSummaryCollectionData(loanAccounts, glimAccounts, savingsAccounts, shareAccounts, guarantorloanAccounts);
+        final List<LoanApplicationDraftData> loanApplicationDrafts = loanApplicationDraftReadPlatformService.retrieveAllActive(clientId);
+        return new AccountSummaryCollectionData(loanAccounts, glimAccounts, savingsAccounts, shareAccounts, guarantorloanAccounts,
+                loanApplicationDrafts);
     }
 
     @Override
@@ -120,7 +127,7 @@ public class AccountDetailsReadPlatformServiceJpaRepositoryImpl implements Accou
         final List<GuarantorAccountSummaryData> memberGuarantorloanAccounts = retrieveGuarantorLoanAccountDetails(
                 guarantorWhereClauseForMembers, new Object[] { groupId });
         return new AccountSummaryCollectionData(groupLoanAccounts, glimAccounts, groupSavingsAccounts, groupGuarantorloanAccounts,
-                memberLoanAccounts, memberSavingsAccounts, memberGuarantorloanAccounts);
+                memberLoanAccounts, memberSavingsAccounts, memberGuarantorloanAccounts, new ArrayList<>());
 
     }
 
@@ -145,7 +152,7 @@ public class AccountDetailsReadPlatformServiceJpaRepositoryImpl implements Accou
         final List<SavingsAccountSummaryData> memberSavingsAccounts = retrieveAccountDetails(savingswhereClauseForMembers,
                 new Object[] { groupId });
         return new AccountSummaryCollectionData(groupLoanAccounts, glimAccounts, gsimSavingsAccounts, null, memberLoanAccounts,
-                memberSavingsAccounts, null);
+                memberSavingsAccounts, null, new ArrayList<>());
     }
 
     @Override

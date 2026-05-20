@@ -197,6 +197,10 @@ public class ExternalServicesPropertiesReadPlatformServiceImpl implements Extern
                 serviceNameToUse = ExternalServicesConstants.DPI_BURO_CHECK_SERVICE_NAME;
             break;
 
+            case "COMMCARE_INTEGRATION":
+                serviceNameToUse = ExternalServicesConstants.COMMCARE_INTEGRATION_SERVICE_NAME;
+            break;
+
             case ExternalServicesConstants.LOAN_ADDITIONAL_PROPERTIES_SERVICE_NAME:
                 serviceNameToUse = ExternalServicesConstants.LOAN_ADDITIONAL_PROPERTIES_SERVICE_NAME;
             break;

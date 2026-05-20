@@ -20,6 +20,7 @@ package org.apache.fineract.infrastructure.documentmanagement.service;
 
 import java.io.InputStream;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
+import org.apache.fineract.infrastructure.core.exception.GeneralPlatformDomainRuleException;
 import org.apache.fineract.infrastructure.core.exception.PlatformDataIntegrityException;
 import org.apache.fineract.infrastructure.documentmanagement.command.DocumentCommand;
 import org.apache.fineract.infrastructure.documentmanagement.command.DocumentCommandValidator;
@@ -76,7 +77,7 @@ public class DocumentWritePlatformServiceJpaRepositoryImpl implements DocumentWr
             final Document document = Document.createNew(documentCommand.getParentEntityType(), documentCommand.getParentEntityId(),
                     documentCommand.getName(), documentCommand.getFileName(), documentCommand.getSize(), documentCommand.getType(),
                     documentCommand.getDescription(), fileLocation, contentRepository.getStorageType(), documentCommand.getDocumentType(),
-                    documentCommand.getDocumentPurpose(), documentCommand.getDateCreated());
+                    documentCommand.getDocumentPurpose(), documentCommand.getDateCreated(), documentCommand.getMetaData());
 
             this.documentRepository.saveAndFlush(document);
 
@@ -100,6 +101,18 @@ public class DocumentWritePlatformServiceJpaRepositoryImpl implements DocumentWr
 
         return documentId;
 
+    }
+
+    @Transactional
+    @Override
+    public void transferDraftDocument(String entityType, Long entityId, Long draftId) {
+
+        if (entityType == null || entityId == null) {
+            throw new GeneralPlatformDomainRuleException("error.msg.entity.type.and.entity.id.must.not.be.null.to.transfer.documents.draft",
+                    "Entity type and entity id must not be null to transfer documents draft");
+        }
+
+        this.documentRepository.transferDocuments(entityType, entityId, DocumentManagementEntity.LOANAPPLICATIONDRAFT.toString(), draftId);
     }
 
     @Transactional
@@ -180,7 +193,7 @@ public class DocumentWritePlatformServiceJpaRepositoryImpl implements DocumentWr
     /*** Entities for document Management **/
     public enum DocumentManagementEntity {
 
-        CLIENTS, CLIENT_IDENTIFIERS, STAFF, LOANS, SAVINGS, GROUPS, IMPORT, BLACKLIST, PREQUALIFICATIONS;
+        CLIENTS, CLIENT_IDENTIFIERS, STAFF, LOANS, SAVINGS, GROUPS, IMPORT, BLACKLIST, PREQUALIFICATIONS, PAELOANDOCS, LOANAPPLICATIONDRAFT;
 
         @Override
         public String toString() {

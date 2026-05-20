@@ -20,6 +20,8 @@ package org.apache.fineract.organisation.prequalification.api;
 
 import static org.apache.fineract.organisation.prequalification.domain.PreQualificationsEnumerations.status;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -63,6 +65,9 @@ import org.apache.fineract.infrastructure.documentmanagement.service.DocumentWri
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.organisation.agency.data.AgencyData;
 import org.apache.fineract.organisation.agency.service.AgencyReadPlatformServiceImpl;
+import org.apache.fineract.organisation.committee.data.CommitteeData;
+import org.apache.fineract.organisation.committee.service.CommitteeReadPlatformService;
+import org.apache.fineract.organisation.prequalification.command.PrequalificatoinApiConstants;
 import org.apache.fineract.organisation.prequalification.data.GroupPrequalificationData;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationStatus;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationType;
@@ -89,7 +94,7 @@ public class GroupPrequalificationApiResource {
 
     private static final Set<String> PRE_QUALIFICATION_DATA_PARAMETERS = new HashSet<>(
             Arrays.asList("id", "productId", "productCode", "year", "typification", "dpi", "nit", "description", "agencyId", "balance",
-                    "disbursementAmount", "status", "addedBy", "createdAt"));
+                    "disbursementAmount", "status", "addedBy", "createdAt", "listComments", "exceptionListComments"));
 
     private final String resourceNameForPermissions = "PREQUALIFICATIONS";
 
@@ -107,6 +112,7 @@ public class GroupPrequalificationApiResource {
     private final LoanProductReadPlatformService loanProductReadPlatformService;
     private final AppUserReadPlatformService appUserReadPlatformService;
     private final ConfigurationReadPlatformService configurationReadPlatformService;
+    private final CommitteeReadPlatformService committeeReadPlatformService;
 
     @Autowired
     public GroupPrequalificationApiResource(final PlatformSecurityContext context,
@@ -119,7 +125,8 @@ public class GroupPrequalificationApiResource {
             final ConfigurationReadPlatformService configurationReadPlatformService,
             final PrequalificationReadPlatformService prequalificationReadPlatformService, final FileUploadValidator fileUploadValidator,
             final DocumentWritePlatformService documentWritePlatformService, final ApiRequestParameterHelper apiRequestParameterHelper,
-            final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService) {
+            final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService,
+            final CommitteeReadPlatformService committeeReadPlatformService) {
         this.context = context;
         this.codeValueReadPlatformService = codeValueReadPlatformService;
         this.toApiJsonSerializer = toApiJsonSerializer;
@@ -134,6 +141,7 @@ public class GroupPrequalificationApiResource {
         this.loanProductReadPlatformService = loanProductReadPlatformService;
         this.appUserReadPlatformService = appUserReadPlatformService;
         this.configurationReadPlatformService = configurationReadPlatformService;
+        this.committeeReadPlatformService = committeeReadPlatformService;
     }
 
     @GET
@@ -222,6 +230,9 @@ public class GroupPrequalificationApiResource {
             if (groupingType.equals("individual")) {
                 prequalificationType = PrequalificationType.INDIVIDUAL.getValue();
             }
+            if (groupingType.equals("pae")) {
+                prequalificationType = PrequalificationType.PAE.getValue();
+            }
 
             if (prequalificationType != null) {
                 loanProducts = this.loanProductReadPlatformService.retrieveAllLoanProductsForOwner(prequalificationType);
@@ -266,6 +277,11 @@ public class GroupPrequalificationApiResource {
         this.context.authenticatedUser().validateHasViewPermission(this.resourceNameForPermissions);
 
         GroupPrequalificationData clientData = this.prequalificationReadPlatformService.retrieveOne(groupId);
+        Page<CommitteeData> committeeData = committeeReadPlatformService.retrieveAll(null);
+        clientData.setCommitteeDataPage(committeeData);
+
+        clientData.setExceptionListComments(this.prequalificationReadPlatformService.retrieveHistoryComments(groupId, true));
+        clientData.setListComments(this.prequalificationReadPlatformService.retrieveHistoryComments(groupId, false));
 
         final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(uriInfo.getQueryParameters());
         return this.toApiJsonSerializer.serialize(settings, clientData, PRE_QUALIFICATION_DATA_PARAMETERS);
@@ -340,7 +356,7 @@ public class GroupPrequalificationApiResource {
             @PathParam("memberId") @Parameter(description = "memberId") final Long memberId) {
 
         try {
-            final CommandWrapper commandRequest = new CommandWrapperBuilder().updatePrequalificationMemberDetails(memberId)
+            final CommandWrapper commandRequest = new CommandWrapperBuilder().updatePrequalificationMemberDetails(memberId, groupId)
                     .withJson(apiRequestBodyAsJson).build();
 
             final CommandProcessingResult result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
@@ -368,8 +384,12 @@ public class GroupPrequalificationApiResource {
                     fileDetails.getFileName(), fileSize, bodyPart.getMediaType().toString(), description, null);
             final Long documentId = this.documentWritePlatformService.createDocument(documentCommand, inputStream);
         }
-
-        this.prequalificationWritePlatformService.addCommentsToPrequalification(groupId, comment);
+        if (!comment.isEmpty() && (PrequalificatoinApiConstants.exceptionComments.equalsIgnoreCase(description)
+                || PrequalificatoinApiConstants.normalComments.equalsIgnoreCase(description))) {
+            this.prequalificationWritePlatformService.addExceptionCommentsToPrequalification(groupId, comment, description);
+        } else {
+            this.prequalificationWritePlatformService.addCommentsToPrequalification(groupId, comment);
+        }
         return this.toApiJsonSerializer.serialize(CommandProcessingResult.resourceResult(groupId, null));
     }
 
@@ -381,8 +401,8 @@ public class GroupPrequalificationApiResource {
             @HeaderParam("Content-Length") @Parameter(description = "Content-Length") final Long fileSize,
             @FormDataParam("file") final InputStream inputStream, @FormDataParam("file") final FormDataContentDisposition fileDetails,
             @FormDataParam("file") final FormDataBodyPart bodyPart, @FormDataParam("description") final String description,
-            @FormDataParam("comment") final String comment, @FormDataParam("memberId") final Long memberId,
-            @FormDataParam("dpi") final String dpi) {
+            @FormDataParam("comment") String comment, @FormDataParam("memberId") final Long memberId,
+            @FormDataParam("dpi") final String dpi, @FormDataParam("sendToCommittee") final Boolean sendToCommittee) {
 
         if (inputStream != null) {
             fileUploadValidator.validate(fileSize, inputStream, fileDetails, bodyPart);
@@ -390,8 +410,22 @@ public class GroupPrequalificationApiResource {
                     fileDetails.getFileName(), fileSize, bodyPart.getMediaType().toString(), description, null);
             this.documentWritePlatformService.createDocument(documentCommand, inputStream);
         }
+        if (memberId != null) {
+            this.prequalificationWritePlatformService.uploadMemberDocs(memberId);
+        }
 
-        this.prequalificationWritePlatformService.uploadMemberDocs(memberId);
+        if (sendToCommittee != null && sendToCommittee) {
+            JsonObject object = new JsonObject();
+            object.addProperty("groupId", groupId);
+            object.addProperty("memberId", memberId);
+            object.addProperty("comments", comment);
+            String action = "approvepreviouscommitee";
+            object.addProperty("action", action);
+            final CommandWrapper commandRequest = new CommandWrapperBuilder().processAnalysisRequest(groupId, StringUtils.upperCase(action))
+                    .withJson(new Gson().toJson(object)).build();
+            this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
+        }
+
         return this.toApiJsonSerializer.serialize(CommandProcessingResult.resourceResult(groupId, null));
     }
 }

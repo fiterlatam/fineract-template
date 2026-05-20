@@ -41,6 +41,8 @@ public class LoanTransactionDTO {
     /*** Breakup of amounts in case of repayments **/
     private final BigDecimal principal;
     private final BigDecimal interest;
+    private final BigDecimal incomeInterest;
+    private final BigDecimal receivableInterest;
     private final BigDecimal fees;
     private final BigDecimal penalties;
     private final BigDecimal overPayment;
@@ -59,4 +61,13 @@ public class LoanTransactionDTO {
 
     @Setter
     private Long glAccountId;
+
+    @Setter
+    private BigDecimal loanTopupAmount;
+
+    @Setter
+    private Boolean postAccountingForWaivers;
+
+    @Setter
+    private BigDecimal netAccruedInterest;
 }
