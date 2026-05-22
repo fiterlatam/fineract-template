@@ -424,8 +424,7 @@ public class AccountTransfersWritePlatformServiceImpl implements AccountTransfer
             if (LoanTransactionType.DISBURSEMENT.getValue().equals(accountTransferDTO.getFromTransferType())) {
                 loanTransaction = this.loanAccountDomainService.makeDisburseTransaction(accountTransferDTO.getFromAccountId(),
                         accountTransferDTO.getTransactionDate(), accountTransferDTO.getTransactionAmount(),
-                        accountTransferDTO.getPaymentDetail(), accountTransferDTO.getNoteText(), accountTransferDTO.getTxnExternalId(),
-                        accountTransferDTO.getLoanTopupAmount());
+                        accountTransferDTO.getPaymentDetail(), accountTransferDTO.getNoteText(), accountTransferDTO.getTxnExternalId());
             } else {
                 loanTransaction = this.loanAccountDomainService.makeRefund(accountTransferDTO.getFromAccountId(),
                         new CommandProcessingResultBuilder(), accountTransferDTO.getTransactionDate(),
@@ -477,7 +476,7 @@ public class AccountTransfersWritePlatformServiceImpl implements AccountTransfer
 
         LoanTransaction disburseTransaction = this.loanAccountDomainService.makeDisburseTransaction(accountTransferDTO.getFromAccountId(),
                 accountTransferDTO.getTransactionDate(), accountTransferDTO.getTransactionAmount(), accountTransferDTO.getPaymentDetail(),
-                accountTransferDTO.getNoteText(), accountTransferDTO.getTxnExternalId(), true, accountTransferDTO.getLoanTopupAmount());
+                accountTransferDTO.getNoteText(), accountTransferDTO.getTxnExternalId(), true);
 
         LoanTransaction repayTransaction = this.loanAccountDomainService.makeRepayment(LoanTransactionType.REPAYMENT, toLoanAccount,
                 new CommandProcessingResultBuilder(), accountTransferDTO.getTransactionDate(), accountTransferDTO.getTransactionAmount(),

@@ -64,10 +64,6 @@ public final class CommonEnumerations {
                 optionData = new EnumOptionData(PeriodFrequencyType.MONTHS.getValue().longValue(),
                         codePrefix + PeriodFrequencyType.MONTHS.getCode(), "Months");
             break;
-            case MONTHS_APPLIED_DAILY:
-                optionData = new EnumOptionData(PeriodFrequencyType.MONTHS_APPLIED_DAILY.getValue().longValue(),
-                        codePrefix + PeriodFrequencyType.MONTHS_APPLIED_DAILY.getCode(), "Months(Applied Daily");
-            break;
             case YEARS:
                 optionData = new EnumOptionData(PeriodFrequencyType.YEARS.getValue().longValue(),
                         codePrefix + PeriodFrequencyType.YEARS.getCode(), "Years");

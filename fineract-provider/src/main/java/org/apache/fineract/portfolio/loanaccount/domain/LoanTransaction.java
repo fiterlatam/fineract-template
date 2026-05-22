@@ -36,10 +36,7 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
-import javax.persistence.Transient;
 import javax.persistence.UniqueConstraint;
-import lombok.Getter;
-import lombok.Setter;
 import org.apache.fineract.infrastructure.core.domain.AbstractAuditableWithUTCDateTimeCustom;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.organisation.monetary.data.CurrencyData;
@@ -118,44 +115,11 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
     @Column(name = "manually_adjusted_or_reversed", nullable = false)
     private boolean manuallyAdjustedOrReversed;
 
-    @Setter
-    @Getter
-    @Column(name = "post_accounting_for_waivers", nullable = false)
-    private Boolean postAccountingForWaivers;
-
-    @Setter
-    @Getter
-    @Column(name = "loan_topup_amount", nullable = false)
-    private BigDecimal loanTopupAmount;
-
-    @Setter
-    @Getter
-    @Column(name = "topup_loan_id", nullable = false)
-    private BigDecimal loanTopupId;
-
-    @Setter
-    @Getter
-    @Column(name = "net_accrued_interest", nullable = false)
-    private BigDecimal netAccruedInterest;
-
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY, mappedBy = "loanTransaction")
     private Set<LoanCollateralManagement> loanCollateralManagementSet = new HashSet<>();
 
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER, mappedBy = "loanTransaction")
     private Set<LoanTransactionToRepaymentScheduleMapping> loanTransactionToRepaymentScheduleMappings = new HashSet<>();
-
-    @Transient
-    @Setter
-    private BigDecimal incomeInterestPortion;
-
-    @Transient
-    @Setter
-    private BigDecimal receivableInterestPortion;
-
-    @Transient
-    @Setter
-    @Getter
-    private Boolean isForeclosureTransaction;
 
     protected LoanTransaction() {}
 
@@ -224,15 +188,6 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
         return loanTransaction;
     }
 
-    public static LoanTransaction waiverNoAccounting(final Office office, final Loan loan, final Money amount, final LocalDate waiveDate,
-            final Money waived, final Money unrecognizedPortion, Boolean isAccountClosure) {
-        LoanTransactionType waiveInterest = Boolean.TRUE.equals(isAccountClosure) ? LoanTransactionType.WAIVE_INTEREST_TOPUP
-                : LoanTransactionType.WAIVE_INTEREST;
-        LoanTransaction loanTransaction = new LoanTransaction(loan, office, waiveInterest, amount.getAmount(), waiveDate, null);
-        loanTransaction.updateInterestComponent(waived, unrecognizedPortion);
-        return loanTransaction;
-    }
-
     public static LoanTransaction accrueInterest(final Office office, final Loan loan, final Money amount,
             final LocalDate interestAppliedDate) {
         BigDecimal principalPortion = null;
@@ -297,13 +252,6 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
                 loanTransaction.reversed, loanTransaction.paymentDetail, loanTransaction.externalId);
     }
 
-    public static LoanTransaction copyInterestTransactionProperties(final LoanTransaction loanTransaction) {
-        return new LoanTransaction(loanTransaction.loan, loanTransaction.office, loanTransaction.typeOf, loanTransaction.dateOf,
-                loanTransaction.amount, loanTransaction.principalPortion, loanTransaction.interestPortion,
-                loanTransaction.unrecognizedIncomePortion, loanTransaction.feeChargesPortion, loanTransaction.penaltyChargesPortion,
-                loanTransaction.overPaymentPortion, loanTransaction.reversed, loanTransaction.paymentDetail, loanTransaction.externalId);
-    }
-
     public static LoanTransaction accrueLoanCharge(final Loan loan, final Office office, final Money amount, final LocalDate applyDate,
             final Money feeCharges, final Money penaltyCharges) {
         String externalId = null;
@@ -350,28 +298,6 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
         this.amount = amount;
         this.principalPortion = principalPortion;
         this.interestPortion = interestPortion;
-        this.feeChargesPortion = feeChargesPortion;
-        this.penaltyChargesPortion = penaltyChargesPortion;
-        this.overPaymentPortion = overPaymentPortion;
-        this.reversed = reversed;
-        this.paymentDetail = paymentDetail;
-        this.office = office;
-        this.externalId = externalId;
-        this.submittedOnDate = DateUtils.getBusinessLocalDate();
-    }
-
-    private LoanTransaction(final Loan loan, final Office office, final Integer typeOf, final LocalDate dateOf, final BigDecimal amount,
-            final BigDecimal principalPortion, final BigDecimal interestPortion, final BigDecimal unrecognizedIncomePortion,
-            final BigDecimal feeChargesPortion, final BigDecimal penaltyChargesPortion, final BigDecimal overPaymentPortion,
-            final boolean reversed, final PaymentDetail paymentDetail, final String externalId) {
-
-        this.loan = loan;
-        this.typeOf = typeOf;
-        this.dateOf = dateOf;
-        this.amount = amount;
-        this.principalPortion = principalPortion;
-        this.interestPortion = interestPortion;
-        this.unrecognizedIncomePortion = unrecognizedIncomePortion;
         this.feeChargesPortion = feeChargesPortion;
         this.penaltyChargesPortion = penaltyChargesPortion;
         this.overPaymentPortion = overPaymentPortion;
@@ -558,7 +484,7 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
     }
 
     public boolean isRepaymentType() {
-        return isRepayment() || isMerchantIssuedRefund() || isPayoutRefund() || isGoodwillCredit() || isLoanTopupPayment();
+        return isRepayment() || isMerchantIssuedRefund() || isPayoutRefund() || isGoodwillCredit();
     }
 
     public boolean isRepayment() {
@@ -575,14 +501,6 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
 
     public boolean isGoodwillCredit() {
         return LoanTransactionType.GOODWILL_CREDIT.equals(getTypeOf()) && isNotReversed();
-    }
-
-    public boolean isLoanTopupPayment() {
-        return LoanTransactionType.LOAN_TOPUP_REPAYMENT.equals(getTypeOf()) && isNotReversed();
-    }
-
-    public boolean isLoanTopupInterestWaiver() {
-        return LoanTransactionType.WAIVE_INTEREST_TOPUP.equals(getTypeOf()) && isNotReversed();
     }
 
     public boolean isNotRepaymentType() {
@@ -614,12 +532,15 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
     }
 
     public boolean isInterestWaiver() {
-        return (LoanTransactionType.WAIVE_INTEREST.equals(getTypeOf()) || LoanTransactionType.WAIVE_INTEREST_TOPUP.equals(getTypeOf()))
-                && isNotReversed();
+        return LoanTransactionType.WAIVE_INTEREST.equals(getTypeOf()) && isNotReversed();
     }
 
     public boolean isChargesWaiver() {
         return LoanTransactionType.WAIVE_CHARGES.equals(getTypeOf()) && isNotReversed();
+    }
+
+    public boolean isNotInterestWaiver() {
+        return !isInterestWaiver();
     }
 
     public boolean isWaiver() {
@@ -720,14 +641,9 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
         thisTransactionData.put("netDisbursalAmount", this.loan.getNetDisbursalAmount());
         thisTransactionData.put("principalPortion", this.principalPortion);
         thisTransactionData.put("interestPortion", this.interestPortion);
-        thisTransactionData.put("incomeInterestPortion", this.incomeInterestPortion);
-        thisTransactionData.put("receivableInterestPortion", this.receivableInterestPortion);
         thisTransactionData.put("feeChargesPortion", this.feeChargesPortion);
         thisTransactionData.put("penaltyChargesPortion", this.penaltyChargesPortion);
         thisTransactionData.put("overPaymentPortion", this.overPaymentPortion);
-        thisTransactionData.put("loanTopupAmount", this.loanTopupAmount);
-        thisTransactionData.put("postAccountingForWaivers", this.postAccountingForWaivers);
-        thisTransactionData.put("netAccruedInterest", this.netAccruedInterest);
 
         if (this.paymentDetail != null) {
             thisTransactionData.put("paymentTypeId", this.paymentDetail.getPaymentType().getId());
@@ -903,12 +819,4 @@ public class LoanTransaction extends AbstractAuditableWithUTCDateTimeCustom {
 
     // TODO missing hashCode(), equals(Object obj), but probably OK as long as
     // this is never stored in a Collection.
-
-    public Money getIncomeInterestPortion(final MonetaryCurrency currency) {
-        return Money.of(currency, this.incomeInterestPortion);
-    }
-
-    public Money getReceivableInterestPortion(final MonetaryCurrency currency) {
-        return Money.of(currency, this.receivableInterestPortion);
-    }
 }

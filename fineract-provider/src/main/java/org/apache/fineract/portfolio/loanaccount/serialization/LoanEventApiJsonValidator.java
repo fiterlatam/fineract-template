@@ -204,7 +204,7 @@ public final class LoanEventApiJsonValidator {
         }
 
         // Disbursement should be not allowed if maxLoanProductCounter is greater than zero
-        if (loan.getLoanProduct().useBorrowerCycle() && loanProductCounter > 0 && !loan.isTopup() && !loan.isRestructuredLoans()) {
+        if (loan.getLoanProduct().useBorrowerCycle() && loanProductCounter > 0 && !loan.isTopup()) {
             throw new LoanDisbursalExistingActiveProduct(loan.getLoanProduct().getName());
         }
     }
@@ -216,8 +216,7 @@ public final class LoanEventApiJsonValidator {
         }
 
         final Set<String> transactionParameters = new HashSet<>(Arrays.asList("transactionDate", "transactionAmount", "externalId", "note",
-                "locale", "dateFormat", "paymentTypeId", "accountNumber", "checkNumber", "routingCode", "receiptNumber", "bankNumber",
-                "netAmountReceivable", "postAccountingForWaivers", "isAccountClosure"));
+                "locale", "dateFormat", "paymentTypeId", "accountNumber", "checkNumber", "routingCode", "receiptNumber", "bankNumber"));
 
         final Type typeOfMap = new TypeToken<Map<String, Object>>() {}.getType();
         this.fromApiJsonHelper.checkForUnsupportedParameters(typeOfMap, json, transactionParameters);
@@ -570,8 +569,7 @@ public final class LoanEventApiJsonValidator {
             throw new InvalidJsonException();
         }
 
-        final Set<String> foreclosureParameters = new HashSet<>(
-                Arrays.asList("transactionDate", "note", "locale", "dateFormat", "glAccountId", "receiptNumber"));
+        final Set<String> foreclosureParameters = new HashSet<>(Arrays.asList("transactionDate", "note", "locale", "dateFormat"));
 
         final Type typeOfMap = new TypeToken<Map<String, Object>>() {}.getType();
         this.fromApiJsonHelper.checkForUnsupportedParameters(typeOfMap, json, foreclosureParameters);

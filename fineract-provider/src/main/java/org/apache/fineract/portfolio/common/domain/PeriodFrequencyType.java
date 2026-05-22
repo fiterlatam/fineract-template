@@ -28,7 +28,7 @@ public enum PeriodFrequencyType {
     MONTHS(2, "periodFrequencyType.months"), //
     YEARS(3, "periodFrequencyType.years"), //
     WHOLE_TERM(4, "periodFrequencyType.whole_term"), //
-    INVALID(5, "periodFrequencyType.invalid"), MONTHS_APPLIED_DAILY(6, "periodFrequencyType.months.applied.daily"); //
+    INVALID(5, "periodFrequencyType.invalid");
 
     private final Integer value;
     private final String code;
@@ -65,9 +65,6 @@ public enum PeriodFrequencyType {
                 case 4:
                     repaymentFrequencyType = PeriodFrequencyType.WHOLE_TERM;
                 break;
-                case 6:
-                    repaymentFrequencyType = PeriodFrequencyType.MONTHS_APPLIED_DAILY;
-                break;
             }
         }
         return repaymentFrequencyType;
@@ -91,10 +88,6 @@ public enum PeriodFrequencyType {
 
     public boolean isWholeTerm() {
         return this.value.equals(PeriodFrequencyType.WHOLE_TERM.getValue());
-    }
-
-    public boolean isMonthlyAppliedDaily() {
-        return this.value.equals(PeriodFrequencyType.MONTHS_APPLIED_DAILY.getValue());
     }
 
     public boolean isInvalid() {

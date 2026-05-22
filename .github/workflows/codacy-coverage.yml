@@ -26,7 +26,7 @@ jobs:
           run: |
             chmod +x gradlew
             ./gradlew clean bootJar
-            ./gradlew :fineract-client:test -x spotlessCheck  
+            ./gradlew :fineract-client:test -x spotlessCheck -x compileJava
             ./gradlew :fineract-provider:test -x spotlessCheck
 
         - name: Merge coverage reports
@@ -40,4 +40,3 @@ jobs:
           with:
             api-token: "${{ secrets.CODACY_API_TOKEN }}"
             coverage-reports: ../fineract-template/build/reports/jacoco/generateMergedReport/generateMergedReport.xml
-

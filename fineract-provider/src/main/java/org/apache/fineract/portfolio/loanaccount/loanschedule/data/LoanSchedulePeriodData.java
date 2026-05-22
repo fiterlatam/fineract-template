@@ -21,14 +21,12 @@ package org.apache.fineract.portfolio.loanaccount.loanschedule.data;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
-import lombok.Getter;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 
 /**
  * Immutable data object that represents a period of a loan schedule.
  *
  */
-@Getter
 public final class LoanSchedulePeriodData {
 
     private final Integer period;
@@ -74,7 +72,6 @@ public final class LoanSchedulePeriodData {
     private final BigDecimal totalOverdue;
     private final BigDecimal totalActualCostOfLoanForPeriod;
     private final BigDecimal totalInstallmentAmountForPeriod;
-    private final BigDecimal totalInterestAccruedForPeriod;
 
     public static LoanSchedulePeriodData disbursementOnlyPeriod(final LocalDate disbursementDate, final BigDecimal principalDisbursed,
             final BigDecimal feeChargesDueAtTimeOfDisbursement, final boolean isDisbursed) {
@@ -106,7 +103,7 @@ public final class LoanSchedulePeriodData {
             final BigDecimal totalDueForPeriod, final BigDecimal totalPaid, final BigDecimal totalPaidInAdvanceForPeriod,
             final BigDecimal totalPaidLateForPeriod, final BigDecimal totalWaived, final BigDecimal totalWrittenOff,
             final BigDecimal totalOutstanding, final BigDecimal totalActualCostOfLoanForPeriod,
-            final BigDecimal totalInstallmentAmountForPeriod, final BigDecimal interestAccrued) {
+            final BigDecimal totalInstallmentAmountForPeriod) {
 
         return new LoanSchedulePeriodData(periodNumber, fromDate, dueDate, obligationsMetOnDate, complete, principalOriginalDue,
                 principalPaid, principalWrittenOff, principalOutstanding, outstandingPrincipalBalanceOfLoan,
@@ -114,7 +111,7 @@ public final class LoanSchedulePeriodData {
                 feeChargesPaid, feeChargesWaived, feeChargesWrittenOff, feeChargesOutstanding, penaltyChargesDue, penaltyChargesPaid,
                 penaltyChargesWaived, penaltyChargesWrittenOff, penaltyChargesOutstanding, totalDueForPeriod, totalPaid,
                 totalPaidInAdvanceForPeriod, totalPaidLateForPeriod, totalWaived, totalWrittenOff, totalOutstanding,
-                totalActualCostOfLoanForPeriod, totalInstallmentAmountForPeriod, interestAccrued);
+                totalActualCostOfLoanForPeriod, totalInstallmentAmountForPeriod);
     }
 
     public static LoanSchedulePeriodData withPaidDetail(final LoanSchedulePeriodData loanSchedulePeriodData, final boolean complete,
@@ -134,8 +131,7 @@ public final class LoanSchedulePeriodData {
                 loanSchedulePeriodData.totalPaidForPeriod, loanSchedulePeriodData.totalPaidInAdvanceForPeriod,
                 loanSchedulePeriodData.totalPaidLateForPeriod, loanSchedulePeriodData.totalWaivedForPeriod,
                 loanSchedulePeriodData.totalWrittenOffForPeriod, loanSchedulePeriodData.totalOutstandingForPeriod,
-                loanSchedulePeriodData.totalActualCostOfLoanForPeriod, loanSchedulePeriodData.totalInstallmentAmountForPeriod,
-                loanSchedulePeriodData.totalInterestAccruedForPeriod);
+                loanSchedulePeriodData.totalActualCostOfLoanForPeriod, loanSchedulePeriodData.totalInstallmentAmountForPeriod);
     }
 
     /*
@@ -197,7 +193,6 @@ public final class LoanSchedulePeriodData {
         this.totalOutstandingForPeriod = this.feeChargesOutstanding;
         this.totalActualCostOfLoanForPeriod = this.feeChargesDue;
         this.totalInstallmentAmountForPeriod = null;
-        this.totalInterestAccruedForPeriod = null;
         if (dueDate.isBefore(DateUtils.getBusinessLocalDate())) {
             this.totalOverdue = this.totalOutstandingForPeriod;
         } else {
@@ -259,7 +254,6 @@ public final class LoanSchedulePeriodData {
         this.totalOutstandingForPeriod = totalDueForPeriod;
         this.totalActualCostOfLoanForPeriod = interestDueOnPrincipalOutstanding.add(feeChargesDueForPeriod);
         this.totalInstallmentAmountForPeriod = totalInstallmentAmountForPeriod;
-        this.totalInterestAccruedForPeriod = null;
 
         if (dueDate.isBefore(DateUtils.getBusinessLocalDate())) {
             this.totalOverdue = this.totalOutstandingForPeriod;
@@ -283,8 +277,7 @@ public final class LoanSchedulePeriodData {
             final BigDecimal penaltyChargesWrittenOff, final BigDecimal penaltyChargesOutstanding, final BigDecimal totalDueForPeriod,
             final BigDecimal totalPaid, final BigDecimal totalPaidInAdvanceForPeriod, final BigDecimal totalPaidLateForPeriod,
             final BigDecimal totalWaived, final BigDecimal totalWrittenOff, final BigDecimal totalOutstanding,
-            final BigDecimal totalActualCostOfLoanForPeriod, final BigDecimal totalInstallmentAmountForPeriod,
-            final BigDecimal interestAccrued) {
+            final BigDecimal totalActualCostOfLoanForPeriod, final BigDecimal totalInstallmentAmountForPeriod) {
         this.period = periodNumber;
         this.fromDate = fromDate;
         this.dueDate = dueDate;
@@ -332,7 +325,6 @@ public final class LoanSchedulePeriodData {
         this.totalOutstandingForPeriod = totalOutstanding;
         this.totalActualCostOfLoanForPeriod = totalActualCostOfLoanForPeriod;
         this.totalInstallmentAmountForPeriod = totalInstallmentAmountForPeriod;
-        this.totalInterestAccruedForPeriod = interestAccrued;
 
         if (dueDate.isBefore(DateUtils.getBusinessLocalDate())) {
             this.totalOverdue = this.totalOutstandingForPeriod;

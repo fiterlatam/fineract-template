@@ -18,7 +18,6 @@
  */
 package org.apache.fineract.portfolio.loanaccount.service;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Collection;
 import java.util.Map;
@@ -121,5 +120,4 @@ public interface LoanWritePlatformService {
 
     CommandProcessingResult creditBalanceRefund(Long loanId, JsonCommand command);
 
-    void makeLoanRestructureRepayment(JsonCommand command, BigDecimal totalLoanOutStanding, Loan loanToClose);
 }

@@ -152,8 +152,7 @@ public abstract class AbstractLoanRepaymentScheduleTransactionProcessor implemen
                 Collections.sort(installments, byDate);
             }
 
-            if (loanTransaction.isRepaymentType() || loanTransaction.isInterestWaiver() || loanTransaction.isLoanTopupInterestWaiver()
-                    || loanTransaction.isRecoveryRepayment()) {
+            if (loanTransaction.isRepaymentType() || loanTransaction.isInterestWaiver() || loanTransaction.isRecoveryRepayment()) {
                 // pass through for new transactions
                 if (loanTransaction.getId() == null) {
                     handleTransaction(loanTransaction, currency, installments, charges);

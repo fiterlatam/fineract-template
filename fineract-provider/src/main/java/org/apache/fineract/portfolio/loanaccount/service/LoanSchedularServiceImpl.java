@@ -395,8 +395,6 @@ public class LoanSchedularServiceImpl implements LoanSchedularService {
                     final String receiptNumber = loanRepaymentImport.getReceiptNumber();
                     final BigDecimal paymentToleranceLimit = loanAccount.getLoanProduct().getPaymentToleranceLimit();
                     final LoanTransactionData transactionData = this.loanReadPlatformService.retrieveLoanTransactionTemplate(loanId);
-                    LoanTransactionData foreclosureData = this.loanReadPlatformService.retrieveLoanForeclosureTemplate(loanId, paymentDate,
-                            false);
                     final Collection<PaymentTypeData> paymentTypeOptions = transactionData.getPaymentTypeOptions();
                     Long paymentTypeId = 1L;
                     if (!paymentTypeOptions.isEmpty()) {
@@ -454,32 +452,6 @@ public class LoanSchedularServiceImpl implements LoanSchedularService {
                             continue;
                         }
                     }
-                    final String glCode = loanRepaymentImport.getGlCode();
-                    final GLAccount glAccount = this.glAccountRepository.findOneByGlCodeWithNotFoundDetection(glCode);
-
-                    Money totalForeclosureAmount = Money.of(currency,
-                            foreclosureData.getOutstandingLoanBalance().add(foreclosureData.getInterestPortion()
-                                    .add(foreclosureData.getFeeChargesPortion().add(foreclosureData.getPenaltyChargesPortion()))));
-                    // IF TOTAL payment amount is equal to total foreclosure amount and is early repayment, then process
-                    // loan foreclosure
-                    if (Money.of(currency, transactionAmount).isEqualTo(totalForeclosureAmount)
-                            && paymentDate.isBefore(foreclosureData.getLoanMaturityDate())) {
-                        final JsonObject jsonObject = new JsonObject();
-                        jsonObject.addProperty("transactionDate", transactionDate);
-                        jsonObject.addProperty("glAccountId", glAccount.getId());
-                        jsonObject.addProperty(PaymentDetailConstants.receiptNumberParamName, receiptNumber);
-                        jsonObject.addProperty("locale", localeAsString);
-                        jsonObject.addProperty("dateFormat", dateFormat);
-                        jsonObject.addProperty("billNumber", loanRepaymentImport.getReceiptNumber());
-
-                        final JsonCommand command = JsonCommand.fromJsonElement(loanId, jsonObject, this.fromApiJsonHelper);
-                        command.setJsonCommand(jsonObject.toString());
-                        CommandProcessingResult result = this.loanWritePlatformService.forecloseLoan(loanId, command);
-                        loanRepaymentImport.setStatus(LoanRepaymentImportStatus.PROCESSED.getId());
-                        loanRepaymentImport.setOperationResult("Aplicado");
-                        log.info("Import loan repayment successful for loan code {}", result.getLoanId());
-                        continue;
-                    }
 
                     // Payment amount greater than outstanding
                     if (Money.of(currency, transactionAmount).isGreaterThan(Money.of(currency, outstandingLoanBalance))) {
@@ -495,6 +467,8 @@ public class LoanSchedularServiceImpl implements LoanSchedularService {
                     }
 
                     // Make loan repayment
+                    final String glCode = loanRepaymentImport.getGlCode();
+                    final GLAccount glAccount = this.glAccountRepository.findOneByGlCodeWithNotFoundDetection(glCode);
                     final JsonObject jsonObject = new JsonObject();
                     jsonObject.addProperty(PaymentDetailConstants.paymentTypeParamName, paymentTypeId);
                     jsonObject.addProperty("transactionAmount", transactionAmount);

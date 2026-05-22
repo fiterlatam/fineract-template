@@ -150,7 +150,6 @@ import org.apache.fineract.portfolio.loanaccount.domain.LoanRepaymentScheduleTra
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepository;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanRepositoryWrapper;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanStatus;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanSummary;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanSummaryWrapper;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanTopupDetails;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanTransactionType;
@@ -376,8 +375,6 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
         try {
             boolean isMeetingMandatoryForJLGLoans = configurationDomainService.isMeetingMandatoryForJLGLoans();
             final Long productId = this.fromJsonHelper.extractLongNamed("productId", command.parsedJson());
-            final Boolean isTopup = command.booleanObjectValueOfParameterNamed(LoanApiConstants.isTopup);
-            final Boolean isRestructuredLoan = command.booleanObjectValueOfParameterNamed("isRestructuredLoan");
             final LoanProduct loanProduct = this.loanProductRepository.findById(productId)
                     .orElseThrow(() -> new LoanProductNotFoundException(productId));
 
@@ -403,8 +400,10 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                 // look for active loan products for client if active loan exists, new request has to be a topup.
                 List<Long> activeLoansLoanProductIdsByClient = this.loanRepository.findActiveLoansLoanProductIdsByClient(clientId,
                         LoanStatus.ACTIVE.getValue());
+                final Boolean isTopup = command.booleanObjectValueOfParameterNamed(LoanApiConstants.isTopup);
+
                 if (activeLoansLoanProductIdsByClient.contains(productId) && !Boolean.TRUE.equals(isTopup)
-                        && !Boolean.TRUE.equals(isRestructuredLoan) && !loanProduct.getOwnerType().equals(LoanProductOwnerType.PAE.getValue())) {
+                        && !loanProduct.getOwnerType().equals(LoanProductOwnerType.PAE.getValue())) {
                     throw new LoanDisbursalExistingActiveProduct(loanProduct.getName());
                 }
             }
@@ -476,6 +475,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                     newLoanApplication);
 
             if (loanProduct.canUseForTopup() && clientId != null) {
+                final Boolean isTopup = command.booleanObjectValueOfParameterNamed(LoanApiConstants.isTopup);
                 if (null == isTopup) {
                     newLoanApplication.setIsTopup(false);
                 } else {
@@ -515,7 +515,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                                         + lastUserTransactionOnLoanToClose);
                     }
                     BigDecimal loanOutstanding = this.loanReadPlatformService.retrieveLoanPrePaymentTemplate(LoanTransactionType.REPAYMENT,
-                            loanIdToClose, newLoanApplication.getDisbursementDate()).getOutstandingLoanBalance();
+                            loanIdToClose, newLoanApplication.getDisbursementDate()).getAmount();
                     final BigDecimal firstDisbursalAmount = newLoanApplication.getFirstDisbursalAmount();
                     if (loanOutstanding.compareTo(firstDisbursalAmount) > 0) {
                         throw new GeneralPlatformDomainRuleException("error.msg.loan.amount.less.than.outstanding.of.loan.to.be.closed",
@@ -2864,11 +2864,8 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
 
         }
 
-        String restructureQuery = "select count(*) from m_restructure_credits_loans_mapping where new_loan_id=?";
-        Integer restructureCount = this.jdbcTemplate.queryForObject(restructureQuery, Integer.class, loanId);
-        final Boolean isRestructuredLoan = restructureCount > 0 ? Boolean.TRUE : Boolean.FALSE;
         final Map<String, Object> changes = loan.loanApplicationApproval(currentUser, command, disbursementDataArray,
-                defaultLoanLifecycleStateMachine(), isRestructuredLoan);
+                defaultLoanLifecycleStateMachine());
 
         entityDatatableChecksWritePlatformService.runTheCheckForProduct(loanId, EntityTables.LOAN.getName(),
                 StatusEnum.APPROVE.getCode().longValue(), EntityTables.LOAN.getForeignKeyColumnNameOnDatatable(), loan.productId());
@@ -2916,24 +2913,14 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                             "Disbursal date of this loan application " + loan.getDisbursementDate()
                                     + " should be after last transaction date of loan to be closed " + lastUserTransactionOnLoanToClose);
                 }
-
-                LoanSummary summary = loanToClose.getSummary();
-
-                final BigDecimal principalOutstanding = summary.getTotalPrincipalOutstanding();
-
+                BigDecimal loanOutstanding = this.loanReadPlatformService
+                        .retrieveLoanPrePaymentTemplate(LoanTransactionType.REPAYMENT, loanIdToClose, expectedDisbursementDate).getAmount();
                 final BigDecimal firstDisbursalAmount = loan.getFirstDisbursalAmount();
-                if (principalOutstanding.compareTo(firstDisbursalAmount) >= 0) {
+                if (loanOutstanding.compareTo(firstDisbursalAmount) > 0) {
                     throw new GeneralPlatformDomainRuleException("error.msg.loan.amount.less.than.outstanding.of.loan.to.be.closed",
                             "Topup loan amount should be greater than outstanding amount of loan to be closed.");
                 }
-                BigDecimal netDisbursalAmount = loan.getApprovedPrincipal().subtract(principalOutstanding);
-                loan.adjustNetDisbursalAmount(netDisbursalAmount);
-            }
-            if (loan.getRestructureRequestId() != null) {
-                String totalRestructureCreditQuery = "select sum(outstanding_balance) from m_restructure_credits_loans_mapping where new_loan_id=?";
-                BigDecimal totalRestructureCreditAmount = this.jdbcTemplate.queryForObject(totalRestructureCreditQuery, BigDecimal.class,
-                        loanId);
-                BigDecimal netDisbursalAmount = loan.getApprovedPrincipal().subtract(totalRestructureCreditAmount);
+                BigDecimal netDisbursalAmount = loan.getApprovedPrincipal().subtract(loanOutstanding);
                 loan.adjustNetDisbursalAmount(netDisbursalAmount);
             }
 

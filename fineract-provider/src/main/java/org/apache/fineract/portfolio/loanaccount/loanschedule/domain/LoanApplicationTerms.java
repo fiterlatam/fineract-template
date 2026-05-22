@@ -656,7 +656,7 @@ public final class LoanApplicationTerms {
     private LocalDate getPeriodEndDate(final LocalDate startDate) {
         LocalDate dueRepaymentPeriodDate = startDate;
         switch (this.repaymentPeriodFrequencyType) {
-            case DAYS, MONTHS_APPLIED_DAILY:
+            case DAYS:
                 dueRepaymentPeriodDate = startDate.plusDays(this.repaymentEvery);
             break;
             case WEEKS:
@@ -1057,7 +1057,7 @@ public final class LoanApplicationTerms {
                 switch (this.repaymentPeriodFrequencyType) {
                     case INVALID:
                     break;
-                    case DAYS, MONTHS_APPLIED_DAILY:
+                    case DAYS:
                         periodicInterestRate = oneDayOfYearInterestRate.multiply(numberOfDaysInPeriod, mc);
                     break;
                     case WEEKS:

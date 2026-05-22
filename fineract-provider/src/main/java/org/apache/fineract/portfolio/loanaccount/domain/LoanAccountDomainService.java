@@ -22,7 +22,6 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Map;
 import java.util.Set;
-import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResultBuilder;
 import org.apache.fineract.portfolio.loanaccount.data.HolidayDetailDTO;
 import org.apache.fineract.portfolio.paymentdetail.domain.PaymentDetail;
@@ -37,7 +36,7 @@ public interface LoanAccountDomainService {
             BigDecimal transactionAmount, PaymentDetail paymentDetail, String noteText, String txnExternalId);
 
     LoanTransaction makeDisburseTransaction(Long loanId, LocalDate transactionDate, BigDecimal transactionAmount,
-            PaymentDetail paymentDetail, String noteText, String txnExternalId, boolean isLoanToLoanTransfer, BigDecimal loanTopupAmount);
+            PaymentDetail paymentDetail, String noteText, String txnExternalId, boolean isLoanToLoanTransfer);
 
     void reverseTransfer(LoanTransaction loanTransaction);
 
@@ -45,7 +44,7 @@ public interface LoanAccountDomainService {
             PaymentDetail paymentDetail, String noteText, String txnExternalId, Integer transactionType, Integer installmentNumber);
 
     LoanTransaction makeDisburseTransaction(Long loanId, LocalDate transactionDate, BigDecimal transactionAmount,
-            PaymentDetail paymentDetail, String noteText, String txnExternalId, BigDecimal loanTopupAmount);
+            PaymentDetail paymentDetail, String noteText, String txnExternalId);
 
     LoanTransaction makeRefundForActiveLoan(Long accountId, CommandProcessingResultBuilder builderResult, LocalDate transactionDate,
             BigDecimal transactionAmount, PaymentDetail paymentDetail, String noteText, String txnExternalId);
@@ -69,7 +68,7 @@ public interface LoanAccountDomainService {
 
     void saveLoanWithDataIntegrityViolationChecks(Loan loan);
 
-    Map<String, Object> foreCloseLoan(Loan loan, LocalDate foreClourseDate, JsonCommand command, Map<String, Object> changes);
+    Map<String, Object> foreCloseLoan(Loan loan, LocalDate foreClourseDate, String noteText);
 
     /**
      * Disables all standing instructions linked to a closed loan

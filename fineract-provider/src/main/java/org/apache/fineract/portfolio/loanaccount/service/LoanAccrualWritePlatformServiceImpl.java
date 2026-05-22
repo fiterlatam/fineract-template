@@ -136,7 +136,6 @@ public class LoanAccrualWritePlatformServiceImpl implements LoanAccrualWritePlat
 
     private void addAccrualTillSpecificDate(final LocalDate tilldate, final LoanScheduleAccrualData accrualData) throws Exception {
         LocalDate interestStartDate = accrualData.getFromDateAsLocaldate();
-
         if (accrualData.getInterestCalculatedFrom() != null
                 && accrualData.getFromDateAsLocaldate().isBefore(accrualData.getInterestCalculatedFrom())) {
             if (accrualData.getInterestCalculatedFrom().isBefore(accrualData.getDueDateAsLocaldate())) {
@@ -147,26 +146,7 @@ public class LoanAccrualWritePlatformServiceImpl implements LoanAccrualWritePlat
         }
 
         int totalNumberOfDays = Math.toIntExact(ChronoUnit.DAYS.between(interestStartDate, accrualData.getDueDateAsLocaldate()));
-        double totalInterest = accrualData.getAccruableIncome().doubleValue();
-        double paidInterest = accrualData.getInterestCompletedIncome() != null ? accrualData.getInterestCompletedIncome().doubleValue()
-                : 0D;
-        double waivedInterest = accrualData.getWaivedInterestIncome() != null ? accrualData.getWaivedInterestIncome().doubleValue() : 0D;
-        double remainingInterest = totalInterest - paidInterest - waivedInterest;
-
-        if (remainingInterest <= 0) {
-            return; // No remaining interest to accrue.
-        }
-
-        double interestPerDay = totalInterest / totalNumberOfDays;
-        int daysPaid = (int) Math.ceil((paidInterest + waivedInterest) / interestPerDay);
-
-        // Adjust start date based on paid days
-        LocalDate adjustedStartDate = interestStartDate.plusDays(daysPaid);
-        if (adjustedStartDate.isAfter(tilldate) || adjustedStartDate.equals(tilldate)) {
-            return; // No accrual needed as paid interest covers till the given date.
-        }
-
-        LocalDate startDate = adjustedStartDate;
+        LocalDate startDate = accrualData.getFromDateAsLocaldate();
         if (accrualData.getInterestCalculatedFrom() != null && startDate.isBefore(accrualData.getInterestCalculatedFrom())) {
             if (accrualData.getInterestCalculatedFrom().isBefore(tilldate)) {
                 startDate = accrualData.getInterestCalculatedFrom();
@@ -174,20 +154,18 @@ public class LoanAccrualWritePlatformServiceImpl implements LoanAccrualWritePlat
                 startDate = tilldate;
             }
         }
-
         int daysToBeAccrued = Math.toIntExact(ChronoUnit.DAYS.between(startDate, tilldate));
-        BigDecimal interestportion;
+        double interestPerDay = accrualData.getAccruableIncome().doubleValue() / totalNumberOfDays;
         BigDecimal amount = BigDecimal.ZERO;
+        BigDecimal interestportion = null;
         BigDecimal feeportion = accrualData.getDueDateFeeIncome();
         BigDecimal penaltyportion = accrualData.getDueDatePenaltyIncome();
-
-        if (daysToBeAccrued >= totalNumberOfDays - daysPaid) {
-            interestportion = BigDecimal.valueOf(remainingInterest);
+        if (daysToBeAccrued >= totalNumberOfDays) {
+            interestportion = accrualData.getAccruableIncome();
         } else {
-            double interest = interestPerDay * daysToBeAccrued;
-            interestportion = BigDecimal.valueOf(interest);
+            double iterest = interestPerDay * daysToBeAccrued;
+            interestportion = BigDecimal.valueOf(iterest);
         }
-
         interestportion = interestportion.setScale(accrualData.getCurrencyData().decimalPlaces(), MoneyHelper.getRoundingMode());
 
         BigDecimal totalAccInterest = accrualData.getAccruedInterestIncome();
@@ -205,7 +183,6 @@ public class LoanAccrualWritePlatformServiceImpl implements LoanAccrualWritePlat
                 interestportion = null;
             }
         }
-
         if (feeportion != null) {
             if (totalAccFee == null) {
                 totalAccFee = BigDecimal.ZERO;
@@ -229,7 +206,6 @@ public class LoanAccrualWritePlatformServiceImpl implements LoanAccrualWritePlat
                 penaltyportion = null;
             }
         }
-
         if (amount.compareTo(BigDecimal.ZERO) > 0) {
             addAccrualAccounting(accrualData, amount, interestportion, totalAccInterest, feeportion, totalAccFee, penaltyportion,
                     totalAccPenalty, tilldate);

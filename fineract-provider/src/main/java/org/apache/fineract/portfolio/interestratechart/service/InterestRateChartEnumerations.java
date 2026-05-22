@@ -44,7 +44,7 @@ public final class InterestRateChartEnumerations {
         switch (type) {
             case INVALID:
             break;
-            case DAYS, MONTHS_APPLIED_DAILY:
+            case DAYS:
                 optionData = new EnumOptionData(PeriodFrequencyType.DAYS.getValue().longValue(), PeriodFrequencyType.DAYS.getCode(),
                         "Days");
             break;
