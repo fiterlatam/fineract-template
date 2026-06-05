@@ -41,7 +41,7 @@ import org.apache.fineract.infrastructure.core.serialization.ToApiJsonSerializer
 import org.apache.fineract.infrastructure.security.data.AccessTokenData;
 import org.apache.fineract.infrastructure.security.data.OTPDeliveryMethod;
 import org.apache.fineract.infrastructure.security.data.OTPMetadata;
-import org.apache.fineract.infrastructure.security.data.OTPRequest;
+import org.apache.fineract.infrastructure.security.domain.OTPRequest;
 import org.apache.fineract.infrastructure.security.domain.TFAccessToken;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.infrastructure.security.service.TwoFactorService;
