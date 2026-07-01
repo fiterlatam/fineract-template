@@ -60,9 +60,9 @@ import org.apache.fineract.organisation.bankcheque.data.GuaranteeData;
 import org.apache.fineract.organisation.bankcheque.domain.BankChequeStatus;
 import org.apache.fineract.organisation.bankcheque.exception.BankChequeException;
 import org.apache.fineract.organisation.bankcheque.exception.BatchNotFoundException;
+import org.apache.fineract.organisation.office.domain.OfficeHierarchyLevel;
 import org.apache.fineract.portfolio.client.domain.Client;
 import org.apache.fineract.portfolio.client.domain.ClientRepositoryWrapper;
-import org.apache.fineract.organisation.office.domain.OfficeHierarchyLevel;
 import org.apache.fineract.portfolio.group.data.CenterData;
 import org.apache.fineract.portfolio.group.data.GroupGeneralData;
 import org.apache.fineract.portfolio.group.service.CenterReadPlatformServiceImpl;
@@ -480,8 +480,8 @@ public class ChequeReadPlatformServiceImpl implements ChequeReadPlatformService 
                     final BigDecimal requestedAmount = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed("monto", withLocale);
                     final String requestedAmountString = String.valueOf(requestedAmount);
                     final GuaranteeData guarantee = GuaranteeData.builder().id(id).dpi(dpiValue).caseId(guaranteeCaseId).clientNo(clientNo)
-                            .clientName(clientName)
-                            .withdrawalReason(withdrawalReason).requestedAmount(requestedAmountString).status(status).build();
+                            .clientName(clientName).withdrawalReason(withdrawalReason).requestedAmount(requestedAmountString).status(status)
+                            .build();
                     guaranteeDataList.add(guarantee);
                 }
             }

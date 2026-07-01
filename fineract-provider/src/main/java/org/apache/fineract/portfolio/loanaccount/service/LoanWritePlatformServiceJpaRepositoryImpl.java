@@ -2237,11 +2237,49 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
 
         final Locale locale = command.extractLocale();
         final DateTimeFormatter fmt = DateTimeFormatter.ofPattern(command.dateFormat()).withLocale(locale);
+        Long loanIdToClose = loan.getTopupLoanDetails().getLoanIdToClose();
         final AccountTransferDTO accountTransferDTO = new AccountTransferDTO(transactionDate, amount, PortfolioAccountType.LOAN,
-                PortfolioAccountType.LOAN, loan.getId(), loan.getTopupLoanDetails().getLoanIdToClose(), "Loan Topup", locale, fmt,
+                PortfolioAccountType.LOAN, loan.getId(), loanIdToClose, "Loan Topup", locale, fmt,
                 LoanTransactionType.DISBURSEMENT.getValue(), LoanTransactionType.REPAYMENT.getValue(), txnExternalId, loan, null);
         accountTransferDTO.setPaymentDetail(paymentDetail);
         AccountTransferDetails accountTransferDetails = this.accountTransfersWritePlatformService.repayLoanWithTopup(accountTransferDTO);
+
+        // after paying the loan with topup, we need to release the amount on hold for the loan that has been paid.
+        List<SavingsAccountTransaction> savingsAccountTransactions = this.savingsAccountTransactionRepository
+                .findAllTransactionByLoanId(loanIdToClose);
+
+        SavingsAccountTransaction holdTransaction = savingsAccountTransactions.stream().filter(sa -> sa.isAmountOnHoldNotReleased())
+                .findFirst().orElse(null);
+
+        if (holdTransaction != null) {
+
+            SavingsAccount fromSavingsAccount = holdTransaction.getSavingsAccount();
+            JsonObject requestData = command.parsedJson().getAsJsonObject();
+            requestData.addProperty(fromOfficeIdParamName, fromSavingsAccount.officeId());
+            requestData.addProperty(fromClientIdParamName, fromSavingsAccount.getClient().getId());
+            requestData.addProperty(toClientIdParamName, loan.getClient().getId());
+            requestData.addProperty(toOfficeIdParamName, loan.getOfficeId());
+            final String dateFormat = "dd MMMM yyyy";
+            final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(dateFormat).withLocale(locale);
+            requestData.addProperty(transferDateParamName, transactionDate.format(dateTimeFormatter));
+            requestData.addProperty(transferAmountParamName, holdTransaction.getAmount());
+            String noteText = null;
+            if (command.hasParameter("note")) {
+                noteText = command.stringValueOfParameterNamed("note");
+                if (StringUtils.isNotBlank(noteText)) {
+                    final Note note = Note.loanNote(loan, noteText);
+                    this.noteRepository.save(note);
+                }
+            }
+            requestData.addProperty(transferDescriptionParamName, noteText);
+            final JsonCommand assemblerCommand = JsonCommand.fromJsonElement(loanIdToClose, requestData, this.fromApiJsonHelper);
+            assemblerCommand.setJsonCommand(requestData.toString());
+
+            // release loan guarantee to make payment
+            this.savingsAccountWritePlatformService.releaseLoanGuarantee(loanIdToClose, command, transactionDate, holdTransaction);
+
+        }
+
         loan.getTopupLoanDetails().setAccountTransferDetails(accountTransferDetails.getId());
         loan.getTopupLoanDetails().setTopupAmount(amount);
     }
