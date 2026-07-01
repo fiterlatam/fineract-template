@@ -171,6 +171,7 @@ import org.apache.fineract.portfolio.rate.service.RateAssembler;
 import org.apache.fineract.portfolio.savings.data.GroupSavingsIndividualMonitoringAccountData;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccount;
 import org.apache.fineract.portfolio.savings.domain.SavingsAccountAssembler;
+import org.apache.fineract.portfolio.savings.domain.SavingsAccountTransactionRepository;
 import org.apache.fineract.portfolio.savings.service.GSIMReadPlatformService;
 import org.apache.fineract.portfolio.savings.service.SavingsAccountWritePlatformService;
 import org.apache.fineract.useradministration.domain.AppUser;
@@ -243,6 +244,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
     private BitaCoraMasterRepository bitaCoraMasterRepository;
 
     private final SavingsAccountWritePlatformService savingsAccountWritePlatformService;
+    private final SavingsAccountTransactionRepository savingsAccountTransactionRepository;
     private final AppUserRepository appUserRepository;
     private final LoanAdditionalPropertiesRepository loanAdditionalPropertiesRepository;
     private final PrequalificationReadPlatformService prequalificationReadPlatformService;
@@ -277,6 +279,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
             ChequeBatchRepositoryWrapper chequeBatchRepositoryWrapper,
             PrequalificationGroupRepositoryWrapper prequalificationGroupRepositoryWrapper,
             final SavingsAccountWritePlatformService savingsAccountWritePlatformService,
+            final SavingsAccountTransactionRepository savingsAccountTransactionRepository,
             final LoanAdditionalPropertiesRepository loanAdditionalPropertiesRepository,
             final GroupLoanAdditionalsRepository groupLoanAdditionalsRepository,
             PrequalificationReadPlatformService prequalificationReadPlatformService) {
@@ -331,6 +334,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
         this.appUserRepository = appUserRepository;
         this.loanAdditionalPropertiesRepository = loanAdditionalPropertiesRepository;
         this.prequalificationReadPlatformService = prequalificationReadPlatformService;
+        this.savingsAccountTransactionRepository = savingsAccountTransactionRepository;
     }
 
     private LoanLifecycleStateMachine defaultLoanLifecycleStateMachine() {

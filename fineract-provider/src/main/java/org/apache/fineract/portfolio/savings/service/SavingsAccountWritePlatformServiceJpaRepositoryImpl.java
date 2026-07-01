@@ -2160,10 +2160,12 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
 
             paymentDetail = this.paymentDetailWritePlatformService.createAndPersistPaymentDetail(depositJsonCommand, changes);
 
-            BigDecimal accountBalance = account.getAccountBalance();
-            BigDecimal amountToDeposit = requiredGuaranteeAmount;
+            this.rebalanceSingleAccount(account.getId());
+
+            BigDecimal accountBalance = account.getWithdrawableBalance();
+
             if (accountBalance.compareTo(requiredGuaranteeAmount) < 0) {
-                amountToDeposit = requiredGuaranteeAmount.subtract(accountBalance);
+                BigDecimal amountToDeposit = requiredGuaranteeAmount.subtract(accountBalance);
                 final SavingsAccountTransaction deposit = this.savingsAccountDomainService.handleDeposit(account,
                         DateUtils.DEFAULT_DATE_FORMATER, transactionDate, amountToDeposit, paymentDetail, isAccountTransfer,
                         isRegularTransaction, backdatedTxnsAllowedTill);
