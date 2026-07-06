@@ -46,6 +46,7 @@ import org.apache.fineract.infrastructure.core.exception.PlatformApiDataValidati
 import org.apache.fineract.infrastructure.core.exception.PlatformDataIntegrityException;
 import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
+import org.apache.fineract.infrastructure.core.service.ExternalHttpClientFactory;
 import org.apache.fineract.infrastructure.creditbureau.data.CreditBureauConfigurations;
 import org.apache.fineract.infrastructure.creditbureau.data.CreditBureauReportData;
 import org.apache.fineract.infrastructure.creditbureau.domain.CreditBureauConfiguration;
@@ -73,6 +74,7 @@ public class ThitsaWorksCreditBureauIntegrationWritePlatformServiceImpl implemen
     private final TokenRepositoryWrapper tokenRepositoryWrapper;
     private final CreditBureauConfigurationRepositoryWrapper configDataRepository;
     private final CreditBureauTokenCommandFromApiJsonDeserializer fromApiJsonDeserializer;
+    private final ExternalHttpClientFactory externalHttpClientFactory;
     private final List<ApiParameterError> dataValidationErrors = new ArrayList<>();
     private final DataValidatorBuilder baseDataValidator = new DataValidatorBuilder(dataValidationErrors)
             .resource("ThitsaWorksCreditBureauIntegration");
@@ -83,12 +85,13 @@ public class ThitsaWorksCreditBureauIntegrationWritePlatformServiceImpl implemen
             final CreditBureauConfigurationRepositoryWrapper configDataRepository,
             final CreditBureauConfigurationRepository configurationDataRepository,
             final CreditBureauTokenCommandFromApiJsonDeserializer fromApiJsonDeserializer,
-            final CreditReportRepository creditReportRepository) {
+            final CreditReportRepository creditReportRepository, final ExternalHttpClientFactory externalHttpClientFactory) {
         this.context = context;
         this.tokenRepositoryWrapper = tokenRepositoryWrapper;
         this.configDataRepository = configDataRepository;
         this.fromApiJsonHelper = fromApiJsonHelper;
         this.fromApiJsonDeserializer = fromApiJsonDeserializer;
+        this.externalHttpClientFactory = externalHttpClientFactory;
     }
 
     private static final Logger LOG = LoggerFactory.getLogger(ThitsaWorksCreditBureauIntegrationWritePlatformServiceImpl.class);
@@ -101,7 +104,7 @@ public class ThitsaWorksCreditBureauIntegrationWritePlatformServiceImpl implemen
 
         String reponseMessage = null;
         RequestBody requestBody = null;
-        OkHttpClient client = new OkHttpClient();
+        OkHttpClient client = externalHttpClientFactory.createOkHttpClient();
 
         if (process.equals("UploadCreditReport")) {
             String fileName = fileData.getFileName();

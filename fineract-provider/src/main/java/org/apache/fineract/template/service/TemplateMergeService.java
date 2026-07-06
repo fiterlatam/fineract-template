@@ -38,10 +38,12 @@ import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.Map;
+import org.apache.fineract.infrastructure.core.service.ExternalHttpClientFactory;
 import org.apache.fineract.template.domain.Template;
 import org.apache.fineract.template.domain.TemplateFunctions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
@@ -50,9 +52,16 @@ public class TemplateMergeService {
 
     private static final Logger LOG = LoggerFactory.getLogger(TemplateMergeService.class);
 
+    private final ExternalHttpClientFactory externalHttpClientFactory;
+
     // private final FromJsonHelper fromApiJsonHelper;
     private Map<String, Object> scopes;
     private String authToken;
+
+    @Autowired
+    public TemplateMergeService(final ExternalHttpClientFactory externalHttpClientFactory) {
+        this.externalHttpClientFactory = externalHttpClientFactory;
+    }
 
     public void setAuthToken(final String authToken) {
         this.authToken = authToken;
@@ -130,6 +139,7 @@ public class TemplateMergeService {
         HttpURLConnection connection = null;
         try {
             connection = (HttpURLConnection) new URL(url).openConnection();
+            externalHttpClientFactory.configureConnectionTimeouts(connection);
             if (this.authToken != null) {
                 connection.setRequestProperty("Authorization", "Basic " + this.authToken);// NOSONAR
             }

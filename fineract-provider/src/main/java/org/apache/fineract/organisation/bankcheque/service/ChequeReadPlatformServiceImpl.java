@@ -33,6 +33,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.stream.Collectors;
+import javax.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.binary.Base64;
@@ -46,6 +47,7 @@ import org.apache.fineract.infrastructure.core.data.PaginationParameters;
 import org.apache.fineract.infrastructure.core.data.PaginationParametersDataValidator;
 import org.apache.fineract.infrastructure.core.domain.JdbcSupport;
 import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
+import org.apache.fineract.infrastructure.core.service.ExternalHttpClientFactory;
 import org.apache.fineract.infrastructure.core.service.Page;
 import org.apache.fineract.infrastructure.core.service.PaginationHelper;
 import org.apache.fineract.infrastructure.core.service.database.DatabaseSpecificSQLGenerator;
@@ -94,9 +96,15 @@ public class ChequeReadPlatformServiceImpl implements ChequeReadPlatformService 
     private final CenterReadPlatformServiceImpl centerReadPlatformService;
     private final AppUserReadPlatformService appUserReadPlatformService;
     private final GroupReadPlatformService groupReadPlatformService;
-    private final RestTemplate restTemplate = new RestTemplate();
+    private final ExternalHttpClientFactory externalHttpClientFactory;
+    private RestTemplate restTemplate;
     private final FromJsonHelper fromApiJsonHelper;
     private final ExternalServicesPropertiesReadPlatformService externalServicePropertiesReadPlatformService;
+
+    @PostConstruct
+    private void initRestTemplate() {
+        this.restTemplate = externalHttpClientFactory.createRestTemplate();
+    }
 
     @Override
     public BatchData retrieveBatch(final Long batchId) {
