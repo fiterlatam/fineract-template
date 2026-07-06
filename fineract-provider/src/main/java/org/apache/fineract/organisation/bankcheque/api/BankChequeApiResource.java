@@ -164,8 +164,7 @@ public class BankChequeApiResource {
     @Operation(summary = "Retrieve Guarantees", description = "Retrieve Guarantees by search parameters")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = BankChequeApiSwagger.GetChequeBatchResponse.class))) })
-    public String retrieveGuarantees(@Context final UriInfo uriInfo,
-            @QueryParam("dpi") @Parameter(description = "dpi") final String dpi,
+    public String retrieveGuarantees(@Context final UriInfo uriInfo, @QueryParam("dpi") @Parameter(description = "dpi") final String dpi,
             @QueryParam("locale") @Parameter(description = "locale") final String locale) {
         this.context.authenticatedUser().validateHasReadPermission(BankChequeApiConstants.BANK_CHECK_RESOURCE_NAME);
         final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(uriInfo.getQueryParameters());

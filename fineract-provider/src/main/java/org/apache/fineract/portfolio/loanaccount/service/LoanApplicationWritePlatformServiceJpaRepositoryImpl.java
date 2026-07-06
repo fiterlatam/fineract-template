@@ -63,6 +63,7 @@ import org.apache.fineract.infrastructure.core.exception.PlatformDataIntegrityEx
 import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
 import org.apache.fineract.infrastructure.core.serialization.JsonParserHelper;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
+import org.apache.fineract.infrastructure.core.service.ExternalHttpClientFactory;
 import org.apache.fineract.infrastructure.dataqueries.data.EntityTables;
 import org.apache.fineract.infrastructure.dataqueries.data.StatusEnum;
 import org.apache.fineract.infrastructure.dataqueries.service.EntityDatatableChecksWritePlatformService;
@@ -267,7 +268,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
     private final DocumentWritePlatformService documentWritePlatformService;
     private final LoanApplicationDraftWritePlatformService loanApplicationDraftWritePlatformService;
     private final ExternalServicesPropertiesReadPlatformService externalServicePropertiesReadPlatformService;
-    private final RestTemplate restTemplate = new RestTemplate();
+    private final RestTemplate restTemplate;
 
     @Autowired
     public LoanApplicationWritePlatformServiceJpaRepositoryImpl(final PlatformSecurityContext context, final FromJsonHelper fromJsonHelper,
@@ -305,7 +306,8 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
             final DocumentWritePlatformService documentWritePlatformService,
             final LoanAdditionalDataPAERepository loanAdditionalDataPAERepository,
             ExternalServicesPropertiesReadPlatformService externalServicePropertiesReadPlatformService,
-            final LoanApplicationDraftWritePlatformService loanApplicationDraftWritePlatformService) {
+            final LoanApplicationDraftWritePlatformService loanApplicationDraftWritePlatformService,
+            final ExternalHttpClientFactory externalHttpClientFactory) {
         this.context = context;
         this.fromJsonHelper = fromJsonHelper;
         this.loanApplicationTransitionApiJsonValidator = loanApplicationTransitionApiJsonValidator;
@@ -361,6 +363,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
         this.loanApplicationDraftWritePlatformService = loanApplicationDraftWritePlatformService;
         this.externalServicePropertiesReadPlatformService = externalServicePropertiesReadPlatformService;
         this.loanAdditionalDataPAERepository = loanAdditionalDataPAERepository;
+        this.restTemplate = externalHttpClientFactory.createRestTemplate();
     }
 
     private LoanLifecycleStateMachine defaultLoanLifecycleStateMachine() {

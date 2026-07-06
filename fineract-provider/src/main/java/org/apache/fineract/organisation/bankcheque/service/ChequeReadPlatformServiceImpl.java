@@ -32,6 +32,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import javax.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.binary.Base64;
@@ -45,6 +46,7 @@ import org.apache.fineract.infrastructure.core.data.PaginationParameters;
 import org.apache.fineract.infrastructure.core.data.PaginationParametersDataValidator;
 import org.apache.fineract.infrastructure.core.domain.JdbcSupport;
 import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
+import org.apache.fineract.infrastructure.core.service.ExternalHttpClientFactory;
 import org.apache.fineract.infrastructure.core.service.Page;
 import org.apache.fineract.infrastructure.core.service.PaginationHelper;
 import org.apache.fineract.infrastructure.core.service.database.DatabaseSpecificSQLGenerator;
@@ -60,9 +62,9 @@ import org.apache.fineract.organisation.bankcheque.data.GuaranteeData;
 import org.apache.fineract.organisation.bankcheque.domain.BankChequeStatus;
 import org.apache.fineract.organisation.bankcheque.exception.BankChequeException;
 import org.apache.fineract.organisation.bankcheque.exception.BatchNotFoundException;
+import org.apache.fineract.organisation.office.domain.OfficeHierarchyLevel;
 import org.apache.fineract.portfolio.client.domain.Client;
 import org.apache.fineract.portfolio.client.domain.ClientRepositoryWrapper;
-import org.apache.fineract.organisation.office.domain.OfficeHierarchyLevel;
 import org.apache.fineract.portfolio.group.data.CenterData;
 import org.apache.fineract.portfolio.group.data.GroupGeneralData;
 import org.apache.fineract.portfolio.group.service.CenterReadPlatformServiceImpl;
@@ -96,10 +98,16 @@ public class ChequeReadPlatformServiceImpl implements ChequeReadPlatformService 
     private final CenterReadPlatformServiceImpl centerReadPlatformService;
     private final AppUserReadPlatformService appUserReadPlatformService;
     private final GroupReadPlatformService groupReadPlatformService;
-    private final RestTemplate restTemplate = new RestTemplate();
+    private final ExternalHttpClientFactory externalHttpClientFactory;
+    private RestTemplate restTemplate;
     private final FromJsonHelper fromApiJsonHelper;
     private final ExternalServicesPropertiesReadPlatformService externalServicePropertiesReadPlatformService;
     private final ClientRepositoryWrapper clientRepositoryWrapper;
+
+    @PostConstruct
+    private void initRestTemplate() {
+        this.restTemplate = externalHttpClientFactory.createRestTemplate();
+    }
 
     @Override
     public BatchData retrieveBatch(final Long batchId) {
@@ -480,8 +488,8 @@ public class ChequeReadPlatformServiceImpl implements ChequeReadPlatformService 
                     final BigDecimal requestedAmount = this.fromApiJsonHelper.extractBigDecimalWithLocaleNamed("monto", withLocale);
                     final String requestedAmountString = String.valueOf(requestedAmount);
                     final GuaranteeData guarantee = GuaranteeData.builder().id(id).dpi(dpiValue).caseId(guaranteeCaseId).clientNo(clientNo)
-                            .clientName(clientName)
-                            .withdrawalReason(withdrawalReason).requestedAmount(requestedAmountString).status(status).build();
+                            .clientName(clientName).withdrawalReason(withdrawalReason).requestedAmount(requestedAmountString).status(status)
+                            .build();
                     guaranteeDataList.add(guarantee);
                 }
             }

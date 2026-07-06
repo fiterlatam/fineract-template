@@ -36,6 +36,16 @@ public class FineractProperties {
 
     private FineractCorrelationProperties correlation;
 
+    private FineractHttpProperties http = new FineractHttpProperties();
+
+    @Getter
+    @Setter
+    public static class FineractHttpProperties {
+
+        private int connectTimeoutMs = 5_000;
+        private int readTimeoutMs = 15_000;
+    }
+
     @Getter
     @Setter
     public static class FineractTenantProperties {
