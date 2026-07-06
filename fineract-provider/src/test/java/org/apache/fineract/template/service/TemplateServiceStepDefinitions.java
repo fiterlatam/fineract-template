@@ -32,12 +32,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import org.apache.commons.io.IOUtils;
+import org.apache.fineract.infrastructure.core.config.FineractProperties;
+import org.apache.fineract.infrastructure.core.service.ExternalHttpClientFactory;
 import org.apache.fineract.template.domain.Template;
 import org.apache.fineract.template.domain.TemplateMapper;
 
 public class TemplateServiceStepDefinitions implements En {
 
-    private TemplateMergeService tms = new TemplateMergeService();
+    private TemplateMergeService tms = new TemplateMergeService(new ExternalHttpClientFactory(new FineractProperties()));
 
     private String template;
 

@@ -31,6 +31,7 @@ import org.apache.fineract.infrastructure.campaigns.sms.constants.SmsCampaignTri
 import org.apache.fineract.infrastructure.campaigns.sms.data.SmsProviderData;
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 import org.apache.fineract.infrastructure.core.exception.PlatformDataIntegrityException;
+import org.apache.fineract.infrastructure.core.service.ExternalHttpClientFactory;
 import org.apache.fineract.portfolio.calendar.domain.CalendarWeekDaysType;
 import org.apache.fineract.portfolio.calendar.service.CalendarEnumerations;
 import org.apache.fineract.portfolio.common.domain.PeriodFrequencyType;
@@ -55,8 +56,9 @@ public class SmsCampaignDropdownReadPlatformServiceImpl implements SmsCampaignDr
     private final SmsConfigUtils smsConfigUtils;
 
     @Autowired
-    public SmsCampaignDropdownReadPlatformServiceImpl(final SmsConfigUtils smsConfigUtils) {
-        this.restTemplate = new RestTemplate();
+    public SmsCampaignDropdownReadPlatformServiceImpl(final SmsConfigUtils smsConfigUtils,
+            final ExternalHttpClientFactory externalHttpClientFactory) {
+        this.restTemplate = externalHttpClientFactory.createRestTemplate();
         this.smsConfigUtils = smsConfigUtils;
     }
 

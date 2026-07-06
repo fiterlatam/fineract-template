@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 import org.apache.fineract.infrastructure.configuration.service.ExternalServicesPropertiesReadPlatformService;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
+import org.apache.fineract.infrastructure.core.service.ExternalHttpClientFactory;
 import org.apache.fineract.infrastructure.gcm.GcmConstants;
 import org.apache.fineract.infrastructure.gcm.domain.DeviceRegistration;
 import org.apache.fineract.infrastructure.gcm.domain.DeviceRegistrationRepositoryWrapper;
@@ -47,14 +48,17 @@ public class NotificationSenderService {
     private final DeviceRegistrationRepositoryWrapper deviceRegistrationRepositoryWrapper;
     private final SmsMessageRepository smsMessageRepository;
     private ExternalServicesPropertiesReadPlatformService propertiesReadPlatformService;
+    private final ExternalHttpClientFactory externalHttpClientFactory;
 
     @Autowired
     public NotificationSenderService(final DeviceRegistrationRepositoryWrapper deviceRegistrationRepositoryWrapper,
             final SmsMessageRepository smsMessageRepository,
-            final ExternalServicesPropertiesReadPlatformService propertiesReadPlatformService) {
+            final ExternalServicesPropertiesReadPlatformService propertiesReadPlatformService,
+            final ExternalHttpClientFactory externalHttpClientFactory) {
         this.deviceRegistrationRepositoryWrapper = deviceRegistrationRepositoryWrapper;
         this.smsMessageRepository = smsMessageRepository;
         this.propertiesReadPlatformService = propertiesReadPlatformService;
+        this.externalHttpClientFactory = externalHttpClientFactory;
     }
 
     public void sendNotification(List<SmsMessage> smsMessages) {
@@ -102,6 +106,8 @@ public class NotificationSenderService {
                 b.delayWhileIdle(true);
                 Message msg = b.build();
                 Sender s = new Sender(notificationConfigurationData.getServerKey(), notificationConfigurationData.getFcmEndPoint());
+                s.setConnectTimeout(externalHttpClientFactory.getConnectTimeoutMs());
+                s.setReadTimeout(externalHttpClientFactory.getReadTimeoutMs());
                 Result res;
 
                 res = s.send(msg, registrationId, 3);
