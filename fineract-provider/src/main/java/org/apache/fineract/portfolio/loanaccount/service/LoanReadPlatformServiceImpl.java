@@ -1777,7 +1777,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
         sqlBuilder.append("select ").append(rm.schema())
                 .append(" where " + sqlGenerator.subDate(sqlGenerator.currentBusinessDate(), "?", "day") + " > ls.duedate ")
                 .append(" and ls.completed_derived <> true and mc.charge_applies_to_enum =1 ")
-                .append(" and ls.recalculated_interest_component <> true ")
+                .append(" and ls.recalculated_interest_component <> true and ml.is_npa <> true ")
                 .append(" and mc.charge_time_enum = 9 and ml.loan_status_id = 300 ");
 
         if (backdatePenalties) {
