@@ -34,6 +34,7 @@ import org.apache.fineract.infrastructure.campaigns.sms.constants.SmsCampaignCon
 import org.apache.fineract.infrastructure.campaigns.sms.domain.SmsCampaign;
 import org.apache.fineract.infrastructure.campaigns.sms.exception.ConnectionFailureException;
 import org.apache.fineract.infrastructure.core.domain.FineractContext;
+import org.apache.fineract.infrastructure.core.service.ExternalHttpClientFactory;
 import org.apache.fineract.infrastructure.core.service.Page;
 import org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil;
 import org.apache.fineract.infrastructure.gcm.service.NotificationSenderService;
@@ -67,7 +68,7 @@ public class SmsMessageScheduledJobServiceImpl implements SmsMessageScheduledJob
 
     private final SmsMessageRepository smsMessageRepository;
     private final SmsReadPlatformService smsReadPlatformService;
-    private final RestTemplate restTemplate = new RestTemplate();
+    private final RestTemplate restTemplate;
     private final SmsConfigUtils smsConfigUtils;
     private final NotificationSenderService notificationSenderService;
     private ExecutorService genericExecutorService;
@@ -78,11 +79,13 @@ public class SmsMessageScheduledJobServiceImpl implements SmsMessageScheduledJob
      **/
     @Autowired
     public SmsMessageScheduledJobServiceImpl(SmsMessageRepository smsMessageRepository, SmsReadPlatformService smsReadPlatformService,
-            final SmsConfigUtils smsConfigUtils, final NotificationSenderService notificationSenderService) {
+            final SmsConfigUtils smsConfigUtils, final NotificationSenderService notificationSenderService,
+            final ExternalHttpClientFactory externalHttpClientFactory) {
         this.smsMessageRepository = smsMessageRepository;
         this.smsReadPlatformService = smsReadPlatformService;
         this.smsConfigUtils = smsConfigUtils;
         this.notificationSenderService = notificationSenderService;
+        this.restTemplate = externalHttpClientFactory.createRestTemplate();
     }
 
     @PostConstruct

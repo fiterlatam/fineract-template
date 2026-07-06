@@ -41,6 +41,7 @@ import org.apache.fineract.infrastructure.core.exception.PlatformDataIntegrityEx
 import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
 import org.apache.fineract.infrastructure.core.serialization.JsonParserHelper;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
+import org.apache.fineract.infrastructure.core.service.ExternalHttpClientFactory;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.organisation.prequalification.data.BuroData;
 import org.apache.fineract.organisation.prequalification.data.LoanAdditionalData;
@@ -80,7 +81,7 @@ public class BureauValidationWritePlatformServiceImpl implements BureauValidatio
     private final PrequalificationGroupRepositoryWrapper prequalificationGroupRepositoryWrapper;
     private final PreQualificationMemberRepository preQualificationMemberRepository;
     private final PreQualificationStatusLogRepository preQualificationStatusLogRepository;
-    private final RestTemplate restTemplate = new RestTemplate();
+    private final RestTemplate restTemplate;
     private final ExternalServicesPropertiesReadPlatformService externalServicePropertiesReadPlatformService;
     private final FromJsonHelper fromApiJsonHelper;
     private final LoanProductRepository loanProductRepository;
@@ -91,7 +92,7 @@ public class BureauValidationWritePlatformServiceImpl implements BureauValidatio
             PrequalificationGroupRepositoryWrapper prequalificationGroupRepositoryWrapper,
             final PreQualificationStatusLogRepository preQualificationStatusLogRepository,
             ExternalServicesPropertiesReadPlatformService externalServicePropertiesReadPlatformService, FromJsonHelper fromApiJsonHelper,
-            final LoanProductRepository loanProductRepository) {
+            final LoanProductRepository loanProductRepository, final ExternalHttpClientFactory externalHttpClientFactory) {
         this.context = context;
         this.prequalificationGroupRepositoryWrapper = prequalificationGroupRepositoryWrapper;
         this.preQualificationMemberRepository = preQualificationMemberRepository;
@@ -99,6 +100,7 @@ public class BureauValidationWritePlatformServiceImpl implements BureauValidatio
         this.externalServicePropertiesReadPlatformService = externalServicePropertiesReadPlatformService;
         this.fromApiJsonHelper = fromApiJsonHelper;
         this.loanProductRepository = loanProductRepository;
+        this.restTemplate = externalHttpClientFactory.createRestTemplate();
     }
 
     @Override

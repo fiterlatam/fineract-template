@@ -28,6 +28,7 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 import okhttp3.OkHttpClient;
+import org.apache.fineract.infrastructure.core.service.ExternalHttpClientFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -66,8 +67,11 @@ public final class ProcessorHelper {
      */
     private final boolean insecureHttpClient = Boolean.getBoolean("fineract.insecureHttpClient");
     private final SSLContext insecureSSLContext;
+    private final ExternalHttpClientFactory externalHttpClientFactory;
 
-    public ProcessorHelper() throws KeyManagementException, NoSuchAlgorithmException {
+    public ProcessorHelper(final ExternalHttpClientFactory externalHttpClientFactory)
+            throws KeyManagementException, NoSuchAlgorithmException {
+        this.externalHttpClientFactory = externalHttpClientFactory;
         if (insecureHttpClient) {
             insecureSSLContext = createInsecureSSLContext();
         } else {
@@ -76,7 +80,7 @@ public final class ProcessorHelper {
     }
 
     private OkHttpClient createClient() {
-        var okBuilder = new OkHttpClient.Builder();
+        var okBuilder = externalHttpClientFactory.createOkHttpClientBuilder();
         if (insecureHttpClient) {
             configureInsecureClient(okBuilder);
         }
