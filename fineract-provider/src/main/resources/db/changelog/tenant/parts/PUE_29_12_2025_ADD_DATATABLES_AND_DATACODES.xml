@@ -1958,13 +1958,14 @@
     </changeSet>
     <changeSet id="15042026_2" author="brian">
         <preConditions onFail="MARK_RAN">
-                <columnExists tableName="p_solicitante" columnName="record_crediticio_PDA"/>
+                <columnExists tableName="p_solicitante" columnName="leadershipRole_roles_liderazgo"/>
         </preConditions>
         <sql>
             ALTER TABLE `p_solicitante`
-                CHANGE COLUMN `record_crediticio_PDA` `creditRecordPDAOptions_cd_record_crediticio_PDA` integer;
+                CHANGE COLUMN `leadershipRole_roles_liderazgo` `roles_liderazgo_pae_cd_leadershipRole_roles_liderazgo` integer;
         </sql>
     </changeSet>
+
     <changeSet id="15042026_3" author="brian">
         <preConditions onFail="MARK_RAN">
             <columnExists tableName="p_solicitante" columnName="leadershipRole_roles_liderazgo"/>
