@@ -166,4 +166,35 @@
                 splitStatements="true"
                 stripComments="true"/>
     </changeSet>
+
+    <changeSet id="PUE_23_04_2026_ADD_PAE_REQUIRED_DOCUMENTS_HIPOTECA_04" author="brian">
+        <preConditions onFail="MARK_RAN">
+                <sqlCheck expectedResult="0">
+                    select count(*) from pae_required_documents where category_id = (
+                    select id from m_code_value where code_id = (select id from m_code where code_name='PaeRequiredGuarantees' limit 1) and code_value='Hipoteca' limit 1
+                    );
+                </sqlCheck>
+        </preConditions>
+        <sqlFile
+                encoding="utf8"
+                path="db/changelog/tenant/commands/paedocumentsupdates_04.sql"
+                relativeToChangelogFile="false"
+                splitStatements="true"
+                stripComments="true"/>
+    </changeSet>
+    <changeSet id="PUE_23_04_2026_ADD_PAE_REQUIRED_DOCUMENTS_FIADOR_EMPRESARIO_05" author="brian">
+        <preConditions onFail="MARK_RAN">
+                <sqlCheck expectedResult="0">
+                    select count(*) from pae_required_documents where category_id = (
+                    select id from m_code_value where code_id = (select id from m_code where code_name='PaeRequiredGuarantees' limit 1) and code_value='Fiador empresario' limit 1
+                    );
+                </sqlCheck>
+        </preConditions>
+        <sqlFile
+                encoding="utf8"
+                path="db/changelog/tenant/commands/paedocumentsupdates_05.sql"
+                relativeToChangelogFile="false"
+                splitStatements="true"
+                stripComments="true"/>
+    </changeSet>
 </databaseChangeLog>
