@@ -1958,11 +1958,22 @@
     </changeSet>
     <changeSet id="15042026_2" author="brian">
         <preConditions onFail="MARK_RAN">
-                <columnExists tableName="p_solicitante" columnName="leadershipRole_roles_liderazgo"/>
+                <columnExists tableName="p_solicitante" columnName="record_crediticio_PDA"/>
         </preConditions>
         <sql>
             ALTER TABLE `p_solicitante`
-                CHANGE COLUMN `leadershipRole_roles_liderazgo` `roles_liderazgo_pae_cd_leadershipRole_roles_liderazgo` integer;
+                CHANGE COLUMN `record_crediticio_PDA` `creditRecordPDAOptions_cd_record_crediticio_PDA` integer;
+        </sql>
+    </changeSet>
+    <changeSet id="15042026_3" author="brian">
+        <preConditions onFail="MARK_RAN">
+            <columnExists tableName="p_solicitante" columnName="leadershipRole_roles_liderazgo"/>
+        </preConditions>
+        <sql>
+            INSERT INTO `m_code` (`code_name`, `is_system_defined`) VALUES ('roles_liderazgo_pae', b'0');
+            INSERT INTO m_code_value (`code_id`, `code_value`, `code_description`, `order_position`, `code_score`, `is_active`, `is_mandatory`) VALUES ((select id from m_code where code_name='roles_liderazgo_pae' limit 1), 'Si, ha tenido varios roles', 'Si, ha tenido varios roles', 3, NULL, b'1', b'0');
+            INSERT INTO m_code_value (`code_id`, `code_value`, `code_description`, `order_position`, `code_score`, `is_active`, `is_mandatory`) VALUES ((select id from m_code where code_name='roles_liderazgo_pae' limit 1), 'Si, ha tenido algún rol', 'Si, ha tenido algún rol', 2, NULL, b'1', b'0');
+            INSERT INTO m_code_value (`code_id`, `code_value`, `code_description`, `order_position`, `code_score`, `is_active`, `is_mandatory`) VALUES ((select id from m_code where code_name='roles_liderazgo_pae' limit 1), 'No', 'No', 1, NULL, b'1', b'0');
         </sql>
     </changeSet>
 
