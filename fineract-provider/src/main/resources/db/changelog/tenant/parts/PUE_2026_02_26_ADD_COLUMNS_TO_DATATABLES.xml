@@ -147,4 +147,15 @@
         </sql>
     </changeSet>
 
+    <changeSet id="1785165839469-1-FIX-PRODUCT-ID-ON-DATA_TABLES" author="brian">
+        <sql>
+            <![CDATA[
+            UPDATE `m_entity_datatable_check` SET `product_id` = (select id from m_product_loan where short_name='PAECI001' limit 1) WHERE `x_registered_table_name` = 'p_destino';
+            UPDATE `m_entity_datatable_check` SET `product_id` = (select id from m_product_loan where short_name='PAECI001' limit 1) WHERE `x_registered_table_name` = 'p_solicitante';
+            UPDATE `m_entity_datatable_check` SET `product_id` = (select id from m_product_loan where short_name='PAECI001' limit 1) WHERE `x_registered_table_name` = 'p_fiador';
+            UPDATE `m_entity_datatable_check` SET `product_id` = (select id from m_product_loan where short_name='PAECI001' limit 1) WHERE `x_registered_table_name` = 'p_garantia';
+            ]]>
+        </sql>
+    </changeSet>
+
 </databaseChangeLog>
