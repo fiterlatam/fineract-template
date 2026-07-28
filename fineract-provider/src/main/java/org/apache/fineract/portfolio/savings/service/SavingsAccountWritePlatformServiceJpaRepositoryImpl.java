@@ -2113,7 +2113,7 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
 
         if (!guaranteeAccount.isEmpty()) {
             SavingsAccount savingsAccount = guaranteeAccount.get();
-
+            this.rebalanceSingleAccount(savingsAccount.getId());
             final SavingsAccount account = this.savingAccountAssembler.assembleFrom(savingsAccount.getId(), backdatedTxnsAllowedTill);
 
             if (account.getGsim() != null) {
