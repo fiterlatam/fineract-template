@@ -2170,6 +2170,7 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
                         DateUtils.DEFAULT_DATE_FORMATER, transactionDate, amountToDeposit, paymentDetail, isAccountTransfer,
                         isRegularTransaction, backdatedTxnsAllowedTill);
                 deposit.setLoanId(loanId);
+                accountBalance = accountBalance.add(amountToDeposit);
                 if (isGsim && (deposit.getId() != null)) {
 
                     LOG.debug("Deposit account has been created: {} ", deposit);
@@ -2190,7 +2191,7 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
             this.savingAccountRepositoryWrapper.saveAndFlush(account);
 
             // Hold Amount
-            Money runningBalance = Money.of(account.getCurrency(), accountBalance);
+            Money runningBalance = Money.of(account.getCurrency(), account.getAccountBalance());
             if (account.getSavingsHoldAmount() != null) {
                 runningBalance = runningBalance.minus(account.getSavingsHoldAmount()).minus(requiredGuaranteeAmount);
             } else {
