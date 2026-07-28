@@ -2063,5 +2063,18 @@
                 DROP COLUMN  guarantee_cd_garantia;
         </sql>
     </changeSet>
+    <changeSet id="" author="brian">
+        <preConditions onFail="MARK_RAN">
+                <columnExists tableName="p_solicitante" columnName="guarantee_cd_garantia"/>
+        </preConditions>
+        <sql>
+            <![CDATA[
+            INSERT INTO `m_code` (`code_name`, `is_system_defined`) VALUES ('pda_options_pae', b'0');
+            INSERT INTO m_code_value (`code_id`, `code_value`, `code_description`, `order_position`, `code_score`, `is_active`, `is_mandatory`) VALUES ((select id from m_code where code_name='pda_options_pae' limit 1), 'No aplica', 'No aplica', 3, NULL, b'1', b'0');
+            INSERT INTO m_code_value (`code_id`, `code_value`, `code_description`, `order_position`, `code_score`, `is_active`, `is_mandatory`) VALUES ((select id from m_code where code_name='pda_options_pae' limit 1), '>30 días de atraso', '>30 días de atraso', 2, NULL, b'1', b'0');
+            INSERT INTO m_code_value (`code_id`, `code_value`, `code_description`, `order_position`, `code_score`, `is_active`, `is_mandatory`) VALUES ((select id from m_code where code_name='pda_options_pae' limit 1), '<30 días de atraso', '<30 días de atraso', 1, NULL, b'1', b'0');
+            ]]>
+        </sql>
+    </changeSet>
 
 </databaseChangeLog>

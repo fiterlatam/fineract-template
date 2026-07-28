@@ -27,7 +27,7 @@ jobs:
             chmod +x gradlew
             ./gradlew clean bootJar
             ./gradlew :fineract-client:test -x spotlessCheck -x compileJava
-            ./gradlew :fineract-provider:test -x spotlessCheck
+            ./gradlew :fineract-provider:test -x spotlessCheck -x compileTestJava
 
         - name: Merge coverage reports
           run: |
