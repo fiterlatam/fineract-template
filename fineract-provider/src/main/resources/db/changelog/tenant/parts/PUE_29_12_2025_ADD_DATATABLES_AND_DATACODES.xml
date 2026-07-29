@@ -1927,9 +1927,7 @@
 
     <changeSet id="1775665199574-1" author="brian">
         <preConditions onFail="MARK_RAN">
-            <not>
                 <columnExists tableName="p_fiador" columnName="DPI_fiador_tercero"/>
-            </not>
         </preConditions>
         <sql>
             ALTER TABLE p_fiador
