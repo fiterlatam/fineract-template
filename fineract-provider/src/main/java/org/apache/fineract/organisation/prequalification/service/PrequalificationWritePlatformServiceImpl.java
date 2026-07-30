@@ -1158,8 +1158,8 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
                 .withReportToPrint(reportToPrint).withLoanId(loanId).build();
     }
 
-    private CommandProcessingResult approveRenegotiation(PrequalificationGroup prequalificationGroup, AppUser addedBy,
-                                                         JsonCommand command, Renegotiation renegotiationById) {
+    private CommandProcessingResult approveRenegotiation(PrequalificationGroup prequalificationGroup, AppUser addedBy, JsonCommand command,
+            Renegotiation renegotiationById) {
 
         // approve renegotiation
         renegotiationById.setStatus("APPROVED");
@@ -1526,9 +1526,9 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
             List<PrequalificationGroupMember> members = prequalificationGroup.getMembers();
             BigDecimal totalApprovedAmount = BigDecimal.ZERO;
             for (PrequalificationGroupMember member : members) {
-                if (member.getApprovedAmount().compareTo(member.getRequestedAmount())>=0){
+                if (member.getApprovedAmount().compareTo(member.getRequestedAmount()) >= 0) {
                     totalApprovedAmount = totalApprovedAmount.add(member.getApprovedAmount());
-                }else{
+                } else {
                     totalApprovedAmount = totalApprovedAmount.add(member.getRequestedAmount());
                 }
             }

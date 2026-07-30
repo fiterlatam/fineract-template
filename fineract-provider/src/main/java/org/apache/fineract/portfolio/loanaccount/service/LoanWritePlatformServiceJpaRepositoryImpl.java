@@ -232,7 +232,6 @@ import org.apache.fineract.portfolio.loanproduct.exception.InvalidCurrencyExcept
 import org.apache.fineract.portfolio.loanproduct.exception.LinkedAccountRequiredException;
 import org.apache.fineract.portfolio.note.domain.Note;
 import org.apache.fineract.portfolio.note.domain.NoteRepository;
-import org.apache.fineract.portfolio.paymentdetail.PaymentDetailConstants;
 import org.apache.fineract.portfolio.paymentdetail.domain.PaymentDetail;
 import org.apache.fineract.portfolio.paymentdetail.service.PaymentDetailWritePlatformService;
 import org.apache.fineract.portfolio.repaymentwithpostdatedchecks.domain.PostDatedChecks;
@@ -2262,11 +2261,13 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
             final String paymentDate = transactionDate.format(dateTimeFormatter);
             jsonObject.addProperty("transactionDate", paymentDate);
 
-            final JsonCommand holdTransactionCommand = JsonCommand.fromJsonElement(holdTransaction.getSavingsAccount().getId(), jsonObject, this.fromApiJsonHelper);
+            final JsonCommand holdTransactionCommand = JsonCommand.fromJsonElement(holdTransaction.getSavingsAccount().getId(), jsonObject,
+                    this.fromApiJsonHelper);
             holdTransactionCommand.setJsonCommand(jsonObject.toString());
 
             // release loan guarantee to make payment
-            this.savingsAccountWritePlatformService.releaseLoanGuarantee(loanIdToClose, holdTransactionCommand, transactionDate, holdTransaction);
+            this.savingsAccountWritePlatformService.releaseLoanGuarantee(loanIdToClose, holdTransactionCommand, transactionDate,
+                    holdTransaction);
 
         }
 
