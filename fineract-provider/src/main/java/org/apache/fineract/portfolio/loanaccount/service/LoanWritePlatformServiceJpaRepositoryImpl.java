@@ -232,6 +232,7 @@ import org.apache.fineract.portfolio.loanproduct.exception.InvalidCurrencyExcept
 import org.apache.fineract.portfolio.loanproduct.exception.LinkedAccountRequiredException;
 import org.apache.fineract.portfolio.note.domain.Note;
 import org.apache.fineract.portfolio.note.domain.NoteRepository;
+import org.apache.fineract.portfolio.paymentdetail.PaymentDetailConstants;
 import org.apache.fineract.portfolio.paymentdetail.domain.PaymentDetail;
 import org.apache.fineract.portfolio.paymentdetail.service.PaymentDetailWritePlatformService;
 import org.apache.fineract.portfolio.repaymentwithpostdatedchecks.domain.PostDatedChecks;
@@ -2253,30 +2254,19 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
 
         if (holdTransaction != null) {
 
-            SavingsAccount fromSavingsAccount = holdTransaction.getSavingsAccount();
-            JsonObject requestData = command.parsedJson().getAsJsonObject();
-            requestData.addProperty(fromOfficeIdParamName, fromSavingsAccount.officeId());
-            requestData.addProperty(fromClientIdParamName, fromSavingsAccount.getClient().getId());
-            requestData.addProperty(toClientIdParamName, loan.getClient().getId());
-            requestData.addProperty(toOfficeIdParamName, loan.getOfficeId());
+            final JsonObject jsonObject = new JsonObject();
             final String dateFormat = "dd MMMM yyyy";
+            jsonObject.addProperty("locale", locale.toString());
+            jsonObject.addProperty("dateFormat", dateFormat);
             final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(dateFormat).withLocale(locale);
-            requestData.addProperty(transferDateParamName, transactionDate.format(dateTimeFormatter));
-            requestData.addProperty(transferAmountParamName, holdTransaction.getAmount());
-            String noteText = null;
-            if (command.hasParameter("note")) {
-                noteText = command.stringValueOfParameterNamed("note");
-                if (StringUtils.isNotBlank(noteText)) {
-                    final Note note = Note.loanNote(loan, noteText);
-                    this.noteRepository.save(note);
-                }
-            }
-            requestData.addProperty(transferDescriptionParamName, noteText);
-            final JsonCommand assemblerCommand = JsonCommand.fromJsonElement(loanIdToClose, requestData, this.fromApiJsonHelper);
-            assemblerCommand.setJsonCommand(requestData.toString());
+            final String paymentDate = transactionDate.format(dateTimeFormatter);
+            jsonObject.addProperty("transactionDate", paymentDate);
+
+            final JsonCommand holdTransactionCommand = JsonCommand.fromJsonElement(holdTransaction.getSavingsAccount().getId(), jsonObject, this.fromApiJsonHelper);
+            holdTransactionCommand.setJsonCommand(jsonObject.toString());
 
             // release loan guarantee to make payment
-            this.savingsAccountWritePlatformService.releaseLoanGuarantee(loanIdToClose, command, transactionDate, holdTransaction);
+            this.savingsAccountWritePlatformService.releaseLoanGuarantee(loanIdToClose, holdTransactionCommand, transactionDate, holdTransaction);
 
         }
 
