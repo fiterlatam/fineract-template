@@ -1044,7 +1044,19 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         Long loanId = null;
 
         if (action.equals("approveRenegotiation")) {
-            approveRenegotiation(prequalificationGroup, addedBy, command);
+
+            Long renegotiationId = command.longValueOfParameterNamed("renegotiationId");
+            Renegotiation renegotiationById = this.renegotiationRepository.getRenegotiationById(renegotiationId);
+            if (renegotiationById == null || !renegotiationById.getPrequalificationGroup().getId().equals(prequalificationGroup.getId())) {
+                throw new RenegotiationNotFoundException(renegotiationId);
+            }
+
+            BigDecimal totalRequestedAmount = prequalificationGroup.getTotalRequestedAmount();
+            BigDecimal proposedAmount = renegotiationById.getProposedAmount();
+
+            if (proposedAmount.compareTo(totalRequestedAmount) >= 0) {
+                approveRenegotiation(prequalificationGroup, addedBy, command, renegotiationById);
+            }
             GroupPrequalificationData prequalificationData = prequalificationReadPlatformService.retrieveOne(prequalificationGroup.getId());
 
             PrequalificationStatus lastStatus = PrequalificationStatus
@@ -1064,6 +1076,10 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
                 }
                 Loan loan = allLoans.get(0);
                 loanId = loan != null ? loan.getId() : null;
+            }
+
+            if (proposedAmount.compareTo(totalRequestedAmount) < 0) {
+                approveRenegotiation(prequalificationGroup, addedBy, command, renegotiationById);
             }
         }
 
@@ -1143,12 +1159,8 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
     }
 
     private CommandProcessingResult approveRenegotiation(PrequalificationGroup prequalificationGroup, AppUser addedBy,
-            JsonCommand command) {
-        Long renegotiationId = command.longValueOfParameterNamed("renegotiationId");
-        Renegotiation renegotiationById = this.renegotiationRepository.getRenegotiationById(renegotiationId);
-        if (renegotiationById == null || !renegotiationById.getPrequalificationGroup().getId().equals(prequalificationGroup.getId())) {
-            throw new RenegotiationNotFoundException(renegotiationId);
-        }
+                                                         JsonCommand command, Renegotiation renegotiationById) {
+
         // approve renegotiation
         renegotiationById.setStatus("APPROVED");
         renegotiationById.setApprovedDate(DateUtils.getLocalDateTimeOfSystem());
@@ -1514,7 +1526,11 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
             List<PrequalificationGroupMember> members = prequalificationGroup.getMembers();
             BigDecimal totalApprovedAmount = BigDecimal.ZERO;
             for (PrequalificationGroupMember member : members) {
-                totalApprovedAmount = totalApprovedAmount.add(member.getApprovedAmount());
+                if (member.getApprovedAmount().compareTo(member.getRequestedAmount())>=0){
+                    totalApprovedAmount = totalApprovedAmount.add(member.getApprovedAmount());
+                }else{
+                    totalApprovedAmount = totalApprovedAmount.add(member.getRequestedAmount());
+                }
             }
 
             PrequalificationChecklistData prequalificationChecklistData = this.prequalificationChecklistReadPlatformService
