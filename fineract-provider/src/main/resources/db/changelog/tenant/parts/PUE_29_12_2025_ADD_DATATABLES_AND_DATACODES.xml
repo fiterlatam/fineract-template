@@ -2085,7 +2085,7 @@
                 MODIFY COLUMN `readWrite_cd_puede_leer_escribir` int NOT NULL;
 
             ALTER TABLE p_solicitante
-                MODIFY COLUMN `direccion_notificaciones` text CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL;
+                MODIFY COLUMN `direccion_notificaciones` text  NOT NULL;
         </sql>
     </changeSet>
 
