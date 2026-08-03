@@ -2075,4 +2075,18 @@
         </sql>
     </changeSet>
 
+
+    <changeSet id="1785759824071-1" author="brian">
+        <preConditions onFail="MARK_RAN">
+            <columnExists tableName="p_fiador" columnName="readWrite_cd_puede_leer_escribir"/>
+        </preConditions>
+        <sql>
+            ALTER TABLE `p_fiador`
+                MODIFY COLUMN `readWrite_cd_puede_leer_escribir` int NOT NULL;
+
+            ALTER TABLE p_solicitante
+                MODIFY COLUMN `direccion_notificaciones` text CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL;
+        </sql>
+    </changeSet>
+
 </databaseChangeLog>
