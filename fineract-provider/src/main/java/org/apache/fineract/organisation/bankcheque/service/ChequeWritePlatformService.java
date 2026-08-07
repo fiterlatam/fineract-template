@@ -43,6 +43,10 @@ public interface ChequeWritePlatformService {
 
     CommandProcessingResult printCheques(final JsonCommand command);
 
+    CommandProcessingResult printChequeBatches(final JsonCommand command);
+
     CommandProcessingResult payGuaranteeByCheque(final JsonCommand command);
+
+    void processBatchChequeRequestById(Long batchChequeRequestId);
 
 }

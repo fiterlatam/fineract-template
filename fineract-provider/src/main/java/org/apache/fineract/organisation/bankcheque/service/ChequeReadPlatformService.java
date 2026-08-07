@@ -21,6 +21,7 @@ package org.apache.fineract.organisation.bankcheque.service;
 import java.util.List;
 import org.apache.fineract.infrastructure.core.data.PaginationParameters;
 import org.apache.fineract.infrastructure.core.service.Page;
+import org.apache.fineract.organisation.bankcheque.data.BatchChequeRequestData;
 import org.apache.fineract.organisation.bankcheque.data.BatchData;
 import org.apache.fineract.organisation.bankcheque.data.ChequeData;
 import org.apache.fineract.organisation.bankcheque.data.ChequeSearchParams;
@@ -37,5 +38,9 @@ public interface ChequeReadPlatformService {
     List<GuaranteeData> retrieveGuarantees(final String dpi, final String locale);
 
     Page<ChequeData> retrieveAll(final ChequeSearchParams chequeSearchParams, final PaginationParameters parameters);
+
+    BatchChequeRequestData retrieveBatchChequeRequest(final Long requestId);
+
+    List<BatchChequeRequestData> retrieveBatchChequeRequests(final String status, final Long requestedById);
 
 }
