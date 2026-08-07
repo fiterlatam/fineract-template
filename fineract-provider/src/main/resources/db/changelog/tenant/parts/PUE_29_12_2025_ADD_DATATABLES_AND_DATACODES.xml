@@ -1918,6 +1918,15 @@
         </insert>
 
     </changeSet>
+    <changeSet id="insert-client-datatables-permissions-id_2" author="brian">
+        <insert tableName="m_permission">
+            <column name="grouping" value="datatable"/>
+            <column name="code" value="DELETE_p_destino"/>
+            <column name="entity_name" value="DELETE_p_destino"/>
+            <column name="action_name" value="UPDATE"/>
+            <column name="can_maker_checker" valueBoolean="false"/>
+        </insert>
+    </changeSet>
 
     <changeSet id="1773341938903-1" author="brian">
         <!--        alter table p_solicitante modify DPI to varchar type-->
