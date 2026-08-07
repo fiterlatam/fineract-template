@@ -26,6 +26,7 @@ import java.nio.charset.Charset;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -54,11 +55,14 @@ import org.apache.fineract.infrastructure.security.utils.ColumnValidator;
 import org.apache.fineract.infrastructure.security.utils.SQLBuilder;
 import org.apache.fineract.organisation.agency.data.AgencyData;
 import org.apache.fineract.organisation.agency.service.AgencyReadPlatformServiceImpl;
+import org.apache.fineract.organisation.bankcheque.data.BatchChequeRequestData;
 import org.apache.fineract.organisation.bankcheque.data.BatchData;
 import org.apache.fineract.organisation.bankcheque.data.ChequeData;
 import org.apache.fineract.organisation.bankcheque.data.ChequeSearchParams;
 import org.apache.fineract.organisation.bankcheque.data.GuaranteeData;
 import org.apache.fineract.organisation.bankcheque.domain.BankChequeStatus;
+import org.apache.fineract.organisation.bankcheque.exception.BankChequeException;
+import org.apache.fineract.organisation.bankcheque.exception.BatchChequeRequestNotFoundException;
 import org.apache.fineract.organisation.bankcheque.exception.BatchNotFoundException;
 import org.apache.fineract.organisation.office.domain.OfficeHierarchyLevel;
 import org.apache.fineract.portfolio.group.data.CenterData;
@@ -86,6 +90,7 @@ public class ChequeReadPlatformServiceImpl implements ChequeReadPlatformService 
     private final JdbcTemplate jdbcTemplate;
     private final BatchMapper batchMapper = new BatchMapper();
     private final ChequeMapper chequeMapper = new ChequeMapper();
+    private final BatchChequeRequestMapper batchChequeRequestMapper = new BatchChequeRequestMapper();
     private final PaginationParametersDataValidator paginationParametersDataValidator;
     private final ColumnValidator columnValidator;
     private final PaginationHelper paginationHelper;
@@ -469,5 +474,114 @@ public class ChequeReadPlatformServiceImpl implements ChequeReadPlatformService 
             }
         }
         return guaranteeDataList;
+    }
+
+    private String resolveCaseIdByDpi(final String dpi, final Long clientId) {
+        final String loanAdditionalSql = """
+                SELECT clap.case_id
+                FROM m_client_loan_additional_properties clap
+                INNER JOIN m_client c ON c.id = clap.client_id
+                WHERE c.dpi = ? AND clap.case_id IS NOT NULL AND TRIM(clap.case_id) <> ''
+                ORDER BY clap.id DESC
+                LIMIT 1
+                """;
+        final String paeAdditionalSql = """
+                SELECT pae.case_id
+                FROM m_pae_loan_additional_data pae
+                INNER JOIN m_loan l ON l.id = pae.loan_id
+                INNER JOIN m_client c ON c.id = l.client_id
+                WHERE c.dpi = ? AND pae.case_id IS NOT NULL AND TRIM(pae.case_id) <> ''
+                ORDER BY pae.id DESC
+                LIMIT 1
+                """;
+        final String bankChequeSql = """
+                SELECT mbc.case_id
+                FROM m_bank_check mbc
+                WHERE mbc.numero_cliente = ? AND mbc.case_id IS NOT NULL AND TRIM(mbc.case_id) <> ''
+                  AND mbc.guarantee_id IS NOT NULL
+                ORDER BY mbc.id DESC
+                LIMIT 1
+                """;
+        String caseId = this.queryLatestCaseId(loanAdditionalSql, dpi);
+        if (StringUtils.isBlank(caseId)) {
+            caseId = this.queryLatestCaseId(paeAdditionalSql, dpi);
+        }
+        if (StringUtils.isBlank(caseId)) {
+            caseId = this.queryLatestCaseId(bankChequeSql, dpi);
+        }
+        if (StringUtils.isBlank(caseId)) {
+            throw new BankChequeException("guarantee.case.id.not.found.for.dpi",
+                    "Case ID not found for client DPI " + dpi + " and client id " + clientId);
+        }
+        return caseId;
+    }
+
+    private String queryLatestCaseId(final String sql, final String dpi) {
+        final List<String> caseIds = this.jdbcTemplate.query(sql, (rs, rowNum) -> rs.getString("case_id"), dpi);
+        return caseIds.isEmpty() ? null : caseIds.get(0);
+    }
+
+    @Override
+    public BatchChequeRequestData retrieveBatchChequeRequest(final Long requestId) {
+        final String sql = "SELECT " + this.batchChequeRequestMapper.schema() + " WHERE bcr.id = ?";
+        final List<BatchChequeRequestData> results = this.jdbcTemplate.query(sql, this.batchChequeRequestMapper, requestId);
+        if (results.isEmpty()) {
+            throw new BatchChequeRequestNotFoundException(requestId);
+        }
+        return results.get(0);
+    }
+
+    @Override
+    public List<BatchChequeRequestData> retrieveBatchChequeRequests(final String status, final Long requestedById) {
+        final StringBuilder sqlBuilder = new StringBuilder(200);
+        sqlBuilder.append("SELECT ").append(this.batchChequeRequestMapper.schema());
+        final SQLBuilder extraCriteria = new SQLBuilder();
+        if (StringUtils.isNotBlank(status)) {
+            extraCriteria.addNonNullCriteria("bcr.status = ", status);
+        }
+        if (requestedById != null) {
+            extraCriteria.addNonNullCriteria("bcr.requested_by_id = ", requestedById);
+        }
+        final String sqlTemplate = extraCriteria.getSQLTemplate();
+        if (StringUtils.isNotBlank(sqlTemplate)) {
+            sqlBuilder.append(" ").append(sqlTemplate);
+        }
+        sqlBuilder.append(" ORDER BY bcr.date_requested DESC, bcr.id DESC");
+        return this.jdbcTemplate.query(sqlBuilder.toString(), this.batchChequeRequestMapper, extraCriteria.getArguments());
+    }
+
+    private static final class BatchChequeRequestMapper implements RowMapper<BatchChequeRequestData> {
+
+        private final String schemaSql;
+
+        BatchChequeRequestMapper() {
+            final StringBuilder sqlBuilder = new StringBuilder(300);
+            sqlBuilder.append("bcr.id AS id, bcr.requested_by_id AS requestedById, ");
+            sqlBuilder.append("mu.username AS requestedByUsername, mu.email AS requestedByEmail, ");
+            sqlBuilder.append("bcr.status AS status, bcr.date_requested AS dateRequested, ");
+            sqlBuilder.append("bcr.date_processed AS dateProcessed, bcr.cheque_ids AS chequeIds ");
+            sqlBuilder.append("FROM batch_cheque_requests bcr ");
+            sqlBuilder.append("INNER JOIN m_appuser mu ON mu.id = bcr.requested_by_id");
+            this.schemaSql = sqlBuilder.toString();
+        }
+
+        public String schema() {
+            return this.schemaSql;
+        }
+
+        @Override
+        public BatchChequeRequestData mapRow(final ResultSet rs, @SuppressWarnings("unused") final int rowNum) throws SQLException {
+            final Long id = JdbcSupport.getLong(rs, "id");
+            final Long requestedById = JdbcSupport.getLong(rs, "requestedById");
+            final String requestedByUsername = rs.getString("requestedByUsername");
+            final String requestedByEmail = rs.getString("requestedByEmail");
+            final String status = rs.getString("status");
+            final LocalDateTime dateRequested = JdbcSupport.getLocalDateTime(rs, "dateRequested");
+            final LocalDateTime dateProcessed = JdbcSupport.getLocalDateTime(rs, "dateProcessed");
+            final String chequeIds = rs.getString("chequeIds");
+            return BatchChequeRequestData.builder().id(id).requestedById(requestedById).requestedByUsername(requestedByUsername)
+                    .requestedByEmail(requestedByEmail).status(status).dateRequested(dateRequested).dateProcessed(dateProcessed)
+                    .chequeIds(chequeIds).build();
+        }
     }
 }

@@ -21,7 +21,6 @@ package org.apache.fineract.infrastructure.campaigns.email.service;
 import java.io.File;
 import java.util.List;
 import java.util.Properties;
-import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
 import org.apache.fineract.infrastructure.campaigns.email.data.EmailMessageWithAttachmentData;
 import org.apache.fineract.infrastructure.configuration.data.SMTPCredentialsData;
@@ -76,22 +75,29 @@ public final class EmailMessageJobEmailServiceImpl implements EmailMessageJobEma
 
             javaMailSenderImpl.send(mimeMessage);
 
-        } catch (MessagingException e) {
-            LOG.error("Could not send emai Problem occurred in sendEmailWithAttachment function", e);
+        } catch (Exception e) {
+            LOG.error("Could not send email. Problem occurred in sendEmailWithAttachment function", e);
         }
 
     }
 
     private Properties getJavaMailProperties(SMTPCredentialsData smtpCredentialsData, Properties properties) {
-        properties.put("mail.smtp.starttls.enable", "true");
+        final String port = smtpCredentialsData.getPort();
         properties.put("mail.transport.protocol", "smtp");
         properties.put("mail.smtp.auth", "true");
         properties.put("mail.smtp.ssl.trust", smtpCredentialsData.getHost());
-        if (smtpCredentialsData.isUseTLS()) {
-            // Needs to disable startTLS if the port is 465 in order to send the email successfully when using the
-            // smtp.gmail.com as the host
-            if (smtpCredentialsData.getPort().equals("465")) {
-                properties.put("mail.smtp.starttls.enable", "false");
+
+        // Port 465 expects implicit SSL (SMTPS). Port 587 uses STARTTLS.
+        if ("465".equals(port)) {
+            properties.put("mail.smtp.starttls.enable", "false");
+            properties.put("mail.smtp.ssl.enable", "true");
+            properties.put("mail.smtp.socketFactory.port", port);
+            properties.put("mail.smtp.socketFactory.class", "javax.net.ssl.SSLSocketFactory");
+            properties.put("mail.smtp.socketFactory.fallback", "false");
+        } else {
+            properties.put("mail.smtp.starttls.enable", String.valueOf(smtpCredentialsData.isUseTLS()));
+            if (smtpCredentialsData.isUseTLS()) {
+                properties.put("mail.smtp.starttls.required", "true");
             }
         }
         return properties;

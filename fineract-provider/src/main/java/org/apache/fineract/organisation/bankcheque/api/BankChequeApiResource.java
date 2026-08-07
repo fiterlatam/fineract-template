@@ -53,6 +53,7 @@ import org.apache.fineract.infrastructure.core.serialization.ApiRequestJsonSeria
 import org.apache.fineract.infrastructure.core.serialization.ToApiJsonSerializer;
 import org.apache.fineract.infrastructure.core.service.Page;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
+import org.apache.fineract.organisation.bankcheque.data.BatchChequeRequestData;
 import org.apache.fineract.organisation.bankcheque.data.BatchData;
 import org.apache.fineract.organisation.bankcheque.data.ChequeData;
 import org.apache.fineract.organisation.bankcheque.data.ChequeSearchParams;
@@ -116,13 +117,45 @@ public class BankChequeApiResource {
         } else if (is(commandParam, "printcheques")) {
             commandRequest = builder.printCheques().build();
             result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
+        } else if (is(commandParam, "printchequebatches")) {
+            commandRequest = builder.printChequeBatches().build();
+            result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
         }
 
         if (result == null) {
             throw new UnrecognizedQueryParamException("command", commandParam, "reassigncheque", "authorizereassignment", "createbatch",
-                    "voidcheque", "authorizevoidance", "approveissuance", "payguaranteesbycheques", "printcheques");
+                    "voidcheque", "authorizevoidance", "approveissuance", "payguaranteesbycheques", "printcheques", "printchequebatches");
         }
         return this.toApiJsonSerializer.serialize(result);
+    }
+
+    @GET
+    @Path("batchrequests")
+    @Consumes({ MediaType.APPLICATION_JSON })
+    @Produces({ MediaType.APPLICATION_JSON })
+    @Operation(summary = "List batch cheque print requests", description = "Example Requests: /bankcheques/batchrequests?status=PENDING")
+    @ApiResponses({ @ApiResponse(responseCode = "200", description = "OK") })
+    public String retrieveBatchChequeRequests(@Context final UriInfo uriInfo,
+            @QueryParam("status") @Parameter(description = "status") final String status,
+            @QueryParam("requestedById") @Parameter(description = "requestedById") final Long requestedById) {
+        this.context.authenticatedUser().validateHasReadPermission(BankChequeApiConstants.BANK_CHECK_RESOURCE_NAME);
+        final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(uriInfo.getQueryParameters());
+        final List<BatchChequeRequestData> requests = this.chequeReadPlatformService.retrieveBatchChequeRequests(status, requestedById);
+        return this.toApiJsonSerializer.serialize(settings, requests, BankChequeApiConstants.BATCH_CHEQUE_REQUEST_RESPONSE_DATA_PARAMETERS);
+    }
+
+    @GET
+    @Path("batchrequests/{requestId}")
+    @Consumes({ MediaType.APPLICATION_JSON })
+    @Produces({ MediaType.APPLICATION_JSON })
+    @Operation(summary = "Retrieve a batch cheque print request", description = "Example Requests: /bankcheques/batchrequests/12")
+    @ApiResponses({ @ApiResponse(responseCode = "200", description = "OK") })
+    public String retrieveBatchChequeRequest(@PathParam("requestId") @Parameter(description = "requestId") final Long requestId,
+            @Context final UriInfo uriInfo) {
+        this.context.authenticatedUser().validateHasReadPermission(BankChequeApiConstants.BANK_CHECK_RESOURCE_NAME);
+        final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(uriInfo.getQueryParameters());
+        final BatchChequeRequestData request = this.chequeReadPlatformService.retrieveBatchChequeRequest(requestId);
+        return this.toApiJsonSerializer.serialize(settings, request, BankChequeApiConstants.BATCH_CHEQUE_REQUEST_RESPONSE_DATA_PARAMETERS);
     }
 
     @GET

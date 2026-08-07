@@ -168,4 +168,5 @@
     <include file="parts/PUE_2026_09_11_PREQUALIFICATION_DETAIL_PERFORMANCE_INDEXES.xml" relativeToChangelogFile="true"/>
     <include file="parts/PUE_2026_09_16_BACKFILL_INDIVIDUAL_PREQUALIFICATION_AGENCY.xml" relativeToChangelogFile="true"/>
     <include file="parts/PUE_2026_09_30_BACKFILL_INDIVIDUAL_PREQUALIFICATION_AGENCY_FROM_CLIENT_OFFICE.xml" relativeToChangelogFile="true"/>
+    <include file="parts/PUE_2026_08_04_batch_cheque_requests.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>
