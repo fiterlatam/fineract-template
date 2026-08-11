@@ -1272,9 +1272,7 @@ public class ReadWriteNonCoreDataServiceImpl implements ReadWriteNonCoreDataServ
     @Override
     public CommandProcessingResult deleteDatatableEntry(final String dataTableName, final Long appTableId, final Long datatableId) {
         validateDatatableName(dataTableName);
-        if (isDatatableAttachedToEntityDatatableCheck(dataTableName)) {
-            throw new DatatableEntryRequiredException(dataTableName, appTableId);
-        }
+
         final String appTable = queryForApplicationTableName(dataTableName);
         final CommandProcessingResult commandProcessingResult = checkMainResourceExistsWithinScope(appTable, appTableId);
 
