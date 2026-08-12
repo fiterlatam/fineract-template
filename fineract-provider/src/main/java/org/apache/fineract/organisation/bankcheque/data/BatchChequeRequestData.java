@@ -34,4 +34,5 @@ public class BatchChequeRequestData {
     private LocalDateTime dateRequested;
     private LocalDateTime dateProcessed;
     private String chequeIds;
+    private String processErrors;
 }
