@@ -663,7 +663,9 @@ public class ChequeWritePlatformServiceImpl implements ChequeWritePlatformServic
             }
             if (!loan.isPendingDisbursementAuthorization() && !chequeData.getReassingedCheque()) {
                 throw new BankChequeException(
-                        "print.cheques.loan:" + loan.getAccountNumber() + " is.not.in.disbursement.authorization.status");
+                        "print.cheques.loan:" + loan.getAccountNumber() + " is.not.in.disbursement.authorization.status",
+                        "No se pudo imprimir el cheque porque la cuenta de préstamo "+loan.getAccountNumber()+
+                        " no está en estado de autorización de desembolso.");
             }
 
             if (!chequeData.getReassingedCheque()) {
@@ -699,13 +701,13 @@ public class ChequeWritePlatformServiceImpl implements ChequeWritePlatformServic
                     .retrieveAllForLookup(clientId);
             if (CollectionUtils.isEmpty(clientSavingsAccounts)) {
                 throw new BankChequeException("guarantee.savings.account.not.found",
-                        "Guarantee savings is not found for client ID" + numeroCliente);
+                        "No se encontraron ahorros garantizados para el ID del cliente." + numeroCliente);
             }
             final Optional<SavingsAccountData> savingsAccountDataOptional = clientSavingsAccounts.stream()
                     .filter(accountData -> "Garantías".equals(accountData.getSavingsProductName())).findFirst();
             if (savingsAccountDataOptional.isEmpty()) {
                 throw new BankChequeException("guarantee.savings.account.not.found",
-                        "Guarantee savings is not found for client ID" + numeroCliente);
+                        "No se encontraron ahorros garantizados para el ID del cliente." + numeroCliente);
             }
 
             if (!chequeData.getReassingedCheque()) {
@@ -717,7 +719,7 @@ public class ChequeWritePlatformServiceImpl implements ChequeWritePlatformServic
                 }
                 if (guaranteeAmount.compareTo(availableBalance) > 0) {
                     throw new BankChequeException("guarantee.amount.greater.than.available.savings.account.balance",
-                            "Guarantee amount is greater than savings account balance of" + availableBalance);
+                            "El importe de la garantía es mayor que el saldo de la cuenta de ahorros de" + availableBalance);
                 }
                 final String localeAsString = "en";
                 final String dateFormat = "dd MMMM yyyy";
