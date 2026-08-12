@@ -55,6 +55,9 @@ public class BatchChequeRequest extends AbstractPersistableCustom {
     @Column(name = "cheque_ids", nullable = false, columnDefinition = "TEXT")
     private String chequeIds;
 
+    @Column(name = "process_errors", columnDefinition = "TEXT")
+    private String processErrors;
+
     public static BatchChequeRequest create(final AppUser requestedBy, final String chequeIds, final LocalDateTime dateRequested) {
         return new BatchChequeRequest().setRequestedBy(requestedBy).setStatus(BatchChequeRequestStatus.PENDING)
                 .setDateRequested(dateRequested).setChequeIds(chequeIds);

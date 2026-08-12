@@ -68,11 +68,13 @@ public class BankChequeApiConstants {
     public static String DATE_REQUESTED = "dateRequested";
     public static String DATE_PROCESSED = "dateProcessed";
     public static String CHEQUE_IDS = "chequeIds";
+    public static String PROCESS_ERRORS = "processErrors";
 
     public static final Set<String> BATCH_RESPONSE_DATA_PARAMETERS = new HashSet<>(
             Arrays.asList(ID_PARAM_NAME, BATCH_NO, AGENCY, BANK_ACCOUNT, CHEQUES, FROM, TO, BANK_ACC_ID, DESCRIPTION));
-    public static final Set<String> BATCH_CHEQUE_REQUEST_RESPONSE_DATA_PARAMETERS = new HashSet<>(Arrays.asList(ID_PARAM_NAME,
-            REQUESTED_BY_ID, REQUESTED_BY_USERNAME, REQUESTED_BY_EMAIL, STATUS, DATE_REQUESTED, DATE_PROCESSED, CHEQUE_IDS));
+    public static final Set<String> BATCH_CHEQUE_REQUEST_RESPONSE_DATA_PARAMETERS = new HashSet<>(
+            Arrays.asList(ID_PARAM_NAME, REQUESTED_BY_ID, REQUESTED_BY_USERNAME, REQUESTED_BY_EMAIL, STATUS, DATE_REQUESTED, DATE_PROCESSED,
+                    CHEQUE_IDS, PROCESS_ERRORS));
     public static final Set<String> SUPPORTED_BATCH_CREATE_OR_UPDATE_PARAMETERS = new HashSet<>(
             Arrays.asList(BANK_ACC_NO, BANK_ACC_ID, AGENCY_ID, FROM, TO, DESCRIPTION, ACCOUNT_NAME, BATCH_ID));
 

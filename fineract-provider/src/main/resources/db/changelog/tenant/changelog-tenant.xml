@@ -209,4 +209,5 @@
     <include file="parts/PUE_2026_04_22_INDEX_JOURNAL_ENTRIES_TABLE.xml" relativeToChangelogFile="true"/>
     <include file="parts/PUE_2026_04_29_DECIMAL_FIELD_UPDATES.xml" relativeToChangelogFile="true"/>
     <include file="parts/PUE_2026_08_04_batch_cheque_requests.xml" relativeToChangelogFile="true"/>
+    <include file="parts/PUE_2026_08_12_batch_cheque_requests_process_errors.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>
