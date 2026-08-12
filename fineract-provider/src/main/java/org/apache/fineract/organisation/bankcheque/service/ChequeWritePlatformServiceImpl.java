@@ -108,9 +108,12 @@ import org.glassfish.jersey.internal.util.collection.MultivaluedStringMap;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.util.CollectionUtils;
 
 @Service
@@ -148,6 +151,7 @@ public class ChequeWritePlatformServiceImpl implements ChequeWritePlatformServic
     private final ReportingProcessServiceProvider reportingProcessServiceProvider;
     private final EmailMessageJobEmailService emailMessageJobEmailService;
     private final ApplicationEventPublisher applicationEventPublisher;
+    private final PlatformTransactionManager transactionManager;
 
     @Override
     public CommandProcessingResult createBatch(JsonCommand command) {
@@ -505,30 +509,35 @@ public class ChequeWritePlatformServiceImpl implements ChequeWritePlatformServic
             log.info("Batch cheque request {} was already claimed or does not exist", batchChequeRequestId);
             return;
         }
-        final BatchChequeRequest batchChequeRequest = this.batchChequeRequestRepository.findById(batchChequeRequestId).orElse(null);
-        if (batchChequeRequest == null) {
-            return;
-        }
+
+        final List<Long> chequeIds;
         try {
-            this.processSingleBatchChequeRequest(batchChequeRequest);
+            chequeIds = this.executeInTransaction(() -> this.printAllChequesInBatch(batchChequeRequestId));
         } catch (final RuntimeException e) {
-            log.error("Failed to process batch cheque request {}", batchChequeRequestId, e);
-            this.markBatchChequeRequestFailed(batchChequeRequest, e.getMessage());
+            log.error("Failed to process batch cheque request {} - rolling back all cheque changes", batchChequeRequestId, e);
+            this.markBatchChequeRequestFailed(batchChequeRequestId, e.getMessage());
             throw e;
-        } catch (final Exception e) {
-            log.error("Failed to process batch cheque request {}", batchChequeRequestId, e);
-            this.markBatchChequeRequestFailed(batchChequeRequest, e.getMessage());
-            throw new RuntimeException(e);
+        }
+
+        try {
+            this.completeBatchChequeRequestPostProcessing(batchChequeRequestId, chequeIds);
+        } catch (final RuntimeException e) {
+            log.error("Cheques for batch request {} were printed, but post-processing failed", batchChequeRequestId, e);
+            this.markBatchChequeRequestFailed(batchChequeRequestId,
+                    "Cheques were printed successfully, but post-processing failed: " + StringUtils.defaultIfBlank(e.getMessage(),
+                            "Unknown error"));
+            throw e;
         }
     }
 
-    private void processSingleBatchChequeRequest(final BatchChequeRequest batchChequeRequest) {
+    private List<Long> printAllChequesInBatch(final Long batchChequeRequestId) {
+        final BatchChequeRequest batchChequeRequest = this.batchChequeRequestRepository.findById(batchChequeRequestId)
+                .orElseThrow(() -> new BankChequeException("print.cheque.batches",
+                        "Batch cheque request " + batchChequeRequestId + " not found"));
         final AppUser requestedBy = batchChequeRequest.getRequestedBy();
         final List<Long> chequeIds = Arrays.stream(StringUtils.split(batchChequeRequest.getChequeIds(), ",")).map(String::trim)
                 .filter(StringUtils::isNotBlank).map(Long::valueOf).collect(Collectors.toList());
 
-        final StringBuilder processErrors = new StringBuilder();
-        final List<Long> successfulChequeIds = new ArrayList<>();
         for (final Long chequeId : chequeIds) {
             try {
                 final JsonObject root = new JsonObject();
@@ -542,58 +551,78 @@ public class ChequeWritePlatformServiceImpl implements ChequeWritePlatformServic
                         this.fromApiJsonHelper, null, null, null, null, null, null, null);
                 final PrintChequeCommand printChequeCommand = PrintChequeCommand.builder().chequeId(chequeId).build();
                 this.printSingleCheque(printChequeCommand, requestedBy, command);
-                successfulChequeIds.add(chequeId);
             } catch (final Exception e) {
-                log.error("Failed to print cheque {} for batch request {}", chequeId, batchChequeRequest.getId(), e);
-                this.appendProcessError(processErrors, chequeId, e.getMessage());
+                log.error("Failed to print cheque {} for batch request {}", chequeId, batchChequeRequestId, e);
+                throw new BankChequeException("print.cheque.batches",
+                        "Cheque " + chequeId + ": " + StringUtils.defaultIfBlank(e.getMessage(), "Unknown error"));
             }
         }
+        return chequeIds;
+    }
 
-        if (processErrors.length() > 0) {
-            this.markBatchChequeRequestFailed(batchChequeRequest, processErrors.toString());
-            return;
-        }
+    private void completeBatchChequeRequestPostProcessing(final Long batchChequeRequestId, final List<Long> chequeIds) {
+        final BatchChequeRequest batchChequeRequest = this.batchChequeRequestRepository.findById(batchChequeRequestId)
+                .orElseThrow(() -> new BankChequeException("print.cheque.batches",
+                        "Batch cheque request " + batchChequeRequestId + " not found"));
+        final AppUser requestedBy = batchChequeRequest.getRequestedBy();
 
         final StringBuilder reportErrorLog = new StringBuilder();
-        final File batchChequeReport = this.generateBatchChequeReportAttachment(batchChequeRequest.getId(), successfulChequeIds,
-                reportErrorLog);
+        final File batchChequeReport = this.generateBatchChequeReportAttachment(batchChequeRequestId, chequeIds, reportErrorLog);
         if (reportErrorLog.length() > 0) {
-            log.warn("Pentaho errors while generating batch cheque report for request {}: {}", batchChequeRequest.getId(), reportErrorLog);
+            log.warn("Pentaho errors while generating batch cheque report for request {}: {}", batchChequeRequestId, reportErrorLog);
         }
 
         final String email = requestedBy.getEmail();
         if (StringUtils.isNotBlank(email) && batchChequeReport != null) {
             final EmailMessageWithAttachmentData emailMessage = EmailMessageWithAttachmentData.createNew(email,
                     "Los cheques solicitados han sido procesados. Se adjunta el archivo generado.",
-                    "Impresión de cheques - lote " + batchChequeRequest.getId(), List.of(batchChequeReport));
+                    "Impresión de cheques - lote " + batchChequeRequestId, List.of(batchChequeReport));
             this.emailMessageJobEmailService.sendEmailWithAttachment(emailMessage);
         } else if (StringUtils.isBlank(email)) {
-            log.warn("Batch cheque request {} has no email address for user {}", batchChequeRequest.getId(), requestedBy.getId());
+            log.warn("Batch cheque request {} has no email address for user {}", batchChequeRequestId, requestedBy.getId());
         } else {
-            this.markBatchChequeRequestFailed(batchChequeRequest,
-                    "Failed to generate Print Bank Cheque PDF for batch request " + batchChequeRequest.getId()
+            throw new BankChequeException("print.cheque.batches",
+                    "Failed to generate Print Bank Cheque PDF for batch request " + batchChequeRequestId
                             + (reportErrorLog.length() > 0 ? ": " + reportErrorLog : ""));
-            return;
         }
 
-        batchChequeRequest.setStatus(BatchChequeRequestStatus.COMPLETED);
-        batchChequeRequest.setDateProcessed(DateUtils.getLocalDateTimeOfSystem());
-        batchChequeRequest.setProcessErrors(null);
-        this.batchChequeRequestRepository.saveAndFlush(batchChequeRequest);
+        this.markBatchChequeRequestCompleted(batchChequeRequestId);
     }
 
-    private void markBatchChequeRequestFailed(final BatchChequeRequest batchChequeRequest, final String processErrors) {
-        batchChequeRequest.setStatus(BatchChequeRequestStatus.FAILED);
-        batchChequeRequest.setDateProcessed(DateUtils.getLocalDateTimeOfSystem());
-        batchChequeRequest.setProcessErrors(StringUtils.abbreviate(StringUtils.defaultString(processErrors), 65000));
-        this.batchChequeRequestRepository.saveAndFlush(batchChequeRequest);
+    private <T> T executeInTransaction(final java.util.function.Supplier<T> action) {
+        final TransactionTemplate transactionTemplate = new TransactionTemplate(this.transactionManager);
+        transactionTemplate.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRED);
+        return transactionTemplate.execute(status -> action.get());
     }
 
-    private void appendProcessError(final StringBuilder processErrors, final Long chequeId, final String errorMessage) {
-        if (processErrors.length() > 0) {
-            processErrors.append(System.lineSeparator());
-        }
-        processErrors.append("Cheque ").append(chequeId).append(": ").append(StringUtils.defaultIfBlank(errorMessage, "Unknown error"));
+    private void markBatchChequeRequestCompleted(final Long batchChequeRequestId) {
+        final TransactionTemplate transactionTemplate = new TransactionTemplate(this.transactionManager);
+        transactionTemplate.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+        transactionTemplate.executeWithoutResult(status -> {
+            final BatchChequeRequest batchChequeRequest = this.batchChequeRequestRepository.findById(batchChequeRequestId).orElse(null);
+            if (batchChequeRequest == null) {
+                return;
+            }
+            batchChequeRequest.setStatus(BatchChequeRequestStatus.COMPLETED);
+            batchChequeRequest.setDateProcessed(DateUtils.getLocalDateTimeOfSystem());
+            batchChequeRequest.setProcessErrors(null);
+            this.batchChequeRequestRepository.saveAndFlush(batchChequeRequest);
+        });
+    }
+
+    private void markBatchChequeRequestFailed(final Long batchChequeRequestId, final String processErrors) {
+        final TransactionTemplate transactionTemplate = new TransactionTemplate(this.transactionManager);
+        transactionTemplate.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+        transactionTemplate.executeWithoutResult(status -> {
+            final BatchChequeRequest batchChequeRequest = this.batchChequeRequestRepository.findById(batchChequeRequestId).orElse(null);
+            if (batchChequeRequest == null) {
+                return;
+            }
+            batchChequeRequest.setStatus(BatchChequeRequestStatus.FAILED);
+            batchChequeRequest.setDateProcessed(DateUtils.getLocalDateTimeOfSystem());
+            batchChequeRequest.setProcessErrors(StringUtils.abbreviate(StringUtils.defaultString(processErrors), 65000));
+            this.batchChequeRequestRepository.saveAndFlush(batchChequeRequest);
+        });
     }
 
     private File generateBatchChequeReportAttachment(final Long batchRequestId, final List<Long> chequeIds, final StringBuilder errorLog) {
