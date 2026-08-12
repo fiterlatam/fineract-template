@@ -584,7 +584,8 @@ public class ChequeReadPlatformServiceImpl implements ChequeReadPlatformService 
             sqlBuilder.append("bcr.id AS id, bcr.requested_by_id AS requestedById, ");
             sqlBuilder.append("mu.username AS requestedByUsername, mu.email AS requestedByEmail, ");
             sqlBuilder.append("bcr.status AS status, bcr.date_requested AS dateRequested, ");
-            sqlBuilder.append("bcr.date_processed AS dateProcessed, bcr.cheque_ids AS chequeIds ");
+            sqlBuilder.append("bcr.date_processed AS dateProcessed, bcr.cheque_ids AS chequeIds, ");
+            sqlBuilder.append("bcr.process_errors AS processErrors ");
             sqlBuilder.append("FROM batch_cheque_requests bcr ");
             sqlBuilder.append("INNER JOIN m_appuser mu ON mu.id = bcr.requested_by_id");
             this.schemaSql = sqlBuilder.toString();
@@ -604,9 +605,10 @@ public class ChequeReadPlatformServiceImpl implements ChequeReadPlatformService 
             final LocalDateTime dateRequested = JdbcSupport.getLocalDateTime(rs, "dateRequested");
             final LocalDateTime dateProcessed = JdbcSupport.getLocalDateTime(rs, "dateProcessed");
             final String chequeIds = rs.getString("chequeIds");
+            final String processErrors = rs.getString("processErrors");
             return BatchChequeRequestData.builder().id(id).requestedById(requestedById).requestedByUsername(requestedByUsername)
                     .requestedByEmail(requestedByEmail).status(status).dateRequested(dateRequested).dateProcessed(dateProcessed)
-                    .chequeIds(chequeIds).build();
+                    .chequeIds(chequeIds).processErrors(processErrors).build();
         }
     }
 }

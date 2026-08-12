@@ -513,15 +513,11 @@ public class ChequeWritePlatformServiceImpl implements ChequeWritePlatformServic
             this.processSingleBatchChequeRequest(batchChequeRequest);
         } catch (final RuntimeException e) {
             log.error("Failed to process batch cheque request {}", batchChequeRequestId, e);
-            batchChequeRequest.setStatus(BatchChequeRequestStatus.FAILED);
-            batchChequeRequest.setDateProcessed(DateUtils.getLocalDateTimeOfSystem());
-            this.batchChequeRequestRepository.saveAndFlush(batchChequeRequest);
+            this.markBatchChequeRequestFailed(batchChequeRequest, e.getMessage());
             throw e;
         } catch (final Exception e) {
             log.error("Failed to process batch cheque request {}", batchChequeRequestId, e);
-            batchChequeRequest.setStatus(BatchChequeRequestStatus.FAILED);
-            batchChequeRequest.setDateProcessed(DateUtils.getLocalDateTimeOfSystem());
-            this.batchChequeRequestRepository.saveAndFlush(batchChequeRequest);
+            this.markBatchChequeRequestFailed(batchChequeRequest, e.getMessage());
             throw new RuntimeException(e);
         }
     }
@@ -531,24 +527,38 @@ public class ChequeWritePlatformServiceImpl implements ChequeWritePlatformServic
         final List<Long> chequeIds = Arrays.stream(StringUtils.split(batchChequeRequest.getChequeIds(), ",")).map(String::trim)
                 .filter(StringUtils::isNotBlank).map(Long::valueOf).collect(Collectors.toList());
 
+        final StringBuilder processErrors = new StringBuilder();
+        final List<Long> successfulChequeIds = new ArrayList<>();
         for (final Long chequeId : chequeIds) {
-            final JsonObject root = new JsonObject();
-            final JsonArray selectedCheques = new JsonArray();
-            final JsonObject chequeObject = new JsonObject();
-            chequeObject.addProperty("chequeId", chequeId);
-            selectedCheques.add(chequeObject);
-            root.add("selectedCheques", selectedCheques);
-            final String json = root.toString();
-            final JsonCommand command = JsonCommand.fromExistingCommand(null, json, this.fromApiJsonHelper.parse(json),
-                    this.fromApiJsonHelper, null, null, null, null, null, null, null);
-            final PrintChequeCommand printChequeCommand = PrintChequeCommand.builder().chequeId(chequeId).build();
-            this.printSingleCheque(printChequeCommand, requestedBy, command);
+            try {
+                final JsonObject root = new JsonObject();
+                final JsonArray selectedCheques = new JsonArray();
+                final JsonObject chequeObject = new JsonObject();
+                chequeObject.addProperty("chequeId", chequeId);
+                selectedCheques.add(chequeObject);
+                root.add("selectedCheques", selectedCheques);
+                final String json = root.toString();
+                final JsonCommand command = JsonCommand.fromExistingCommand(null, json, this.fromApiJsonHelper.parse(json),
+                        this.fromApiJsonHelper, null, null, null, null, null, null, null);
+                final PrintChequeCommand printChequeCommand = PrintChequeCommand.builder().chequeId(chequeId).build();
+                this.printSingleCheque(printChequeCommand, requestedBy, command);
+                successfulChequeIds.add(chequeId);
+            } catch (final Exception e) {
+                log.error("Failed to print cheque {} for batch request {}", chequeId, batchChequeRequest.getId(), e);
+                this.appendProcessError(processErrors, chequeId, e.getMessage());
+            }
         }
 
-        final StringBuilder errorLog = new StringBuilder();
-        final File batchChequeReport = this.generateBatchChequeReportAttachment(batchChequeRequest.getId(), chequeIds, errorLog);
-        if (errorLog.length() > 0) {
-            log.warn("Pentaho errors while generating batch cheque report for request {}: {}", batchChequeRequest.getId(), errorLog);
+        if (processErrors.length() > 0) {
+            this.markBatchChequeRequestFailed(batchChequeRequest, processErrors.toString());
+            return;
+        }
+
+        final StringBuilder reportErrorLog = new StringBuilder();
+        final File batchChequeReport = this.generateBatchChequeReportAttachment(batchChequeRequest.getId(), successfulChequeIds,
+                reportErrorLog);
+        if (reportErrorLog.length() > 0) {
+            log.warn("Pentaho errors while generating batch cheque report for request {}: {}", batchChequeRequest.getId(), reportErrorLog);
         }
 
         final String email = requestedBy.getEmail();
@@ -560,13 +570,30 @@ public class ChequeWritePlatformServiceImpl implements ChequeWritePlatformServic
         } else if (StringUtils.isBlank(email)) {
             log.warn("Batch cheque request {} has no email address for user {}", batchChequeRequest.getId(), requestedBy.getId());
         } else {
-            throw new BankChequeException("print.cheque.batches",
-                    "Failed to generate Print Bank Cheque PDF for batch request " + batchChequeRequest.getId());
+            this.markBatchChequeRequestFailed(batchChequeRequest,
+                    "Failed to generate Print Bank Cheque PDF for batch request " + batchChequeRequest.getId()
+                            + (reportErrorLog.length() > 0 ? ": " + reportErrorLog : ""));
+            return;
         }
 
         batchChequeRequest.setStatus(BatchChequeRequestStatus.COMPLETED);
         batchChequeRequest.setDateProcessed(DateUtils.getLocalDateTimeOfSystem());
+        batchChequeRequest.setProcessErrors(null);
         this.batchChequeRequestRepository.saveAndFlush(batchChequeRequest);
+    }
+
+    private void markBatchChequeRequestFailed(final BatchChequeRequest batchChequeRequest, final String processErrors) {
+        batchChequeRequest.setStatus(BatchChequeRequestStatus.FAILED);
+        batchChequeRequest.setDateProcessed(DateUtils.getLocalDateTimeOfSystem());
+        batchChequeRequest.setProcessErrors(StringUtils.abbreviate(StringUtils.defaultString(processErrors), 65000));
+        this.batchChequeRequestRepository.saveAndFlush(batchChequeRequest);
+    }
+
+    private void appendProcessError(final StringBuilder processErrors, final Long chequeId, final String errorMessage) {
+        if (processErrors.length() > 0) {
+            processErrors.append(System.lineSeparator());
+        }
+        processErrors.append("Cheque ").append(chequeId).append(": ").append(StringUtils.defaultIfBlank(errorMessage, "Unknown error"));
     }
 
     private File generateBatchChequeReportAttachment(final Long batchRequestId, final List<Long> chequeIds, final StringBuilder errorLog) {
