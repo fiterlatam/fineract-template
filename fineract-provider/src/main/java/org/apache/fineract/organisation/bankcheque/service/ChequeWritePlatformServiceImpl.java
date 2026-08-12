@@ -659,7 +659,9 @@ public class ChequeWritePlatformServiceImpl implements ChequeWritePlatformServic
             }
             if (!loan.isPendingDisbursementAuthorization() && !chequeData.getReassingedCheque()) {
                 throw new BankChequeException(
-                        "print.cheques.loan:" + loan.getAccountNumber() + " is.not.in.disbursement.authorization.status");
+                        "print.cheques.loan:" + loan.getAccountNumber() + " is.not.in.disbursement.authorization.status",
+                        "No se pudo imprimir el cheque porque la cuenta de préstamo "+loan.getAccountNumber()+
+                        " no está en estado de autorización de desembolso.");
             }
 
             if (!chequeData.getReassingedCheque()) {
@@ -695,77 +697,83 @@ public class ChequeWritePlatformServiceImpl implements ChequeWritePlatformServic
                     .retrieveAllForLookup(clientId);
             if (CollectionUtils.isEmpty(clientSavingsAccounts)) {
                 throw new BankChequeException("guarantee.savings.account.not.found",
-                        "Guarantee savings is not found for client ID" + numeroCliente);
+                        "No se encontraron ahorros garantizados para el ID del cliente." + numeroCliente);
             }
             final Optional<SavingsAccountData> savingsAccountDataOptional = clientSavingsAccounts.stream()
                     .filter(accountData -> "Garantías".equals(accountData.getSavingsProductName())).findFirst();
             if (savingsAccountDataOptional.isEmpty()) {
                 throw new BankChequeException("guarantee.savings.account.not.found",
-                        "Guarantee savings is not found for client ID" + numeroCliente);
+                        "No se encontraron ahorros garantizados para el ID del cliente." + numeroCliente);
             }
 
-                if (!chequeData.getReassingedCheque()) {
-                    BigDecimal availableBalance = BigDecimal.ZERO;
-                    final SavingsAccountData savingsAccountData = savingsAccountDataOptional.get();
-                    final Long savingsAccountId = savingsAccountData.getId();
-                    if (savingsAccountData.getSummary() != null) {
-                        availableBalance = savingsAccountData.getSummary().getAvailableBalance();
-                    }
-                    if (guaranteeAmount.compareTo(availableBalance) > 0) {
-                        throw new BankChequeException("guarantee.amount.greater.than.available.savings.account.balance",
-                                "Guarantee amount is greater than savings account balance of" + availableBalance);
-                    }
-                    final String localeAsString = "en";
-                    final String dateFormat = "dd MMMM yyyy";
-                    final JsonObject jsonObject = new JsonObject();
-                    final LocalDate localDate = DateUtils.getBusinessLocalDate();
-                    Locale locale = JsonParserHelper.localeFromString(localeAsString);
-                    final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(dateFormat).withLocale(locale);
-                    final String localDateString = localDate.format(dateTimeFormatter);
-                    jsonObject.addProperty("locale", localeAsString);
-                    jsonObject.addProperty("dateFormat", dateFormat);
-                    jsonObject.addProperty("transactionAmount", guaranteeAmount);
-                    jsonObject.addProperty("transactionDate", localDateString);
-                    if (!CollectionUtils.isEmpty(paymentTypeOptions)) {
-                        Optional<PaymentTypeData> paymentTypeOptional = new ArrayList<>(paymentTypeOptions).stream()
-                                .filter(pt -> BankChequeApiConstants.BANK_CHEQUE_PAYMENT_TYPE.equalsIgnoreCase(pt.getName())).findFirst();
-                        if (paymentTypeOptional.isPresent()) {
-                            PaymentTypeData paymentType = paymentTypeOptional.get();
-                            jsonObject.addProperty("paymentTypeId", paymentType.getId());
-                        }
-                    }
-                    jsonObject.addProperty("accountNumber", bankAccNo);
-                    jsonObject.addProperty("checkNumber", chequeData.getChequeNo());
-                    jsonObject.addProperty("receiptNumber", chequeData.getGuaranteeId());
-                    jsonObject.addProperty("bankNumber", chequeData.getBankName());
-                    jsonObject.addProperty("glAccountId", chequeData.getGlAccountId());
-                    jsonObject.addProperty("routingCode", "");
-                    final String note = "Retiro de garantía por ID de garantía " + guaranteeId;
-                    jsonObject.addProperty("note", note);
-                    final JsonCommand withdrawalJsonCommand = JsonCommand.fromJsonElement(savingsAccountId, jsonObject, this.fromApiJsonHelper);
-                    withdrawalJsonCommand.setJsonCommand(jsonObject.toString());
-                    CommandProcessingResult result = this.savingsAccountWritePlatformService.withdrawal(savingsAccountId,
-                            withdrawalJsonCommand);
-                    if (result != null) {
-                        log.info("Guarantee withdrawal is successful for savings account ID {}", result.getSavingsId());
+            if (!chequeData.getReassingedCheque()) {
+                BigDecimal availableBalance = BigDecimal.ZERO;
+                final SavingsAccountData savingsAccountData = savingsAccountDataOptional.get();
+                final Long savingsAccountId = savingsAccountData.getId();
+                if (savingsAccountData.getSummary() != null) {
+                    availableBalance = savingsAccountData.getSummary().getAvailableBalance();
+                }
+                if (guaranteeAmount.compareTo(availableBalance) > 0) {
+                    throw new BankChequeException("guarantee.amount.greater.than.available.savings.account.balance",
+                            "El importe de la garantía es mayor que el saldo de la cuenta de ahorros de" + availableBalance);
+                }
+                final String localeAsString = "en";
+                final String dateFormat = "dd MMMM yyyy";
+                final JsonObject jsonObject = new JsonObject();
+                final LocalDate localDate = DateUtils.getBusinessLocalDate();
+                Locale locale = JsonParserHelper.localeFromString(localeAsString);
+                final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(dateFormat).withLocale(locale);
+                final String localDateString = localDate.format(dateTimeFormatter);
+                jsonObject.addProperty("locale", localeAsString);
+                jsonObject.addProperty("dateFormat", dateFormat);
+                jsonObject.addProperty("transactionAmount", guaranteeAmount);
+                jsonObject.addProperty("transactionDate", localDateString);
+                if (!CollectionUtils.isEmpty(paymentTypeOptions)) {
+                    Optional<PaymentTypeData> paymentTypeOptional = new ArrayList<>(paymentTypeOptions).stream()
+                            .filter(pt -> BankChequeApiConstants.BANK_CHEQUE_PAYMENT_TYPE.equalsIgnoreCase(pt.getName())).findFirst();
+                    if (paymentTypeOptional.isPresent()) {
+                        PaymentTypeData paymentType = paymentTypeOptional.get();
+                        jsonObject.addProperty("paymentTypeId", paymentType.getId());
                     }
                 }
+                jsonObject.addProperty("accountNumber", bankAccNo);
+                jsonObject.addProperty("checkNumber", chequeData.getChequeNo());
+                jsonObject.addProperty("receiptNumber", chequeData.getGuaranteeId());
+                jsonObject.addProperty("bankNumber", chequeData.getBankName());
+                jsonObject.addProperty("glAccountId", chequeData.getGlAccountId());
+                jsonObject.addProperty("routingCode", "");
+                final String note = "Retiro de garantía por ID de garantía " + guaranteeId;
+                jsonObject.addProperty("note", note);
+                final JsonCommand withdrawalJsonCommand = JsonCommand.fromJsonElement(savingsAccountId, jsonObject, this.fromApiJsonHelper);
+                withdrawalJsonCommand.setJsonCommand(jsonObject.toString());
+                CommandProcessingResult result = this.savingsAccountWritePlatformService.withdrawal(savingsAccountId,
+                        withdrawalJsonCommand);
+                if (result != null) {
+                    log.info("Guarantee withdrawal is successful for savings account ID {}", result.getSavingsId());
+                }
             }
-            if (chequeAmount != null) {
-                final String amountInWords = NumberToWordsConverter.convertToWords(chequeAmount.intValue(),
-                        NumberToWordsConverter.Language.SPANISH);
-                String decimalValues = extractDecimals(chequeAmount);
-                cheque.setAmountInWords(
-                        new StringBuilder().append(amountInWords).append(" con ").append(decimalValues).append("/100").toString());
-            }
-            cheque.setStatus(BankChequeStatus.ISSUED.getValue());
-            final LocalDateTime localDateTime = DateUtils.getLocalDateTimeOfSystem();
-            LocalDate localDate = DateUtils.getBusinessLocalDate();
-            final Long currentUserId = currentUser.getId();
-            cheque.stampAudit(currentUserId, localDateTime);
-            cheque.setPrintedBy(currentUser);
-            cheque.setPrintedDate(localDate);
-            this.chequeBatchRepositoryWrapper.updateCheque(cheque);
+        }
+        if (chequeAmount != null) {
+            final String amountInWords = NumberToWordsConverter.convertToWords(chequeAmount.intValue(),
+                    NumberToWordsConverter.Language.SPANISH);
+            String decimalValues = extractDecimals(chequeAmount);
+            cheque.setAmountInWords(
+                    new StringBuilder().append(amountInWords).append(" con ").append(decimalValues).append("/100").toString());
+        }
+        cheque.setStatus(BankChequeStatus.ISSUED.getValue());
+        final LocalDateTime localDateTime = DateUtils.getLocalDateTimeOfSystem();
+        LocalDate localDate = DateUtils.getBusinessLocalDate();
+        final Long currentUserId = currentUser.getId();
+        cheque.stampAudit(currentUserId, localDateTime);
+        cheque.setPrintedBy(currentUser);
+        cheque.setPrintedDate(localDate);
+        this.chequeBatchRepositoryWrapper.updateCheque(cheque);
+        if (Boolean.TRUE.equals(chequeData.getReassingedCheque()) && chequeData.getReassignedFrom() != null) {
+            Cheque reassignedCheque = this.chequeBatchRepositoryWrapper.findOneChequeWithNotFoundDetection(chequeData.getReassignedFrom());
+            reassignedCheque.setStatus(BankChequeStatus.VOIDED.getValue());
+            reassignedCheque.setVoidedDate(localDate);
+            reassignedCheque.setVoidedBy(currentUser);
+            this.chequeBatchRepositoryWrapper.updateCheque(reassignedCheque);
         }
     }
 
