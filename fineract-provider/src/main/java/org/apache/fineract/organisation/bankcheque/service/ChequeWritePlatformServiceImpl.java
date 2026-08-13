@@ -46,8 +46,11 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.infrastructure.campaigns.email.data.EmailMessageWithAttachmentData;
 import org.apache.fineract.infrastructure.campaigns.email.service.EmailMessageJobEmailService;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
+import org.apache.fineract.infrastructure.core.data.ApiParameterError;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResultBuilder;
+import org.apache.fineract.infrastructure.core.exception.AbstractPlatformException;
+import org.apache.fineract.infrastructure.core.exception.PlatformApiDataValidationException;
 import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
 import org.apache.fineract.infrastructure.core.serialization.JsonParserHelper;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
@@ -515,7 +518,7 @@ public class ChequeWritePlatformServiceImpl implements ChequeWritePlatformServic
             chequeIds = this.executeInTransaction(() -> this.printAllChequesInBatch(batchChequeRequestId));
         } catch (final RuntimeException e) {
             log.error("Failed to process batch cheque request {} - rolling back all cheque changes", batchChequeRequestId, e);
-            this.markBatchChequeRequestFailed(batchChequeRequestId, e.getMessage());
+            this.markBatchChequeRequestFailed(batchChequeRequestId, resolveErrorMessage(e));
             throw e;
         }
 
@@ -524,8 +527,7 @@ public class ChequeWritePlatformServiceImpl implements ChequeWritePlatformServic
         } catch (final RuntimeException e) {
             log.error("Cheques for batch request {} were printed, but post-processing failed", batchChequeRequestId, e);
             this.markBatchChequeRequestFailed(batchChequeRequestId,
-                    "Cheques were printed successfully, but post-processing failed: " + StringUtils.defaultIfBlank(e.getMessage(),
-                            "Unknown error"));
+                    "Cheques were printed successfully, but post-processing failed: " + resolveErrorMessage(e));
             throw e;
         }
     }
@@ -553,11 +555,74 @@ public class ChequeWritePlatformServiceImpl implements ChequeWritePlatformServic
                 this.printSingleCheque(printChequeCommand, requestedBy, command);
             } catch (final Exception e) {
                 log.error("Failed to print cheque {} for batch request {}", chequeId, batchChequeRequestId, e);
-                throw new BankChequeException("print.cheque.batches",
-                        "Cheque " + chequeId + ": " + StringUtils.defaultIfBlank(e.getMessage(), "Unknown error"));
+                throw new BankChequeException("print.cheque.batches", "Cheque " + chequeId + ": " + resolveErrorMessage(e));
             }
         }
         return chequeIds;
+    }
+
+    private String resolveErrorMessage(final Throwable throwable) {
+        if (throwable == null) {
+            return "Unknown error";
+        }
+
+        PlatformApiDataValidationException validationException = findValidationException(throwable);
+        if (validationException != null && !CollectionUtils.isEmpty(validationException.getErrors())) {
+            return validationException.getErrors().stream().map(this::formatApiParameterError).collect(Collectors.joining("; "));
+        }
+
+        if (throwable instanceof AbstractPlatformException) {
+            final String defaultUserMessage = ((AbstractPlatformException) throwable).getDefaultUserMessage();
+            if (StringUtils.isNotBlank(defaultUserMessage) && !isGenericValidationMessage(defaultUserMessage)) {
+                return defaultUserMessage;
+            }
+        }
+
+        if (StringUtils.isNotBlank(throwable.getMessage()) && !isGenericValidationMessage(throwable.getMessage())) {
+            return throwable.getMessage();
+        }
+
+        if (throwable.getCause() != null && throwable.getCause() != throwable) {
+            final String nestedMessage = resolveErrorMessage(throwable.getCause());
+            if (StringUtils.isNotBlank(nestedMessage) && !isGenericValidationMessage(nestedMessage)) {
+                return nestedMessage;
+            }
+        }
+
+        return StringUtils.defaultIfBlank(throwable.getMessage(), "Unknown error");
+    }
+
+    private PlatformApiDataValidationException findValidationException(final Throwable throwable) {
+        Throwable current = throwable;
+        while (current != null) {
+            if (current instanceof PlatformApiDataValidationException) {
+                return (PlatformApiDataValidationException) current;
+            }
+            if (current.getCause() == null || current.getCause() == current) {
+                break;
+            }
+            current = current.getCause();
+        }
+        return null;
+    }
+
+    private String formatApiParameterError(final ApiParameterError error) {
+        final String parameter = StringUtils.defaultIfBlank(error.getParameterName(), "parameter");
+        String message = error.getDeveloperMessage();
+        if (StringUtils.isBlank(message)) {
+            message = error.getDefaultUserMessage();
+        }
+        if (StringUtils.isBlank(message)) {
+            message = error.getUserMessageGlobalisationCode();
+        }
+        if (StringUtils.isBlank(message)) {
+            message = "Validation error";
+        }
+        return parameter + " - " + message;
+    }
+
+    private boolean isGenericValidationMessage(final String message) {
+        return StringUtils.containsIgnoreCase(message, "Validation errors exist");
     }
 
     private void completeBatchChequeRequestPostProcessing(final Long batchChequeRequestId, final List<Long> chequeIds) {
@@ -698,7 +763,26 @@ public class ChequeWritePlatformServiceImpl implements ChequeWritePlatformServic
             }
 
             if (!chequeData.getReassingedCheque()) {
-                final JsonObject jsonObject = command.parsedJson().getAsJsonObject();
+                final JsonObject jsonObject = command.parsedJson() != null && command.parsedJson().isJsonObject()
+                        ? command.parsedJson().getAsJsonObject().deepCopy()
+                        : new JsonObject();
+                // Remove print-only payload that is unsupported by loan disbursement validation.
+                jsonObject.remove("selectedCheques");
+
+                if (!jsonObject.has("locale") || jsonObject.get("locale").isJsonNull()) {
+                    jsonObject.addProperty("locale", "en");
+                }
+                if (!jsonObject.has("dateFormat") || jsonObject.get("dateFormat").isJsonNull()) {
+                    jsonObject.addProperty("dateFormat", "dd MMMM yyyy");
+                }
+                if (!jsonObject.has("actualDisbursementDate") || jsonObject.get("actualDisbursementDate").isJsonNull()) {
+                    final String localeAsString = jsonObject.get("locale").getAsString();
+                    final String dateFormat = jsonObject.get("dateFormat").getAsString();
+                    final Locale locale = JsonParserHelper.localeFromString(localeAsString);
+                    final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(dateFormat).withLocale(locale);
+                    jsonObject.addProperty("actualDisbursementDate", DateUtils.getBusinessLocalDate().format(dateTimeFormatter));
+                }
+
                 jsonObject.addProperty("glAccountId", chequeData.getGlAccountId());
                 jsonObject.addProperty("accountNumber", bankAccNo);
                 jsonObject.addProperty("checkNumber", chequeData.getChequeNo());
