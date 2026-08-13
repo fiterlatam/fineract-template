@@ -86,7 +86,7 @@ public class PromissoryNoteServiceImpl implements PromissoryNoteService {
         final boolean nonMortgage = loanRepository.containsGuaranteeByLoanIdAndName(loanId, "Hipoteca") > 0;
 
         // credito sin garantía ó garantía no hipotecaria y monto aprobado menor al limite y esta desembolsado
-        if ((!containsGuarantee || (nonMortgage && isApprovedAmount)) && loan.isDisbursed()) {
+        if ((containsGuarantee && (nonMortgage && isApprovedAmount)) && loan.isDisbursed()) {
 
             final boolean containsFiador = loanRepository.containsFiador(loanId) > 0;
             final Long canWriteAndReadClientl = loanRepository.retrieveCanWriteAndReadClient(loanId);
@@ -129,6 +129,10 @@ public class PromissoryNoteServiceImpl implements PromissoryNoteService {
             if (containsGuarantee && !nonMortgage) {
                 errors.add(ApiParameterError.parameterError("loan.guarantee.is.mortgage",
                         "The guarantee is mortgage type, which is not allowed", "guaranteeType", null));
+            }
+            if (!(containsGuarantee && nonMortgage)) {
+                errors.add(ApiParameterError.parameterError("loan.must.have.both.guarantor.and.mortgage",
+                        "The loan should have both guarantor and mortgage", "guaranteeType", null));
             }
 
             if (!isApprovedAmount) {

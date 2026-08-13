@@ -34,7 +34,7 @@
             <column name="id" type="BIGINT" autoIncrement="true">
                 <constraints primaryKey="true" nullable="false" primaryKeyName="pk_pae_required_documents"/>
             </column>
-            <column name="category_id" type="BIGINT">
+            <column name="category_id" type="INTEGER">
                 <constraints nullable="false"/>
             </column>
             <column name="document_name" type="VARCHAR(255)">

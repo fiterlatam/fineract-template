@@ -135,7 +135,7 @@
         </preConditions>
 
         <addColumn tableName="p_garantia">
-            <column name="detalle_garantia" type="varchar"/>
+            <column name="detalle_garantia" type="varchar(200)"/>
         </addColumn>
     </changeSet>
 
