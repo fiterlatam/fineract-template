@@ -186,7 +186,7 @@ public class PromissoryNoteTemplateSix {
             Font normalFont = FontFactory.getFont(FontFactory.HELVETICA, 11, Color.BLACK);
 
             // Título
-            Paragraph title = new Paragraph("PAGARÉ LIBRE DE PROTESTO", titleFont);
+            Paragraph title = new Paragraph(template.getTitle(), titleFont);
             title.setAlignment(Element.ALIGN_CENTER);
             title.setSpacingAfter(20f);
             document.add(title);
