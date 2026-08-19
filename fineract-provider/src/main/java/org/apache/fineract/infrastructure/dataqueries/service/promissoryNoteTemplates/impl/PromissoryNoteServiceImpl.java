@@ -97,8 +97,10 @@ public class PromissoryNoteServiceImpl implements PromissoryNoteService {
             if (!containsFiador && !containsGuarantee) { // sin fiador y sin garantía
 
                 if (!canWriteAndReadClient) { // cliente no sabe leer ni escribir
+                    log.info("Going to Print Pagare 1");
                     type = 1;
                 } else { // cliente sabe leer y escribir
+                    log.info("Going to Print Pagare 2");
                     type = 2;
                 }
 
@@ -106,14 +108,18 @@ public class PromissoryNoteServiceImpl implements PromissoryNoteService {
                 if (containsGuarantee) { // contiene fiador y garantía
 
                     if (!canWriteAndReadFiador && !canWriteAndReadClient) { // cliente y fiador no saben leer ni
-                                                                            // escribir
+                        log.info("Going to Print Pagare 5");
+                        // escribir
                         type = 5;
                     } else if (canWriteAndReadClient && !canWriteAndReadFiador) { // cliente sabe leer y escribir pero
                                                                                   // el fiador no
+                        log.info("Going to Print Pagare 6");
                         type = 6;
                     } else if (!canWriteAndReadClient) { // cliente no sabe leer ni escribir
+                        log.info("Going to Print Pagare 3");
                         type = 3;
                     } else { // se supone cliente y fiador sabe leer y escribir
+                        log.info("Going to Print Pagare 4");
                         type = 4;
                     }
                 }
