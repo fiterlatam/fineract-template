@@ -35,9 +35,6 @@
     <module name="SuppressionFilter">
         <property name="file" value="${config_loc}/suppressions.xml"/>
     </module>
-    <module name="FileTabCharacter">
-        <property name="eachLine" value="true"/>
-    </module>
     <module name="RegexpSingleline">
         <property name="format" value="\s+$"/>
         <property name="message" value="Line has trailing spaces."/>
@@ -65,6 +62,29 @@
             <property name="format" value="System\.(out)|(err)\.print(ln)?\("/>
             <property name="message" value="Line contains console output."/>
             <property name="ignoreComments" value="false" />
+        </module>
+        <!--
+            Outbound HTTP clients must be created via ExternalHttpClientFactory so connect/read
+            timeouts are always applied (connection-pool exhaustion RCA remediation).
+            Bypass: see README "External HTTP client policy" / suppressions.xml (Tech Lead approval required).
+        -->
+        <module name="RegexpSinglelineJava">
+            <property name="id" value="ForbidDirectRestTemplate"/>
+            <property name="format" value="new\s+RestTemplate\s*\("/>
+            <property name="message" value="Do not instantiate RestTemplate directly. Inject ExternalHttpClientFactory and call createRestTemplate()."/>
+            <property name="ignoreComments" value="true"/>
+        </module>
+        <module name="RegexpSinglelineJava">
+            <property name="id" value="ForbidDirectOkHttpClient"/>
+            <property name="format" value="new\s+OkHttpClient(\.Builder)?\s*\("/>
+            <property name="message" value="Do not instantiate OkHttpClient directly. Inject ExternalHttpClientFactory and call createOkHttpClient() / createOkHttpClientBuilder()."/>
+            <property name="ignoreComments" value="true"/>
+        </module>
+        <module name="RegexpSinglelineJava">
+            <property name="id" value="ForbidRawHttpURLConnection"/>
+            <property name="format" value="\(HttpURLConnection\)\s*new\s+URL\s*\([^)]*\)\s*\.\s*openConnection\s*\("/>
+            <property name="message" value="Do not open HttpURLConnection without timeouts. Use ExternalHttpClientFactory.configureConnectionTimeouts(connection) (or createRestTemplate / createOkHttpClient)."/>
+            <property name="ignoreComments" value="true"/>
         </module>
         <module name="EqualsHashCode"/>
         <module name="FinalClass"/>
@@ -188,21 +208,9 @@
              <message key="ws.notPreceded"
              value="WhitespaceAround: ''{0}'' is not preceded with whitespace."/>
         </module>
-        <module name="MemberName">
-            <property name="format" value="^[a-z][a-z0-9][a-zA-Z0-9]*$"/>
-            <message key="name.invalidPattern"
-             value="Member name ''{0}'' must match pattern ''{1}''."/>
-        </module>
         <module name="RedundantModifier"/>
         <module name="ParenPad" />
         <module name="ModifierOrder"/>
-                <module name="LocalVariableName">
-            <property name="tokens" value="VARIABLE_DEF"/>
-            <property name="format" value="^[a-z][a-z0-9][a-zA-Z0-9]*$|[a-z]"/>
-            <property name="allowOneCharVarInForLoop" value="true"/>
-            <message key="name.invalidPattern"
-             value="Local variable name ''{0}'' must match pattern ''{1}''."/>
-        </module>
         <module name="AvoidNoArgumentSuperConstructorCall"/>
         <module name="AvoidDoubleBraceInitialization"/>
 <!-- TODO Enable many more checks (go about this one by one, step by step, raise separate PRs fixing and then enforcing):

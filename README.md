@@ -327,6 +327,42 @@ Window > Java > Code Style and import our [config/fineractdev-formatter.xml](con
 You could also use Checkstyle directly in your IDE (but you don't neccesarily have to, it may just be more convenient for you).  For Eclipse, use https://checkstyle.org/eclipse-cs/ and load our checkstyle.xml into it, for IntelliJ you can use [CheckStyle-IDEA](https://plugins.jetbrains.com/plugin/1065-checkstyle-idea).
 
 
+External HTTP client policy
+============
+
+All **production** outbound HTTP clients must be created through
+`org.apache.fineract.infrastructure.core.service.ExternalHttpClientFactory`
+so connect/read timeouts are always applied (remediation for connection-pool exhaustion).
+
+### Enforced patterns (Checkstyle)
+
+Checkstyle fails the build when production code (`src/main/java`) contains:
+
+| Forbidden | Use instead |
+|-----------|-------------|
+| `new RestTemplate(...)` | `externalHttpClientFactory.createRestTemplate()` |
+| `new OkHttpClient(...)` / `new OkHttpClient.Builder()` | `createOkHttpClient()` / `createOkHttpClientBuilder()` |
+| `(HttpURLConnection) new URL(...).openConnection()` | open the connection, then `configureConnectionTimeouts(connection)` (or prefer RestTemplate/OkHttp via the factory) |
+
+Rules live in [config/checkstyle/checkstyle.xml](config/checkstyle/checkstyle.xml) (`ForbidDirectRestTemplate`, `ForbidDirectOkHttpClient`, `ForbidRawHttpURLConnection`).
+CI runs them on every PR via [.github/workflows/quality-checkstyle.yml](.github/workflows/quality-checkstyle.yml).
+
+### Scope (false-positive mitigation)
+
+- **Tests are excluded.** Instantiating clients under `src/test/java` is allowed (see [suppressions.xml](config/checkstyle/suppressions.xml)).
+- **Baseline / New Code.** Known legacy `openConnection` call sites that already apply factory timeouts are listed in `suppressions.xml` so unrelated PRs are not blocked. SonarCloud is configured with `sonar.newCode.referenceBranch=fiter/latam/dev` so Quality Gates should evaluate **New Code** only (confirm the same Leak Period / New Code definition in the SonarCloud project settings).
+
+### Break-glass procedure (emergency hotfixes)
+
+Use only for **P1** emergencies when the Quality Gate would block a required deploy. **Any bypass requires documented Tech Lead or Architect approval on the Pull Request** (comment naming the approver, ticket/incident ID, and removal follow-up).
+
+1. **Preferred (scoped):** Add a temporary file entry in [config/checkstyle/suppressions.xml](config/checkstyle/suppressions.xml) for the specific check `id`, with a comment citing the incident and approver. Open a follow-up ticket to remove the suppression and migrate to `ExternalHttpClientFactory`.
+2. **Pipeline override:** Set repository Actions variable `BYPASS_CHECKSTYLE=true`, or run Gradle with `-PbypassCheckstyle=true` / env `BYPASS_CHECKSTYLE=true`. This sets Checkstyle `ignoreFailures` (build warns but does not fail). Revert the variable immediately after the hotfix merge.
+3. **Sonar (if used):** `// NOSONAR` on the offending line with the same PR approval comment — do not leave permanent NOSONAR without a follow-up.
+
+Do **not** use break-glass for routine work. New production code must use the factory.
+
+
 Code Coverage Reports
 ============
 

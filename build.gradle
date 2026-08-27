@@ -125,6 +125,10 @@ allprojects  {
             property "sonar.host.url", "https://sonarcloud.io"
             property "sonar.branch.name", "fiter/latam/dev"
             property "sonar.coverage.exclusions", "**/*Exception.java,**/migration/Migration*.java,**/*Config.java"
+            // Task C: Quality Gate evaluates New Code only (Leak Period) so untouched legacy
+            // modules do not fail unrelated PRs. Align SonarCloud project New Code setting
+            // with this reference branch (or Previous version) in the SonarCloud UI as well.
+            property "sonar.newCode.referenceBranch", "fiter/fb/qa"
         }
     }
 
@@ -397,6 +401,15 @@ configure(project.fineractJavaProjects) {
     dependencies {
         checkstyle 'com.puppycrawl.tools:checkstyle:10.3.1'
         checkstyle 'com.github.sevntu-checkstyle:sevntu-checks:1.42.0'
+    }
+
+    // Break-glass (Task D): ./gradlew checkstyleMain -PbypassCheckstyle=true
+    // or CI env BYPASS_CHECKSTYLE=true. Requires Tech Lead / Architect approval on the PR.
+    checkstyle {
+        if (project.hasProperty('bypassCheckstyle') || System.getenv('BYPASS_CHECKSTYLE') == 'true') {
+            ignoreFailures = true
+            logger.warn('Checkstyle failures ignored (bypassCheckstyle / BYPASS_CHECKSTYLE). Tech Lead approval required.')
+        }
     }
 
     // Configuration for JaCoCo code coverage task
