@@ -25,13 +25,52 @@
 
     <changeSet author="brian" id="1787814221623-1">
         <comment>
-            Move all prequalification permissions into a dedicated "prequalifications" grouping.
-            Covers codes/entities introduced in:
-            0059, 0077, 0092, 0102, 0106, PUE_2026_02_25, PUE_2026_03_11.
+            Move every prequalification workflow permission into grouping "prequalification".
         </comment>
         <update tableName="m_permission">
-            <column name="grouping" value="prequalifications"/>
-            <where>code LIKE '%PREQUALIFICATION%' OR entity_name LIKE '%PREQUALIFICATION%'</where>
+            <column name="grouping" value="prequalification"/>
+            <where>
+                code IN (
+                    'CREATE_PREQUALIFICATIONS',
+                    'VIEW_PREQUALIFICATIONS',
+                    'UPDATE_PREQUALIFICATIONS',
+                    'ASSIGN_PREQUALIFICATIONS',
+                    'VIEW_INDIVIDUALPREQUALIFICATIONS',
+                    'VIEW_GROUP_PREQUALIFICATIONS',
+                    'UPDATE_PREQUALIFICATIONMEMBER',
+                    'REQUESTUPDATE_PREQUALIFICATIONS',
+                    'RESTARTFLOW_PREQUALIFICATIONS',
+                    'VALIDATEHARDPOLICIES_PREQUALIFICATION_CHECKLIST',
+                    'REVALIDATEHARDPOLICY_PREQUALIFICATIONS',
+                    'VALIDATE_BUREAU',
+                    'VIEW_AGENCY_LEAD',
+                    'APPROVE_AGENCY_LEAD',
+                    'SENDTOAGENCY_PREQUALIFICATIONS',
+                    'VIEW_ANALYSIS_QUEUE',
+                    'REQUESTANALYSIS_PREQUALIFICATIONS',
+                    'PROCESSANALYSIS_PREQUALIFICATIONS',
+                    'APPROVEANALYSIS_PREQUALIFICATIONS',
+                    'REJECTANALYSIS_PREQUALIFICATIONS',
+                    'VIEW_AGENCY_EXCEPTIONS_QUEUE',
+                    'SENDTOEXCEPTION_PREQUALIFICATIONS',
+                    'CREATE_COMMITTEE',
+                    'READ_COMMITTEE',
+                    'UPDATE_COMMITTEE',
+                    'DELETE_COMMITTEE',
+                    'VIEW_COMMITTEE_APPROVALS',
+                    'SENDTOCOMMITEE_PREQUALIFICATIONS',
+                    'RECOMMENDCOMMITTEE_PREQUALIFICATIONS',
+                    'APPROVECOMMITTEE_PREQUALIFICATIONS',
+                    'APPROVECOMMITEE_PREQUALIFICATIONS',
+                    'APPROVECOMMITEEWHITEXC_PREQUALIFICATIONS',
+                    'APPROVECOMMITEEWITEXC_PREQUALIFICATIONS',
+                    'APPROVEPREVIOUSCOMMITEE_PREQUALIFICATIONS',
+                    'VIEW_RENEGOTIATIONS',
+                    'SENDTORENEGOTIATION_PREQUALIFICATIONS',
+                    'APPROVERENEGOTIATION_PREQUALIFICATIONS',
+                    'REJECTRENEGOTIATION_PREQUALIFICATIONS'
+                )
+            </where>
         </update>
     </changeSet>
 
