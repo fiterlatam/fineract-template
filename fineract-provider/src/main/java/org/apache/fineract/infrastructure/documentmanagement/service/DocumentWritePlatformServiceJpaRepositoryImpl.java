@@ -193,7 +193,7 @@ public class DocumentWritePlatformServiceJpaRepositoryImpl implements DocumentWr
     /*** Entities for document Management **/
     public enum DocumentManagementEntity {
 
-        CLIENTS, CLIENT_IDENTIFIERS, STAFF, LOANS, SAVINGS, GROUPS, IMPORT, BLACKLIST, PREQUALIFICATIONS, PAELOANDOCS, LOANAPPLICATIONDRAFT;
+        CLIENTS, CLIENT_IDENTIFIERS, STAFF, LOANS, SAVINGS, GROUPS, IMPORT, BLACKLIST, PREQUALIFICATIONS, PAELOANDOCS, PAELOANDRAFTS, LOANAPPLICATIONDRAFT;
 
         @Override
         public String toString() {
