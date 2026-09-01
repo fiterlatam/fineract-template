@@ -197,9 +197,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
 
         }
         Optional<LoanProduct> productOption = this.loanProductRepository.findById(productId);
-        if (productOption.isEmpty()) {
-            throw new LoanProductNotFoundException(productId);
-        }
+        if (productOption.isEmpty()) throw new LoanProductNotFoundException(productId);
         LoanProduct loanProduct = productOption.get();
 
         AppUser facilitator = null;
@@ -475,9 +473,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
             LoanProduct newLoanProduct = null;
             if (newValue != null) {
                 Optional<LoanProduct> productOption = this.loanProductRepository.findById(newValue);
-                if (productOption.isEmpty()) {
-                    throw new LoanProductNotFoundException(newValue);
-                }
+                if (productOption.isEmpty()) throw new LoanProductNotFoundException(newValue);
                 newLoanProduct = productOption.get();
             }
             prequalificationGroup.updateProduct(newLoanProduct);
@@ -498,11 +494,6 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         List<PrequalificationGroupMember> members = assembleMembersForUpdate(command, prequalificationGroup,
                 prequalificationGroup.getAddedBy());
         prequalificationGroup.updateMembers(members);
-        if (prequalificationGroup.isPrequalificationTypeIndividual() || prequalificationGroup.isPrequalificationTypePAE()) {
-            applySupervisionOfficeContext(prequalificationGroup,
-                    PrequalificationType.fromInt(prequalificationGroup.getPrequalificationType()), prequalificationGroup.getAgency(),
-                    members);
-        }
         this.prequalificationGroupRepositoryWrapper.saveAndFlush(prequalificationGroup);
 
         return new CommandProcessingResultBuilder() //
@@ -548,9 +539,8 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
             Integer status = prequalificationGroup.getStatus();
             List<PrequalificationStatusLog> statusLogList = this.preQualificationLogRepository.groupStatusLogs(status,
                     prequalificationGroup);
-            if (statusLogList.isEmpty()) {
+            if (statusLogList.isEmpty())
                 throw new PrequalificationStatusNotCompletedException(PrequalificationStatus.fromInt(status).toString());
-            }
 
             // retrieve latest log update assignee
             PrequalificationStatusLog statusLog = statusLogList.get(0);
@@ -790,8 +780,10 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
                 }
             }
         } catch (Exception e) {
-            LOG.error("Error updating expired prequalifications", e);
-            throw new JobExecutionException(List.of(e));
+            e.printStackTrace();
+            List<Throwable> problems = new ArrayList<>();
+            problems.add(e);
+            throw new JobExecutionException(problems);
         }
 
     }
@@ -908,16 +900,11 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
          * PrequalificationStatus.PRE_COMMITTEE_A_PENDING_APPROVAL ); } }
          */
         if ((action.equals("approvepreviouscommitee") || action.equals("approveRenegotiation")) && !nextPhase) {
+
             PrequalificationStatus lastStatus = PrequalificationStatus
                     .fromInt(prequalificationData.getLastPrequalificationStatus().getId().intValue());
 
-            if (action.equals("approveRenegotiation") && !nextPhase) {
-
-                prequalificationGroup.updateStatus(lastStatus);
-            }
-            if (action.equals("approvepreviouscommitee")) {
-                fromStatus = lastStatus.getValue();
-            }
+            prequalificationGroup.updateStatus(lastStatus);
 
         } else {
             if (!nextPhase) {
@@ -1207,12 +1194,9 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
                 loan.getLoanProductRelatedDetail().getInterestCalculationPeriodMethod().getValue());
         jsonObject.addProperty("interestType", loan.getLoanProductRelatedDetail().getInterestMethod().getValue());
         jsonObject.addProperty("loanType", AccountType.fromInt(loan.getLoanType()).getName());
-        if (renegotiationById.getProposedInterest() != null) {
+        if (renegotiationById.getProposedInterest() != null)
             jsonObject.addProperty("interestRatePerPeriod", renegotiationById.getProposedInterest());
-        }
-        if (renegotiationById.getProposedAmount() != null) {
-            jsonObject.addProperty("principal", renegotiationById.getProposedAmount());
-        }
+        if (renegotiationById.getProposedAmount() != null) jsonObject.addProperty("principal", renegotiationById.getProposedAmount());
         jsonObject.addProperty("isEqualAmortization", loan.getLoanProductRelatedDetail().isEqualAmortization());
         jsonObject.addProperty("amortizationType", loan.getLoanProductRelatedDetail().getAmortizationMethod().getValue());
 
@@ -1482,9 +1466,8 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
 
         Integer status = prequalificationGroup.getStatus();
         List<PrequalificationStatusLog> statusLogList = this.preQualificationLogRepository.groupStatusLogs(status, prequalificationGroup);
-        if (statusLogList.isEmpty()) {
+        if (statusLogList.isEmpty())
             throw new PrequalificationStatusNotCompletedException(PrequalificationStatus.fromInt(status).toString());
-        }
 
         // retrieve latest log update assignee
         PrequalificationStatusLog prequalificationStatusLog = statusLogList.get(0);
@@ -1500,9 +1483,8 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         PrequalificationGroup prequalificationGroup = groupMember.getPrequalificationGroup();
         Integer status = prequalificationGroup.getStatus();
         List<PrequalificationStatusLog> statusLogList = this.preQualificationLogRepository.groupStatusLogs(status, prequalificationGroup);
-        if (statusLogList.isEmpty()) {
+        if (statusLogList.isEmpty())
             throw new PrequalificationStatusNotCompletedException(PrequalificationStatus.fromInt(status).toString());
-        }
 
         PrequalificationStatusLog prequalificationStatusLog = statusLogList.get(0);
         prequalificationStatusLog.updateSubStatus(PrequalificationSubStatus.RE_VALIDATE.getValue());
@@ -1654,68 +1636,6 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
             }
         }
         return PrequalificationType.INVALID;
-    }
-
-    private void applySupervisionOfficeContext(final PrequalificationGroup prequalificationGroup,
-            final PrequalificationType prequalificationType, final Agency agency, final List<PrequalificationGroupMember> members) {
-        if (PrequalificationType.GROUP.equals(prequalificationType)) {
-            if (agency != null) {
-                prequalificationGroup.updateSupervisionOfficeId(resolveSupervisionOfficeIdFromAgency(agency.getId()));
-            }
-            return;
-        }
-        if (PrequalificationType.INDIVIDUAL.equals(prequalificationType) || PrequalificationType.PAE.equals(prequalificationType)) {
-            if (members == null || members.isEmpty()) {
-                return;
-            }
-            final String memberDpi = members.get(0).getDpi();
-            if (StringUtils.isBlank(memberDpi)) {
-                return;
-            }
-            final MemberOfficeContext memberOfficeContext = resolveMemberOfficeContext(memberDpi);
-            if (memberOfficeContext == null) {
-                return;
-            }
-            prequalificationGroup.updateSupervisionOfficeId(memberOfficeContext.supervisionOfficeId());
-            if (prequalificationGroup.getAgency() == null && memberOfficeContext.agencyId() != null) {
-                prequalificationGroup
-                        .updateAgency(this.agencyRepositoryWrapper.findOneWithNotFoundDetection(memberOfficeContext.agencyId()));
-            }
-        }
-    }
-
-    private Long resolveSupervisionOfficeIdFromAgency(final Long agencyId) {
-        if (agencyId == null) {
-            return null;
-        }
-        final List<Long> officeIds = this.jdbcTemplate.queryForList("""
-                SELECT MIN(mo.id)
-                FROM m_agency ma
-                INNER JOIN m_office mo ON ma.linked_office_id = mo.parent_id
-                WHERE ma.id = ?
-                """, Long.class, agencyId);
-        return officeIds.isEmpty() ? null : officeIds.get(0);
-    }
-
-    private MemberOfficeContext resolveMemberOfficeContext(final String dpi) {
-        if (StringUtils.isBlank(dpi)) {
-            return null;
-        }
-        final List<MemberOfficeContext> contexts = this.jdbcTemplate.query("""
-                SELECT MIN(ms.agency_id) AS agency_id, MIN(ms.linked_office_id) AS supervision_office_id
-                FROM m_client mc
-                INNER JOIN m_group_client mgc ON mgc.client_id = mc.id
-                INNER JOIN m_group mg ON mg.id = mgc.group_id
-                INNER JOIN m_group center ON center.id = mg.parent_id
-                INNER JOIN m_portfolio mp ON mp.id = center.portfolio_id
-                INNER JOIN m_supervision ms ON ms.id = mp.supervision_id
-                WHERE mc.dpi = ?
-                """, (rs, rowNum) -> new MemberOfficeContext(JdbcSupport.getLong(rs, "agency_id"),
-                JdbcSupport.getLong(rs, "supervision_office_id")), dpi);
-        return contexts.isEmpty() ? null : contexts.get(0);
-    }
-
-    private record MemberOfficeContext(Long agencyId, Long supervisionOfficeId) {
     }
 
     private void updateLoanAssociated(JsonCommand jsonCommand) {
