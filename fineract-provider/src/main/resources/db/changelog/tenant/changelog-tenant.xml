@@ -211,4 +211,6 @@
     <include file="parts/PUE_2026_08_04_batch_cheque_requests.xml" relativeToChangelogFile="true"/>
     <include file="parts/PUE_2026_08_12_batch_cheque_requests_process_errors.xml" relativeToChangelogFile="true"/>
     <include file="parts/PUE_2026_08_27_UPDATE_PREQUALIFICATION_PERMISSIONS_GROUPING.xml" relativeToChangelogFile="true"/>
+    <include file="parts/PUE_2026_09_01_PREQUALIFICATION_LIST_PERFORMANCE_INDEXES.xml" relativeToChangelogFile="true"/>
+    <include file="parts/PUE_2026_09_01_ADD_SUPERVISION_OFFICE_TO_PREQUALIFICATION.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>
