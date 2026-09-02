@@ -115,7 +115,7 @@ public class CommitteeReadPlatformServiceImpl implements CommitteeReadPlatformSe
 
             return committeeData;
         } catch (EmptyResultDataAccessException e) {
-            throw new CommitteeNotFoundException(committeeId);
+            throw new CommitteeNotFoundException(committeeId, e);
         }
     }
 
@@ -174,7 +174,7 @@ public class CommitteeReadPlatformServiceImpl implements CommitteeReadPlatformSe
 
         private final String schema;
 
-        public CommitteeMapper() {
+        CommitteeMapper() {
             final StringBuilder sqlBuilder = new StringBuilder(300);
             sqlBuilder.append(" distinct cu.committee_id as id, cvCommittee.code_value as name ");
             sqlBuilder.append("from m_committee_user cu ");
@@ -216,7 +216,7 @@ public class CommitteeReadPlatformServiceImpl implements CommitteeReadPlatformSe
 
         private final String schema;
 
-        public CommitteeUserMapper() {
+        CommitteeUserMapper() {
             final StringBuilder sqlBuilder = new StringBuilder(300);
             sqlBuilder.append(" distinct c.user_id as id, u.firstname as firstname, u.lastname as lastname ");
             sqlBuilder.append("from m_committee_user c ");

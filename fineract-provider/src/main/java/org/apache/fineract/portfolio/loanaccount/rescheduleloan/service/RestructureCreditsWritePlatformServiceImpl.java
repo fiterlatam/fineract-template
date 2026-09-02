@@ -130,7 +130,9 @@ public class RestructureCreditsWritePlatformServiceImpl implements RestructureCr
         final Long prequalificationId = jsonCommand.longValueOfParameterNamed("prequalificationId");
         final BigDecimal totalRequestedAmount = jsonCommand.bigDecimalValueOfParameterNamed("totalRequestedAmount");
         Optional<LoanProduct> loanProducts = this.loanProductRepository.findById(productId);
-        if (loanProducts.isEmpty()) throw new ProductNotFoundException(productId, "loan");
+        if (loanProducts.isEmpty()) {
+            throw new ProductNotFoundException(productId, "loan");
+        }
         String disbursementDateString = jsonCommand.stringValueOfParameterNamed("disbursementDate");
         String dateFormat = jsonCommand.stringValueOfParameterNamed("dateFormat");
         Locale clientApplicationLocale = jsonCommand.extractLocale();
@@ -139,7 +141,9 @@ public class RestructureCreditsWritePlatformServiceImpl implements RestructureCr
         LocalDateTime disbursementDate = LocalDateTime.parse(disbursementDateString, simpleDateFormat);
 
         List<Loan> loanAccounts = resolveLoanAccounts(jsonCommand.arrayValueOfParameterNamed("selectedLoanIds"));
-        if (loanAccounts.isEmpty()) throw new NoSelectedLoansFoundException();
+        if (loanAccounts.isEmpty()) {
+            throw new NoSelectedLoansFoundException();
+        }
 
         String comments = jsonCommand.stringValueOfParameterNamed("comments");
         BigDecimal totalOutstanding = getTotalOutstanding(loanAccounts);
@@ -259,7 +263,9 @@ public class RestructureCreditsWritePlatformServiceImpl implements RestructureCr
             long loanIdLong = Long.valueOf(loanId);
             Loan loan = this.loanAssembler.assembleFrom(loanIdLong);
 
-            if (loan == null) throw new LoanNotFoundException(loanIdLong);
+            if (loan == null) {
+                throw new LoanNotFoundException(loanIdLong);
+            }
             selectedLoans.add(loan);
         }
 

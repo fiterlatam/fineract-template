@@ -35,7 +35,7 @@ public interface AppUserReadPlatformService {
 
     Collection<AppUserData> retrieveUsersUnderHierarchy(Long hierarchyLevel);
 
-    Collection<AppUserData> retrieveByOfficeHierarchy(final String hierarchy, final Long centerId);
+    Collection<AppUserData> retrieveByOfficeHierarchy(String hierarchy, Long centerId);
 
     Collection<AppUserData> retrieveUsersForCommittees();
 }

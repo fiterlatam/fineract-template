@@ -22,7 +22,9 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
-public class BankChequeApiConstants {
+public final class BankChequeApiConstants {
+
+    private BankChequeApiConstants() {}
 
     public static final String BANK_CHECK_RESOURCE_NAME = "BANKCHEQUE";
     public static final String CHECK_ACTION_CREATE = "CREATE";

@@ -141,7 +141,7 @@ public class CenterGroupReadPlatformServiceImpl implements CenterGroupReadPlatfo
 
         private final String schema;
 
-        public CenterGroupMapper() {
+        CenterGroupMapper() {
             final StringBuilder sqlBuilder = new StringBuilder(300);
             sqlBuilder.append("cg.id as id, cg.name as name, cg.portfolio_center_id as portfolioCenterId, cg.location, ");
             sqlBuilder.append("pc.name as portfolioCenterName, cg.legacy_group_number as legacyGroupNumber, ");

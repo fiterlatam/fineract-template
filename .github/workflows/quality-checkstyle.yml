@@ -6,7 +6,7 @@ on:
       - '**'
   push:
     branches:
-      - fiter/latam/dev
+      - fiter/fb/qa
       - fiter/fb/main
 
 jobs:

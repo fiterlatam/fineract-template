@@ -31,5 +31,5 @@ public interface AgencyReadPlatformService {
 
     Collection<AgencyData> retrieveAllByAgencyLeader();
 
-    Collection<AgencyData> retrieveByOfficeHierarchy(final String hierarchy);
+    Collection<AgencyData> retrieveByOfficeHierarchy(String hierarchy);
 }

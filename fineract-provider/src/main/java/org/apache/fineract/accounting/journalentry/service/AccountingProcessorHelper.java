@@ -381,10 +381,6 @@ public class AccountingProcessorHelper {
             final Integer accountTypeToBeDebited, final Integer accountTypeToBeCredited, final Long loanProductId, final Long paymentTypeId,
             final Long loanId, final String transactionId, final LocalDate transactionDate, final BigDecimal amount,
             final Boolean isReversal, final Long fundSourceGlAccountId, BigDecimal loanTopupAmount) {
-        BigDecimal transactionAmount = amount;
-        if (loanTopupAmount != null) {
-
-        }
         int accountTypeToDebitId = accountTypeToBeDebited;
         int accountTypeToCreditId = accountTypeToBeCredited;
         // reverse debits and credits for reversals

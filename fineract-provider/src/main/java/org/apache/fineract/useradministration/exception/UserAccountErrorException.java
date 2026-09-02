@@ -28,4 +28,8 @@ public class UserAccountErrorException extends AbstractPlatformResourceNotFoundE
     public UserAccountErrorException(final String action, final String username) {
         super("error.msg.user." + action, "User " + username + " is " + action, username);
     }
+
+    public UserAccountErrorException(final String action, final String username, final Throwable cause) {
+        super("error.msg.user." + action, "User " + username + " is " + action, username, cause);
+    }
 }

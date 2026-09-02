@@ -20,7 +20,9 @@ package org.apache.fineract.organisation.monetary.domain;
 
 import java.text.DecimalFormat;
 
-public class NumberToWordsConverter {
+public final class NumberToWordsConverter {
+
+    private NumberToWordsConverter() {}
 
     public enum Language {
         ENGLISH, SPANISH
@@ -56,7 +58,9 @@ public class NumberToWordsConverter {
                 soFar = tensNames[number % 10] + soFar;
                 number /= 10;
             }
-            if (number == 0) return soFar;
+            if (number == 0) {
+                return soFar;
+            }
             return numNames[number] + " hundred" + soFar;
         }
 
@@ -129,17 +133,17 @@ public class NumberToWordsConverter {
 
         private static final String FORMAT_MASK = "000000000000000000000";
         private static final String[] NUM_NAMES = { "", "un", "dos", "tres", "cuatro", "cinco", "seis", "siete", "ocho", "nueve", "diez",
-                "once", "doce", "trece", "catorce", "quince", "diecis\u00E9is", "diecisiete", "dieciocho", "diecinueve", "veinte",
-                "veintiun", "veintid\u00F3s", "veintitr\u00E9s", "veinticuatro", "veinticinco", "veintis\u00E9is", "veintisiete",
+                "once", "doce", "trece", "catorce", "quince", "dieciséis", "diecisiete", "dieciocho", "diecinueve", "veinte",
+                "veintiun", "veintidós", "veintitrés", "veinticuatro", "veinticinco", "veintiséis", "veintisiete",
                 "veintiocho", "veintinueve" };
         private static final String[] TENS_NAMES = { "", "diez", "veinte", "treinta", "cuarenta", "cincuenta", "sesenta", "setenta",
                 "ochenta", "noventa", "ciento" };
         private static final String[] HUNDREDS_NAMES = { "", "ciento", "doscientos", "trescientos", "cuatrocientos", "quinientos",
                 "seiscientos", "setecientos", "ochocientos", "novecientos" };
-        private static final String[] POWER_NAMES = { "mil", "mill\u00F3nes", "mil mill\u00F3nes", "bill\u00F3nes", "mil bill\u00F3nes",
-                "trill\u00F3nes" };
-        private static final String[] SINGLE_POWER_NAMES = { "un mil", "un mill\u00F3n", "mil mill\u00F3nes", "un bill\u00F3n",
-                "mil bill\u00F3nes", "un trill\u00F3n" };
+        private static final String[] POWER_NAMES = { "mil", "millónes", "mil millónes", "billónes", "mil billónes",
+                "trillónes" };
+        private static final String[] SINGLE_POWER_NAMES = { "un mil", "un millón", "mil millónes", "un billón",
+                "mil billónes", "un trillón" };
 
         protected static String convertLessThanOneThousand(final int _number) {
             final StringBuilder ret = new StringBuilder();

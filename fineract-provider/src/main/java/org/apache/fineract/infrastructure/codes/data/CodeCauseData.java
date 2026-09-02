@@ -22,7 +22,7 @@ import java.io.Serializable;
 import java.util.Collection;
 import org.apache.fineract.organisation.monetary.data.CurrencyData;
 
-public class CodeCauseData implements Serializable {
+public final class CodeCauseData implements Serializable {
 
     private final Integer id;
     private final String description;

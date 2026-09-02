@@ -189,7 +189,6 @@ public class BlacklistApiResource {
 
             return this.toApiJsonSerializer.serialize(result);
         } catch (final Exception e) {
-            e.printStackTrace();
             throw e;
         }
     }

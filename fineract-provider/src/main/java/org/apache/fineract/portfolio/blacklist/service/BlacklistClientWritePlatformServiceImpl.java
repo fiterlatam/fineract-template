@@ -80,11 +80,15 @@ public class BlacklistClientWritePlatformServiceImpl implements BlacklistClientW
         final Long agencyId = command.longValueOfParameterNamed(BlacklistApiConstants.agencyIdParamName);
 
         Optional<LoanProduct> productOption = this.loanProductRepository.findById(productId);
-        if (productOption.isEmpty()) throw new LoanProductNotFoundException(productId);
+        if (productOption.isEmpty()) {
+            throw new LoanProductNotFoundException(productId);
+        }
         LoanProduct loanProduct = productOption.get();
 
         Optional<Agency> agencyOption = this.agencyRepository.findById(agencyId);
-        if (agencyOption.isEmpty()) throw new AgencyNotFoundException(agencyId);
+        if (agencyOption.isEmpty()) {
+            throw new AgencyNotFoundException(agencyId);
+        }
         Agency agency = agencyOption.get();
 
         CodeValueData typification = codeValueReadPlatformService

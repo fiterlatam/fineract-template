@@ -102,7 +102,7 @@ public class ExchangeReadPlatformServiceImpl implements ExchangeReadPlatformServ
 
         private final String schema;
 
-        public ExchangeMapper() {
+        ExchangeMapper() {
             final StringBuilder sqlBuilder = new StringBuilder(100);
             sqlBuilder.append(
                     "select ex.id, ex.MonedaDestino, ex.MonedaOrigen, ex.TipoCambio, ex.AplicaDesde, ex.FechaIngreso, ex.UsuarioIngreso");
