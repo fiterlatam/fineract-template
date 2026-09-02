@@ -31,7 +31,7 @@ jobs:
         - name: Merge coverage reports
           run: |
             chmod +x gradlew
-            ./gradlew generateMergedReport
+            ./gradlew generateMergedReport -x fineract-client:compileJava
 
         - name: Run codacy-coverage-reporter
           continue-on-error: true
