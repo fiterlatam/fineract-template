@@ -146,7 +146,7 @@ public class CupoReadServiceImpl implements CupoReadService {
 
         private final String schema;
 
-        public CupoTransactionsMapper() {
+        CupoTransactionsMapper() {
             final StringBuilder sqlBuilder = new StringBuilder(100);
             sqlBuilder.append("select ct.id, ");
             sqlBuilder.append("ct.cupo_id cupoId, ct.transaction_date transactionDate, ");
@@ -179,7 +179,7 @@ public class CupoReadServiceImpl implements CupoReadService {
 
         private final String schema;
 
-        public CupoMapper() {
+        CupoMapper() {
             final StringBuilder sqlBuilder = new StringBuilder(100);
             sqlBuilder.append("select c.id, ");
             sqlBuilder.append("c.amount_submitted amountSubmitted, c.amount_approved amountApproved, ");

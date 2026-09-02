@@ -23,7 +23,7 @@ import java.util.HashSet;
 import java.util.Set;
 import org.apache.fineract.portfolio.loanapplicationdraft.data.LoanApplicationDraftData;
 
-public class LoanApplicationDraftConstants {
+public final class LoanApplicationDraftConstants {
 
     private LoanApplicationDraftConstants() {}
 

@@ -29,18 +29,18 @@ import org.apache.fineract.organisation.bankcheque.data.GuaranteeData;
 
 public interface ChequeReadPlatformService {
 
-    BatchData retrieveBatch(final Long batchId);
+    BatchData retrieveBatch(Long batchId);
 
-    BatchData retrieveTemplate(final Long bankAccId);
+    BatchData retrieveTemplate(Long bankAccId);
 
     ChequeData retrieveChequeById(Long chequeId);
 
-    List<GuaranteeData> retrieveGuarantees(final String dpi, final String locale);
+    List<GuaranteeData> retrieveGuarantees(String dpi, String locale);
 
-    Page<ChequeData> retrieveAll(final ChequeSearchParams chequeSearchParams, final PaginationParameters parameters);
+    Page<ChequeData> retrieveAll(ChequeSearchParams chequeSearchParams, PaginationParameters parameters);
 
-    BatchChequeRequestData retrieveBatchChequeRequest(final Long requestId);
+    BatchChequeRequestData retrieveBatchChequeRequest(Long requestId);
 
-    List<BatchChequeRequestData> retrieveBatchChequeRequests(final String status, final Long requestedById);
+    List<BatchChequeRequestData> retrieveBatchChequeRequests(String status, Long requestedById);
 
 }

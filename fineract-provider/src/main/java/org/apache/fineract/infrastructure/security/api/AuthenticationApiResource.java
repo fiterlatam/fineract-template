@@ -165,13 +165,13 @@ public class AuthenticationApiResource {
                         """, maxLoginAttempt, request.username);
                 this.appUserWritePlatformService.logUserAuthenticationDetails(null, servletRequest, "LOGIN", "Credenciales inválidas",
                         request.username, false);
-                throw new BadCredentialsException("Authentication failed for user: " + request.username + ": " + e.getMessage());
+                throw new BadCredentialsException("Authentication failed for user: " + request.username + ": " + e.getMessage(), e);
             }
             // log the failed login attempt
             if (e instanceof LockedException) {
                 this.appUserWritePlatformService.logUserAuthenticationDetails(null, servletRequest, "LOGIN", "Cuenta de usuario bloqueada",
                         request.username, false);
-                throw new UserAccountErrorException("locked", request.username);
+                throw new UserAccountErrorException("locked", request.username, e);
             }
             throw e;
         }

@@ -341,7 +341,7 @@ public class BureauValidationWritePlatformServiceImpl implements BureauValidatio
             // Log the error without blocking the main thread
             LOG.error("Error sending loan application data to CommCare API", e);
             throw new PlatformDataIntegrityException("error.msg.loan.additional.not.found",
-                    "Loan additional properties Not Found for Case ID " + caseId);
+                    "Loan additional properties Not Found for Case ID " + caseId, e);
         }
     }
 

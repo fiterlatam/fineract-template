@@ -145,7 +145,7 @@ public class PortfolioReadPlatformServiceImpl implements PortfolioReadPlatformSe
 
         private final String schema;
 
-        public PortfolioMapper() {
+        PortfolioMapper() {
             this.schema = """
                     	mp.id AS id,
                     	mp.name AS name,
@@ -190,7 +190,7 @@ public class PortfolioReadPlatformServiceImpl implements PortfolioReadPlatformSe
 
         private final String schema;
 
-        public PortfolioPlanningMapper() {
+        PortfolioPlanningMapper() {
             final StringBuilder sqlBuilder = new StringBuilder(300);
             sqlBuilder.append("p.id as id, p.name as name, ");
             sqlBuilder.append(

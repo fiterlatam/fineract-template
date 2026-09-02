@@ -59,7 +59,7 @@ public class RangeTemplateReadPlatformServiceImpl implements RangeTemplateReadPl
 
         private final String schema;
 
-        public RangeTemplateMapper() {
+        RangeTemplateMapper() {
             final StringBuilder sqlBuilder = new StringBuilder(300);
             sqlBuilder.append("rt.id as id, rt.name as name, rt.code as code, rt.month_start_day as startDay, rt.month_end_day as endDay ");
             sqlBuilder.append("from m_range_template rt");

@@ -20,7 +20,7 @@ package org.apache.fineract.infrastructure.codes.data;
 
 import java.io.Serializable;
 
-public class CodeCauseProcessMappingData implements Serializable {
+public final class CodeCauseProcessMappingData implements Serializable {
 
     // pk
     private final String processId;

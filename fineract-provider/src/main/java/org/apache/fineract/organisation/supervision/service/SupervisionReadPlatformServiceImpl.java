@@ -118,7 +118,7 @@ public class SupervisionReadPlatformServiceImpl implements SupervisionReadPlatfo
 
         private final String schema;
 
-        public SupervisionMapper() {
+        SupervisionMapper() {
             final StringBuilder sqlBuilder = new StringBuilder(300);
             sqlBuilder.append("s.id as id, s.name as name, ma.name as agencyName, ma.id as agencyId, ");
             sqlBuilder.append("s.linked_office_id as parentRegionId, region.name as parentRegionName, ");

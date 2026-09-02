@@ -28,13 +28,13 @@ public interface CodeCauseReadPlatformService {
 
     Page<CodeCauseData> retrieveAll(Integer offset, Integer limit, String searchText);
 
-    CodeCauseData retrieveByCodigoAcrm(final Integer codigoAcrm);
+    CodeCauseData retrieveByCodigoAcrm(Integer codigoAcrm);
 
-    Collection<CodeCauseData> retrieveByAllowOverdraft(final Boolean allowOverdraft);
+    Collection<CodeCauseData> retrieveByAllowOverdraft(Boolean allowOverdraft);
 
-    Collection<CodeCauseData> retrieveByCurrencyCode(final Integer currencyCodeInt);
+    Collection<CodeCauseData> retrieveByCurrencyCode(Integer currencyCodeInt);
 
-    CodeCauseData retrieveByCauseId(final Long causeId);
+    CodeCauseData retrieveByCauseId(Long causeId);
 
     CodeCauseData retrieveTemplate();
 }

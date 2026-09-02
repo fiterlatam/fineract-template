@@ -25,5 +25,5 @@ public interface CodeCauseProcessMappingPlatformService {
 
     Collection<CodeCauseProcessMappingData> retrieveAll();
 
-    CodeCauseProcessMappingData retrieveOne(final String processId, final Integer currencyIntCode);
+    CodeCauseProcessMappingData retrieveOne(String processId, Integer currencyIntCode);
 }

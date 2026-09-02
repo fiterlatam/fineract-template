@@ -22,7 +22,9 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
-public class ExchangeApiConstants {
+public final class ExchangeApiConstants {
+
+    private ExchangeApiConstants() {}
 
     public static final String EXCHANGE_RESOURCE_NAME = "exchange";
 
@@ -47,7 +49,7 @@ public class ExchangeApiConstants {
     public static final String createdOnDataParamName = "createdOn";
     public static final String createdByDataParamName = "createdBy";
 
-    protected static final Set<String> EXCHANGE_RESPONSE_DATA_PARAMETERS = new HashSet<>(
+    public static final Set<String> EXCHANGE_RESPONSE_DATA_PARAMETERS = new HashSet<>(
             Arrays.asList(idDataParamName, destinationCurrencyDataParamName, originCurrencyDataParamName, exchangeRateDataParamName,
                     validFromDataParamName, createdOnDataParamName, createdByDataParamName));
 }

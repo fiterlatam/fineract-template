@@ -26,7 +26,7 @@ import org.apache.fineract.organisation.monetary.data.CurrencyData;
 import org.apache.fineract.portfolio.client.data.ClientData;
 import org.apache.fineract.portfolio.group.data.GroupGeneralData;
 
-public class CupoData {
+public final class CupoData {
 
     private Long id;
     private BigDecimal amount;

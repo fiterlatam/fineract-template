@@ -110,7 +110,7 @@ public class BankReadPlatformServiceImpl implements BankReadPlatformService {
 
         private final String schema;
 
-        public BankMapper() {
+        BankMapper() {
             final StringBuilder sqlBuilder = new StringBuilder(300);
             sqlBuilder.append("b.id as id, b.code as code, b.name as name ");
 

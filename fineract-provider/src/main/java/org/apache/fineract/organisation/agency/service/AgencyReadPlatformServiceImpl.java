@@ -153,7 +153,7 @@ public class AgencyReadPlatformServiceImpl implements AgencyReadPlatformService 
 
         private final String schema;
 
-        public AgencyMapper() {
+        AgencyMapper() {
             final StringBuilder sqlBuilder = new StringBuilder(300);
             sqlBuilder.append("a.id as id, a.name as name,  a.address as address, a.city_id as cityId, cvCity.code_value as cityValue, ");
             sqlBuilder.append("a.state_province_id as stateId, cvState.code_value as stateValue, a.country_id as countryId, ");

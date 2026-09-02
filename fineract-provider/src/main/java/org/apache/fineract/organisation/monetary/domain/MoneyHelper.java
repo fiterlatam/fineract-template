@@ -66,7 +66,9 @@ public class MoneyHelper {
 
     public static String getMoneyString(BigDecimal value) {
 
-        if (value == null) return "";
+        if (value == null) {
+            return "";
+        }
 
         value = value.setScale(2, RoundingMode.HALF_UP);
         String moneyFormatted = "(" + getNumberMoneyFormat(value) + ")";
@@ -89,7 +91,9 @@ public class MoneyHelper {
     }
 
     private static String getNumberMoneyFormat(BigDecimal bd) {
-        if (bd == null) return "";
+        if (bd == null) {
+            return "";
+        }
 
         NumberFormat nf = NumberFormat.getCurrencyInstance(new Locale("es", "GT"));
         String formatted = nf.format(bd);

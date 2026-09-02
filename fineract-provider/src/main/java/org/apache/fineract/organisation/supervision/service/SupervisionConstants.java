@@ -21,7 +21,7 @@ package org.apache.fineract.organisation.supervision.service;
 import java.util.HashSet;
 import java.util.Set;
 
-public class SupervisionConstants {
+public final class SupervisionConstants {
 
     private SupervisionConstants() {
 
