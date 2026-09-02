@@ -43,6 +43,8 @@ public final class ReportData {
     @SuppressWarnings("unused")
     private final Boolean useReport;
     @SuppressWarnings("unused")
+    private final String reportPermission;
+    @SuppressWarnings("unused")
     private final Collection<ReportParameterData> reportParameters;
 
     @SuppressWarnings("unused")
@@ -54,7 +56,7 @@ public final class ReportData {
 
     public ReportData(final Long id, final String reportName, final String reportType, final String reportSubType,
             final String reportCategory, final String description, final String reportSql, final Boolean coreReport,
-            final Boolean useReport, final Collection<ReportParameterData> reportParameters) {
+            final Boolean useReport, final String reportPermission, final Collection<ReportParameterData> reportParameters) {
         this.id = id;
         this.reportName = reportName;
         this.reportType = reportType;
@@ -65,6 +67,7 @@ public final class ReportData {
         this.reportSql = reportSql;
         this.coreReport = coreReport;
         this.useReport = useReport;
+        this.reportPermission = reportPermission;
         this.allowedReportTypes = null;
         this.allowedReportSubTypes = null;
         this.allowedParameters = null;
@@ -81,6 +84,7 @@ public final class ReportData {
         this.reportSql = null;
         this.coreReport = null;
         this.useReport = null;
+        this.reportPermission = null;
         this.allowedReportTypes = null;
         this.allowedReportSubTypes = null;
         this.allowedParameters = null;
