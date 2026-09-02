@@ -307,9 +307,10 @@ public class ReadReportingServiceImpl implements ReadReportingService {
 
     private Collection<ReportData> retrieveReports(final Long id) {
 
+        final AppUser currentUser = this.context.authenticatedUser();
         final ReportParameterJoinMapper rm = new ReportParameterJoinMapper();
 
-        final String sql = rm.schema(id);
+        final String sql = rm.schema(id, currentUser.getId());
 
         final Collection<ReportParameterJoinData> rpJoins = this.jdbcTemplate.query(sql, rm,
                 id != null ? new Object[] { id } : new Object[] {});
@@ -329,6 +330,7 @@ public class ReadReportingServiceImpl implements ReadReportingService {
         String description = null;
         Boolean coreReport = null;
         Boolean useReport = null;
+        String reportPermission = null;
         String reportSql = null;
 
         Long prevReportId = (long) -1234;
@@ -349,7 +351,7 @@ public class ReadReportingServiceImpl implements ReadReportingService {
                 } else {
                     // write report entry
                     reportList.add(new ReportData(reportId, reportName, reportType, reportSubType, reportCategory, description, reportSql,
-                            coreReport, useReport, reportParameters));
+                            coreReport, useReport, reportPermission, reportParameters));
                 }
 
                 prevReportId = rpJoin.getReportId();
@@ -363,6 +365,7 @@ public class ReadReportingServiceImpl implements ReadReportingService {
                 reportSql = rpJoin.getReportSql();
                 coreReport = rpJoin.getCoreReport();
                 useReport = rpJoin.getUseReport();
+                reportPermission = rpJoin.getReportPermission();
 
                 if (rpJoin.getReportParameterId() != null) {
                     // report has at least one parameter
@@ -377,7 +380,7 @@ public class ReadReportingServiceImpl implements ReadReportingService {
         }
         // write last report
         reportList.add(new ReportData(reportId, reportName, reportType, reportSubType, reportCategory, description, reportSql, coreReport,
-                useReport, reportParameters));
+                useReport, reportPermission, reportParameters));
 
         return reportList;
     }
@@ -392,10 +395,11 @@ public class ReadReportingServiceImpl implements ReadReportingService {
 
     private static final class ReportParameterJoinMapper implements RowMapper<ReportParameterJoinData> {
 
-        public String schema(final Long reportId) {
+        public String schema(final Long reportId, final Long userId) {
 
             String sql = "select r.id as reportId, r.report_name as reportName, r.report_type as reportType, "
                     + " r.report_subtype as reportSubType, r.report_category as reportCategory, r.description, r.core_report as coreReport, r.use_report as useReport, "
+                    + " r.report_permission as reportPermission, "
                     + " rp.id as reportParameterId, rp.parameter_id as parameterId, rp.report_parameter_name as reportParameterName, p.parameter_name as parameterName";
 
             if (reportId != null) {
@@ -407,19 +411,14 @@ public class ReadReportingServiceImpl implements ReadReportingService {
             if (reportId != null) {
                 sql += " where r.id = ?";
             } else {
+                sql += " where exists" + " (select 'f'" + " from m_appuser_role ur " + " join m_role role on role.id = ur.role_id"
+                        + " join m_role_permission rp_perm on rp_perm.role_id = role.id"
+                        + " join m_permission perm on perm.id = rp_perm.permission_id" + " where ur.appuser_id = " + userId
+                        + " and (perm.code in ('ALL_FUNCTIONS', 'ALL_FUNCTIONS_READ', 'REPORTING_SUPER_USER') or perm.code = r.report_permission)) ";
                 sql += " order by r.id, rp.parameter_id";
             }
 
             return sql;
-
-            /*
-             * used to only return reports that the use can run as done in report UI but not necessary as there is a
-             * read_report permission which should give user access to look all reports + " where exists" +
-             * " (select 'f'" + " from m_appuser_role ur " + " join m_role r on r.id = ur.role_id" +
-             * " left join m_role_permission rp on rp.role_id = r.id" +
-             * " left join m_permission p on p.id = rp.permission_id" + " where ur.appuser_id = " + userId +
-             * " and (p.code in ('ALL_FUNCTIONS', 'ALL_FUNCTIONS_READ') or p.code = concat('READ_', r.report_name))) " ;
-             */
         }
 
         @Override
@@ -432,6 +431,7 @@ public class ReadReportingServiceImpl implements ReadReportingService {
             final String description = rs.getString("description");
             final Boolean coreReport = rs.getBoolean("coreReport");
             final Boolean useReport = rs.getBoolean("useReport");
+            final String reportPermission = rs.getString("reportPermission");
 
             String reportSql;
             // reportSql might not be on the select list of columns
@@ -447,7 +447,7 @@ public class ReadReportingServiceImpl implements ReadReportingService {
             final String parameterName = rs.getString("parameterName");
 
             return new ReportParameterJoinData(reportId, reportName, reportType, reportSubType, reportCategory, description, reportSql,
-                    coreReport, useReport, reportParameterId, parameterId, reportParameterName, parameterName);
+                    coreReport, useReport, reportPermission, reportParameterId, parameterId, reportParameterName, parameterName);
         }
     }
 

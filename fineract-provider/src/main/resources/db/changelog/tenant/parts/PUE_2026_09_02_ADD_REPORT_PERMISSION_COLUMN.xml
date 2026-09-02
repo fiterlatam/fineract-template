@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements. See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership. The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License. You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied. See the License for the
+    specific language governing permissions and limitations
+    under the License.
+
+-->
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.1.xsd">
+
+    <changeSet author="brian" id="PUE_2026_09_02_ADD_REPORT_PERMISSION_COLUMN-1">
+        <comment>Add report_permission column to stretchy_report for role-based report access</comment>
+        <addColumn tableName="stretchy_report">
+            <column name="report_permission" type="VARCHAR(100)">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="brian" id="PUE_2026_09_02_ADD_REPORT_PERMISSION_COLUMN-2">
+        <comment>Populate report_permission for all existing reports using READ_&lt;UPPERCASE_UNDERSCORE_NAME&gt; format</comment>
+        <sql>
+            <![CDATA[
+                UPDATE stretchy_report
+                SET report_permission = CONCAT('READ_', UPPER(REPLACE(TRIM(report_name), ' ', '_')))
+                WHERE report_permission IS NULL;
+            ]]>
+        </sql>
+    </changeSet>
+
+    <changeSet author="brian" id="PUE_2026_09_02_ADD_REPORT_PERMISSION_COLUMN-3">
+        <comment>Insert standardized report permissions into m_permission</comment>
+        <sql>
+            <![CDATA[
+                INSERT INTO m_permission (`grouping`, code, entity_name, action_name, can_maker_checker)
+                SELECT 'report', sr.report_permission, sr.report_name, 'READ', 0
+                FROM stretchy_report sr
+                WHERE sr.report_permission IS NOT NULL
+                  AND NOT EXISTS (SELECT 1 FROM m_permission p WHERE p.code = sr.report_permission);
+            ]]>
+        </sql>
+    </changeSet>
+
+    <changeSet author="brian" id="PUE_2026_09_02_ADD_REPORT_PERMISSION_COLUMN-4">
+        <comment>Copy role assignments from legacy READ_&lt;report_name&gt; permissions to new standardized codes</comment>
+        <sql>
+            <![CDATA[
+                INSERT INTO m_role_permission (role_id, permission_id)
+                SELECT DISTINCT rp.role_id, new_p.id
+                FROM m_role_permission rp
+                INNER JOIN m_permission old_p ON old_p.id = rp.permission_id AND old_p.`grouping` = 'report'
+                INNER JOIN stretchy_report sr ON old_p.code = CONCAT('READ_', sr.report_name)
+                INNER JOIN m_permission new_p ON new_p.code = sr.report_permission
+                WHERE NOT EXISTS (
+                    SELECT 1 FROM m_role_permission rp2
+                    WHERE rp2.role_id = rp.role_id AND rp2.permission_id = new_p.id
+                );
+            ]]>
+        </sql>
+    </changeSet>
+
+    <changeSet author="brian" id="PUE_2026_09_02_ADD_REPORT_PERMISSION_COLUMN-5">
+        <comment>Update FullReportList query to filter reports by report_permission column</comment>
+        <sql>
+            <![CDATA[
+                UPDATE stretchy_parameter
+                SET parameter_sql = 'select  r.id as report_id, r.report_name, r.report_type, r.report_subtype, r.report_category,
+rp.id as parameter_id, rp.report_parameter_name, p.parameter_name
+  from stretchy_report r
+  left join stretchy_report_parameter rp on rp.report_id = r.id
+  left join stretchy_parameter p on p.id = rp.parameter_id
+  where r.use_report is true and r.self_service_user_report = ''${isSelfServiceUser}''
+  and exists
+  ( select ''f''
+  from m_appuser_role ur
+  join m_role r on r.id = ur.role_id
+  join m_role_permission rp on rp.role_id = r.id
+  join m_permission p on p.id = rp.permission_id
+  where ur.appuser_id = ${currentUserId}
+  and (p.code in (''ALL_FUNCTIONS_READ'', ''ALL_FUNCTIONS'', ''REPORTING_SUPER_USER'') or p.code = r.report_permission) )
+  order by r.report_category, r.report_name, rp.id'
+                WHERE parameter_name = 'FullReportList';
+            ]]>
+        </sql>
+    </changeSet>
+
+    <changeSet author="brian" id="PUE_2026_09_02_ADD_REPORT_PERMISSION_COLUMN-6">
+        <comment>Update reportCategoryList query to filter reports by report_permission column</comment>
+        <sql>
+            <![CDATA[
+                UPDATE stretchy_parameter
+                SET parameter_sql = 'select  r.id as report_id, r.report_name, r.report_type, r.report_subtype, r.report_category,
+  rp.id as parameter_id, rp.report_parameter_name, p.parameter_name
+  from stretchy_report r
+  left join stretchy_report_parameter rp on rp.report_id = r.id
+  left join stretchy_parameter p on p.id = rp.parameter_id
+  where r.report_category = ''${reportCategory}''
+  and r.use_report is true and r.self_service_user_report = ''${isSelfServiceUser}''
+  and exists
+  (select ''f''
+  from m_appuser_role ur
+  join m_role r on r.id = ur.role_id
+  join m_role_permission rp on rp.role_id = r.id
+  join m_permission p on p.id = rp.permission_id
+  where ur.appuser_id = ${currentUserId}
+  and (p.code in (''ALL_FUNCTIONS_READ'', ''ALL_FUNCTIONS'', ''REPORTING_SUPER_USER'') or p.code = r.report_permission) )
+  order by r.report_category, r.report_name, rp.id'
+                WHERE parameter_name = 'reportCategoryList';
+            ]]>
+        </sql>
+    </changeSet>
+
+    <changeSet author="brian" id="PUE_2026_09_02_ADD_REPORT_PERMISSION_COLUMN-7">
+        <comment>Move READ_REPORT permission into the report grouping</comment>
+        <update tableName="m_permission">
+            <column name="grouping" value="report"/>
+            <where>code = 'READ_REPORT'</where>
+        </update>
+    </changeSet>
+
+</databaseChangeLog>

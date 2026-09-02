@@ -51,6 +51,14 @@ public class Permission extends AbstractPersistableCustom implements Serializabl
         this.canMakerChecker = false;
     }
 
+    public Permission(final String grouping, final String code, final String entityName, final String actionName) {
+        this.grouping = grouping;
+        this.code = code;
+        this.entityName = entityName;
+        this.actionName = actionName;
+        this.canMakerChecker = false;
+    }
+
     protected Permission() {
         this.grouping = null;
         this.entityName = null;
