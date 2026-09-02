@@ -6,6 +6,7 @@ on:
       - '**'
   push:
     branches:
+      - fiter/fb/quality
       - fiter/fb/qa
       - fiter/fb/main
 
