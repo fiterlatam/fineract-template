@@ -495,8 +495,9 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
                 prequalificationGroup.getAddedBy());
         prequalificationGroup.updateMembers(members);
         if (prequalificationGroup.isPrequalificationTypeIndividual() || prequalificationGroup.isPrequalificationTypePAE()) {
-            applySupervisionOfficeContext(prequalificationGroup, PrequalificationType.fromInt(prequalificationGroup.getPrequalificationType()),
-                    prequalificationGroup.getAgency(), members);
+            applySupervisionOfficeContext(prequalificationGroup,
+                    PrequalificationType.fromInt(prequalificationGroup.getPrequalificationType()), prequalificationGroup.getAgency(),
+                    members);
         }
         this.prequalificationGroupRepositoryWrapper.saveAndFlush(prequalificationGroup);
 
@@ -1642,8 +1643,8 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         return PrequalificationType.INVALID;
     }
 
-    private void applySupervisionOfficeContext(final PrequalificationGroup prequalificationGroup, final PrequalificationType prequalificationType,
-            final Agency agency, final List<PrequalificationGroupMember> members) {
+    private void applySupervisionOfficeContext(final PrequalificationGroup prequalificationGroup,
+            final PrequalificationType prequalificationType, final Agency agency, final List<PrequalificationGroupMember> members) {
         if (PrequalificationType.GROUP.equals(prequalificationType)) {
             if (agency != null) {
                 prequalificationGroup.updateSupervisionOfficeId(resolveSupervisionOfficeIdFromAgency(agency.getId()));
@@ -1664,7 +1665,8 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
             }
             prequalificationGroup.updateSupervisionOfficeId(memberOfficeContext.supervisionOfficeId());
             if (prequalificationGroup.getAgency() == null && memberOfficeContext.agencyId() != null) {
-                prequalificationGroup.updateAgency(this.agencyRepositoryWrapper.findOneWithNotFoundDetection(memberOfficeContext.agencyId()));
+                prequalificationGroup
+                        .updateAgency(this.agencyRepositoryWrapper.findOneWithNotFoundDetection(memberOfficeContext.agencyId()));
             }
         }
     }
@@ -1700,7 +1702,8 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         return contexts.isEmpty() ? null : contexts.get(0);
     }
 
-    private record MemberOfficeContext(Long agencyId, Long supervisionOfficeId) {}
+    private record MemberOfficeContext(Long agencyId, Long supervisionOfficeId) {
+    }
 
     private void updateLoanAssociated(JsonCommand jsonCommand) {
         final Long groupId = jsonCommand.getGroupId();

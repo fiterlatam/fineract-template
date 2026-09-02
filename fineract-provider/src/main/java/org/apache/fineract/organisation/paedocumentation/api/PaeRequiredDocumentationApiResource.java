@@ -177,6 +177,7 @@ public class PaeRequiredDocumentationApiResource {
         }
         return this.toApiJsonSerializer.serialize(CommandProcessingResult.resourceResult(loanId, null));
     }
+
     @POST
     @Path("/{draftId}/paedrafts")
     @Consumes({ MediaType.MULTIPART_FORM_DATA })
@@ -190,8 +191,8 @@ public class PaeRequiredDocumentationApiResource {
             @FormDataParam("metaData") final String metaData) {
         if (inputStream != null) {
             fileUploadValidator.validate(fileSize, inputStream, fileDetails, bodyPart);
-            final DocumentCommand documentCommand = new DocumentCommand(null, null, "paeloandrafts", draftId, name, fileDetails.getFileName(),
-                    fileSize, bodyPart.getMediaType().toString(), description, null);
+            final DocumentCommand documentCommand = new DocumentCommand(null, null, "paeloandrafts", draftId, name,
+                    fileDetails.getFileName(), fileSize, bodyPart.getMediaType().toString(), description, null);
             documentCommand.setDocumentType(categoryId);
             documentCommand.setDocumentPurpose(guaranteeNo);
             documentCommand.setMetaData(metaData);

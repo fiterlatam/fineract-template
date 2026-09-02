@@ -136,7 +136,7 @@ public final class Report extends AbstractPersistableCustom {
 
         final Map<String, Object> actualChanges = new LinkedHashMap<>(8);
 
-        String         paramName = "reportName";
+        String paramName = "reportName";
         if (command.isChangeInStringParameterNamed(paramName, this.reportName)) {
             final String newValue = command.stringValueOfParameterNamed(paramName);
             actualChanges.put(paramName, newValue);

@@ -141,8 +141,9 @@ public class ReportMailingJobReadPlatformServiceImpl implements ReportMailingJob
                     + "sr.id as reportId, sr.report_name as reportName, sr.report_type as reportType, sr.report_subtype as reportSubType, "
                     + "sr.report_category as reportCategory, sr.report_sql as reportSql, sr.description as reportDescription, "
                     + "sr.core_report as coreReport, sr.use_report as useReport, sr.report_permission as reportPermission "
-                    + "from m_report_mailing_job rmj " + "inner join m_appuser cbu " + "on cbu.id = rmj.createdby_id " + "left join m_appuser mbu "
-                    + "on mbu.id = rmj.lastmodifiedby_id " + "left join stretchy_report sr " + "on rmj.stretchy_report_id = sr.id";
+                    + "from m_report_mailing_job rmj " + "inner join m_appuser cbu " + "on cbu.id = rmj.createdby_id "
+                    + "left join m_appuser mbu " + "on mbu.id = rmj.lastmodifiedby_id " + "left join stretchy_report sr "
+                    + "on rmj.stretchy_report_id = sr.id";
         }
 
         @Override
