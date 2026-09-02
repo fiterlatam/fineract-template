@@ -46,6 +46,7 @@ import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
 import org.apache.fineract.infrastructure.core.domain.AbstractPersistableCustom;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
+import org.apache.fineract.infrastructure.dataqueries.domain.ReportPermissionUtils;
 import org.apache.fineract.infrastructure.security.domain.PlatformUser;
 import org.apache.fineract.infrastructure.security.exception.NoAuthorizationException;
 import org.apache.fineract.infrastructure.security.service.PlatformPasswordEncoder;
@@ -521,7 +522,10 @@ public class AppUser extends AbstractPersistableCustom implements PlatformUser {
 
     public boolean hasNotPermissionForReport(final String reportName) {
 
-        if (hasNotPermissionForAnyOf("ALL_FUNCTIONS", "ALL_FUNCTIONS_READ", "REPORTING_SUPER_USER", "READ_" + reportName)) {
+        final String reportPermissionCode = ReportPermissionUtils.generateReportPermissionCode(reportName);
+
+        if (hasNotPermissionForAnyOf("ALL_FUNCTIONS", "ALL_FUNCTIONS_READ", "REPORTING_SUPER_USER", reportPermissionCode,
+                "READ_" + reportName)) {
             return true;
         }
 

@@ -94,7 +94,8 @@ public class ReportWritePlatformServiceImpl implements ReportWritePlatformServic
 
             this.reportRepository.saveAndFlush(report);
 
-            final Permission permission = new Permission("report", report.getReportName(), "READ");
+            final String permissionCode = report.getReportPermission();
+            final Permission permission = new Permission("report", permissionCode, report.getReportName(), "READ");
             this.permissionRepository.save(permission);
 
             return new CommandProcessingResultBuilder() //
@@ -162,9 +163,12 @@ public class ReportWritePlatformServiceImpl implements ReportWritePlatformServic
             throw new PlatformDataIntegrityException("error.msg.cant.delete.core.report", "Core Reports Can't be Deleted", "");
         }
 
-        final Permission permission = this.permissionRepository.findOneByCode("READ" + "_" + report.getReportName());
+        Permission permission = this.permissionRepository.findOneByCode(report.getReportPermission());
         if (permission == null) {
-            throw new PermissionNotFoundException("READ" + "_" + report.getReportName());
+            permission = this.permissionRepository.findOneByCode("READ_" + report.getReportName());
+        }
+        if (permission == null) {
+            throw new PermissionNotFoundException(report.getReportPermission());
         }
 
         this.reportRepository.delete(report);

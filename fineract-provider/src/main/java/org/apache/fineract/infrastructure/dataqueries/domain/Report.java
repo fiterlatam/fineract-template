@@ -76,6 +76,9 @@ public final class Report extends AbstractPersistableCustom {
     @Column(name = "self_service_user_report")
     private boolean isSelfServiceUserReport;
 
+    @Column(name = "report_permission")
+    private String reportPermission;
+
     public static Report fromJson(final JsonCommand command, final Collection<String> reportTypes) {
 
         String reportName = null;
@@ -125,6 +128,7 @@ public final class Report extends AbstractPersistableCustom {
         this.coreReport = false;
         this.useReport = useReport;
         this.reportSql = reportSql;
+        this.reportPermission = ReportPermissionUtils.generateReportPermissionCode(reportName);
         validate(reportTypes);
     }
 
@@ -132,11 +136,13 @@ public final class Report extends AbstractPersistableCustom {
 
         final Map<String, Object> actualChanges = new LinkedHashMap<>(8);
 
-        String paramName = "reportName";
+        String         paramName = "reportName";
         if (command.isChangeInStringParameterNamed(paramName, this.reportName)) {
             final String newValue = command.stringValueOfParameterNamed(paramName);
             actualChanges.put(paramName, newValue);
             this.reportName = StringUtils.defaultIfEmpty(newValue, null);
+            this.reportPermission = ReportPermissionUtils.generateReportPermissionCode(this.reportName);
+            actualChanges.put("reportPermission", this.reportPermission);
         }
         paramName = "reportType";
         if (command.isChangeInStringParameterNamed(paramName, this.reportType)) {
@@ -258,6 +264,10 @@ public final class Report extends AbstractPersistableCustom {
 
     public String getReportName() {
         return this.reportName;
+    }
+
+    public String getReportPermission() {
+        return this.reportPermission;
     }
 
     public boolean update(final Set<ReportParameterUsage> newReportParameterUsages) {
