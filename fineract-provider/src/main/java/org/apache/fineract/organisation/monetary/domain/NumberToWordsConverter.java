@@ -133,17 +133,15 @@ public final class NumberToWordsConverter {
 
         private static final String FORMAT_MASK = "000000000000000000000";
         private static final String[] NUM_NAMES = { "", "un", "dos", "tres", "cuatro", "cinco", "seis", "siete", "ocho", "nueve", "diez",
-                "once", "doce", "trece", "catorce", "quince", "dieciséis", "diecisiete", "dieciocho", "diecinueve", "veinte",
-                "veintiun", "veintidós", "veintitrés", "veinticuatro", "veinticinco", "veintiséis", "veintisiete",
-                "veintiocho", "veintinueve" };
+                "once", "doce", "trece", "catorce", "quince", "dieciséis", "diecisiete", "dieciocho", "diecinueve", "veinte", "veintiun",
+                "veintidós", "veintitrés", "veinticuatro", "veinticinco", "veintiséis", "veintisiete", "veintiocho", "veintinueve" };
         private static final String[] TENS_NAMES = { "", "diez", "veinte", "treinta", "cuarenta", "cincuenta", "sesenta", "setenta",
                 "ochenta", "noventa", "ciento" };
         private static final String[] HUNDREDS_NAMES = { "", "ciento", "doscientos", "trescientos", "cuatrocientos", "quinientos",
                 "seiscientos", "setecientos", "ochocientos", "novecientos" };
-        private static final String[] POWER_NAMES = { "mil", "millónes", "mil millónes", "billónes", "mil billónes",
-                "trillónes" };
-        private static final String[] SINGLE_POWER_NAMES = { "un mil", "un millón", "mil millónes", "un billón",
-                "mil billónes", "un trillón" };
+        private static final String[] POWER_NAMES = { "mil", "millónes", "mil millónes", "billónes", "mil billónes", "trillónes" };
+        private static final String[] SINGLE_POWER_NAMES = { "un mil", "un millón", "mil millónes", "un billón", "mil billónes",
+                "un trillón" };
 
         protected static String convertLessThanOneThousand(final int _number) {
             final StringBuilder ret = new StringBuilder();

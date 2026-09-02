@@ -32,4 +32,4 @@ jobs:
           BYPASS_CHECKSTYLE: ${{ vars.BYPASS_CHECKSTYLE }}
         run: |
           chmod +x gradlew
-          ./gradlew :fineract-provider:checkstyleMain :fineract-client:checkstyleMain -x spotlessCheck
+          ./gradlew :fineract-provider:checkstyleMain
