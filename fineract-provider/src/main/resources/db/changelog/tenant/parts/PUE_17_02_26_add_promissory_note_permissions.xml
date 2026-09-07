@@ -40,4 +40,13 @@
         </insert>
 
     </changeSet>
+
+
+    <changeSet author="fineract" id="2">
+        <update tableName="m_permission">
+            <column name="grouping" value="report" />
+            <where>code IN ('GENERATE_PROMISSORY_NOTE','READ_PROMISSORY_NOTE')</where>
+        </update>
+    </changeSet>
+
 </databaseChangeLog>
