@@ -62,4 +62,11 @@
         </insert>
     </changeSet>
 
+    <changeSet author="fineract" id="8">
+        <update tableName="m_permission">
+            <column name="grouping" value="prequalification" />
+            <where>code IN ('VIEW_PAE_PREQUALIFICATIONS','VIEW_REJECTED_PREQUALIFICATIONS')</where>
+        </update>
+    </changeSet>
+
 </databaseChangeLog>
