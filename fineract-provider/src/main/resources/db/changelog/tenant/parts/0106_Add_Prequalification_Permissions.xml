@@ -42,4 +42,24 @@
         </insert>
     </changeSet>
 
+    <changeSet author="fineract" id="3">
+        <insert tableName="m_permission">
+            <column name="grouping" value="portfolio" />
+            <column name="code" value="VIEW_PAE_PREQUALIFICATIONS"/>
+            <column name="entity_name" value="PAE_PREQUALIFICATIONS" />
+            <column name="action_name" value="VIEW" />
+            <column name="can_maker_checker" valueBoolean="false" />
+        </insert>
+    </changeSet>
+
+    <changeSet author="fineract" id="4">
+        <insert tableName="m_permission">
+            <column name="grouping" value="portfolio" />
+            <column name="code" value="VIEW_REJECTED_PREQUALIFICATIONS"/>
+            <column name="entity_name" value="REJECTED_PREQUALIFICATIONS" />
+            <column name="action_name" value="VIEW" />
+            <column name="can_maker_checker" valueBoolean="false" />
+        </insert>
+    </changeSet>
+
 </databaseChangeLog>
