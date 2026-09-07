@@ -911,14 +911,13 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
             PrequalificationStatus lastStatus = PrequalificationStatus
                     .fromInt(prequalificationData.getLastPrequalificationStatus().getId().intValue());
 
-            if (action.equals("approveRenegotiation") && !nextPhase){
+            if (action.equals("approveRenegotiation") && !nextPhase) {
 
                 prequalificationGroup.updateStatus(lastStatus);
             }
-            if (action.equals("approvepreviouscommitee")){
+            if (action.equals("approvepreviouscommitee")) {
                 fromStatus = lastStatus.getValue();
             }
-
 
         } else {
             if (!nextPhase) {
