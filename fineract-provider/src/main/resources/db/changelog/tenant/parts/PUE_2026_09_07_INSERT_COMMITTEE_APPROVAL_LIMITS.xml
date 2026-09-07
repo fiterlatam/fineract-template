@@ -24,7 +24,6 @@
                    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.1.xsd">
 
     <changeSet author="fineract" id="PUE_2026_09_07_INSERT_COMMITTEE_APPROVAL_LIMITS-1">
-        <comment>Configure committee approval limits for committees A, B, C and D</comment>
         <preConditions onFail="MARK_RAN">
             <tableExists tableName="committee_approval_limits"/>
         </preConditions>
