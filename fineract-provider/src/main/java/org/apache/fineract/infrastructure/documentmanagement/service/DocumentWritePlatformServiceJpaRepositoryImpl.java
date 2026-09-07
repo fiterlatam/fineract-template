@@ -112,7 +112,7 @@ public class DocumentWritePlatformServiceJpaRepositoryImpl implements DocumentWr
                     "Entity type and entity id must not be null to transfer documents draft");
         }
 
-        this.documentRepository.transferDocuments(entityType, entityId, DocumentManagementEntity.LOANAPPLICATIONDRAFT.toString(), draftId);
+        this.documentRepository.transferDocuments(entityType, entityId, DocumentManagementEntity.PAELOANDRAFTS.toString(), draftId);
     }
 
     @Transactional
