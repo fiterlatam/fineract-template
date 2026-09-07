@@ -119,4 +119,15 @@
         </changeSet>
 
 
+        <changeSet author="Brian" id="005-m-loan-application-draft-permissions">
+            <insert tableName="m_permission">
+                <column name="grouping" value="portfolio" />
+                <column name="code" value="VIEW_LOAN_APPLICATION_DRAFT" />
+                <column name="entity_name" value="LOAN_APPLICATION_DRAFT" />
+                <column name="action_name" value="VIEW" />
+                <column name="can_maker_checker" valueBoolean="false" />
+            </insert>
+        </changeSet>
+
+
 </databaseChangeLog>
