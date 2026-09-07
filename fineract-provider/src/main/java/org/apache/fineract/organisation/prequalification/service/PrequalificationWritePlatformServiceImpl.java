@@ -908,12 +908,15 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
          * PrequalificationStatus.PRE_COMMITTEE_A_PENDING_APPROVAL ); } }
          */
         if ((action.equals("approvepreviouscommitee") || action.equals("approveRenegotiation")) && !nextPhase) {
+            PrequalificationStatus lastStatus = PrequalificationStatus
+                    .fromInt(prequalificationData.getLastPrequalificationStatus().getId().intValue());
 
             if (action.equals("approveRenegotiation") && !nextPhase){
-                PrequalificationStatus lastStatus = PrequalificationStatus
-                        .fromInt(prequalificationData.getLastPrequalificationStatus().getId().intValue());
 
                 prequalificationGroup.updateStatus(lastStatus);
+            }
+            if (action.equals("approvepreviouscommitee")){
+                fromStatus = lastStatus.getValue();
             }
 
 
