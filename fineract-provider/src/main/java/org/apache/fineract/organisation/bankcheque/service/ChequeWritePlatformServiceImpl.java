@@ -533,9 +533,8 @@ public class ChequeWritePlatformServiceImpl implements ChequeWritePlatformServic
     }
 
     private List<Long> printAllChequesInBatch(final Long batchChequeRequestId) {
-        final BatchChequeRequest batchChequeRequest = this.batchChequeRequestRepository.findById(batchChequeRequestId)
-                .orElseThrow(() -> new BankChequeException("print.cheque.batches",
-                        "Batch cheque request " + batchChequeRequestId + " not found"));
+        final BatchChequeRequest batchChequeRequest = this.batchChequeRequestRepository.findById(batchChequeRequestId).orElseThrow(
+                () -> new BankChequeException("print.cheque.batches", "Batch cheque request " + batchChequeRequestId + " not found"));
         final AppUser requestedBy = batchChequeRequest.getRequestedBy();
         final List<Long> chequeIds = Arrays.stream(StringUtils.split(batchChequeRequest.getChequeIds(), ",")).map(String::trim)
                 .filter(StringUtils::isNotBlank).map(Long::valueOf).collect(Collectors.toList());
@@ -626,9 +625,8 @@ public class ChequeWritePlatformServiceImpl implements ChequeWritePlatformServic
     }
 
     private void completeBatchChequeRequestPostProcessing(final Long batchChequeRequestId, final List<Long> chequeIds) {
-        final BatchChequeRequest batchChequeRequest = this.batchChequeRequestRepository.findById(batchChequeRequestId)
-                .orElseThrow(() -> new BankChequeException("print.cheque.batches",
-                        "Batch cheque request " + batchChequeRequestId + " not found"));
+        final BatchChequeRequest batchChequeRequest = this.batchChequeRequestRepository.findById(batchChequeRequestId).orElseThrow(
+                () -> new BankChequeException("print.cheque.batches", "Batch cheque request " + batchChequeRequestId + " not found"));
         final AppUser requestedBy = batchChequeRequest.getRequestedBy();
 
         final StringBuilder reportErrorLog = new StringBuilder();
@@ -646,9 +644,8 @@ public class ChequeWritePlatformServiceImpl implements ChequeWritePlatformServic
         } else if (StringUtils.isBlank(email)) {
             log.warn("Batch cheque request {} has no email address for user {}", batchChequeRequestId, requestedBy.getId());
         } else {
-            throw new BankChequeException("print.cheque.batches",
-                    "Failed to generate Print Bank Cheque PDF for batch request " + batchChequeRequestId
-                            + (reportErrorLog.length() > 0 ? ": " + reportErrorLog : ""));
+            throw new BankChequeException("print.cheque.batches", "Failed to generate Print Bank Cheque PDF for batch request "
+                    + batchChequeRequestId + (reportErrorLog.length() > 0 ? ": " + reportErrorLog : ""));
         }
 
         this.markBatchChequeRequestCompleted(batchChequeRequestId);
@@ -758,8 +755,8 @@ public class ChequeWritePlatformServiceImpl implements ChequeWritePlatformServic
             if (!loan.isPendingDisbursementAuthorization() && !chequeData.getReassingedCheque()) {
                 throw new BankChequeException(
                         "print.cheques.loan:" + loan.getAccountNumber() + " is.not.in.disbursement.authorization.status",
-                        "No se pudo imprimir el cheque porque la cuenta de préstamo "+loan.getAccountNumber()+
-                        " no está en estado de autorización de desembolso.");
+                        "No se pudo imprimir el cheque porque la cuenta de préstamo " + loan.getAccountNumber()
+                                + " no está en estado de autorización de desembolso.");
             }
 
             if (!chequeData.getReassingedCheque()) {
