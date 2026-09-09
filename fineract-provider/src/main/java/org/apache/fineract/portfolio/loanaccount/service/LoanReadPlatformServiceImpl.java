@@ -255,14 +255,14 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
 
             final StringBuilder sqlBuilder = new StringBuilder();
             sqlBuilder.append("select ");
-            sqlBuilder.append(rm.loanSchema());
-            sqlBuilder.append(" join m_office o on (o.id = c.office_id or o.id = g.office_id) ");
-            sqlBuilder.append(" left join m_office transferToOffice on transferToOffice.id = c.transfer_to_office_id ");
-            sqlBuilder.append(" where l.id=? and ( o.hierarchy like ? or transferToOffice.hierarchy like ?)");
-            sqlBuilder.append(" GROUP BY l.id");
+            sqlBuilder.append(rm.loanSchemaForSingleLoan());
+            sqlBuilder.append(" where l.id = ?");
+            sqlBuilder.append(" and (exists (select 1 from m_office o where o.id = c.office_id and o.hierarchy like ?)");
+            sqlBuilder.append(" or exists (select 1 from m_office o where o.id = g.office_id and o.hierarchy like ?)");
+            sqlBuilder.append(" or exists (select 1 from m_office t where t.id = c.transfer_to_office_id and t.hierarchy like ?))");
 
             LoanAccountData loanAccountData = this.jdbcTemplate.queryForObject(sqlBuilder.toString(), rm, loanId, hierarchySearchString,
-                    hierarchySearchString);
+                    hierarchySearchString, hierarchySearchString);
             if (loanAccountData != null) {
                 final Long prequalificationId = loanAccountData.getPrequalificationId();
                 final Long clientId = loanAccountData.getClientId();
@@ -310,7 +310,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
         this.context.authenticatedUser();
         final LoanMapper rm = new LoanMapper(sqlGenerator);
 
-        final String sql = "select " + rm.loanSchema() + " where l.account_no=?";
+        final String sql = "select " + rm.loanSchemaForSingleLoan() + " where l.account_no=?";
 
         return this.jdbcTemplate.queryForObject(sql, rm, loanAccountNumber); // NOSONAR
 
@@ -764,8 +764,36 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
         }
 
         public String loanSchema() {
+            return loanSchema(true);
+        }
 
-            return "l.id as id, mlrs.first_duedate As firstInstallmentDate, l.account_no as accountNo, l.contract as contractNo, l.external_id as externalId, l.fund_id as fundId, f.name as fundName, l.prequalification_id AS prequalificationId, "
+        public String loanSchemaForSingleLoan() {
+            return loanSchema(false);
+        }
+
+        private String loanSchema(final boolean includeListHierarchyJoins) {
+            final String firstInstallmentDate = "(select sc.duedate from m_loan_repayment_schedule sc where sc.loan_id = l.id and sc.installment = 1 "
+                    + sqlGenerator.limit(1) + ") As firstInstallmentDate";
+            final String actualGuaranteeAmount = "(select (ifnull(sa.account_balance_derived, 0) - ifnull(sa.total_savings_amount_on_hold, 0) - ifnull(sa.on_hold_funds_derived, 0))"
+                    + " from m_savings_account sa where sa.client_id = c.id " + sqlGenerator.limit(1) + ") as actualGuaranteeAmount";
+            final String groupJoins;
+            if (includeListHierarchyJoins) {
+                groupJoins = " left join m_group_client gcl on gcl.client_id = c.id" //
+                        + " left join m_group g on g.id = gcl.group_id" //
+                        + " left join m_group center on center.id = g.parent_id" //
+                        + " left join m_portfolio portfolio on portfolio.id = center.portfolio_id" //
+                        + " left join m_supervision supv on supv.id = portfolio.supervision_id" //
+                        + " left join m_agency agency on agency.id = supv.agency_id" //
+                        + " left join m_agency mag on mag.responsible_user_id = center.responsible_user_id "
+                        + " left join m_office centeroffice on centeroffice.id = center.office_id"
+                        + " left join m_office centerounder on centeroffice.hierarchy LIKE CONCAT(centerounder.hierarchy, '%')"
+                        + " left join m_prequalification_group mpg on mpg.id = g.prequalification_id";
+            } else {
+                groupJoins = " left join m_group g on g.id = l.group_id";
+            }
+
+            return "l.id as id, " + firstInstallmentDate
+                    + ", l.account_no as accountNo, l.contract as contractNo, l.external_id as externalId, l.fund_id as fundId, f.name as fundName, l.prequalification_id AS prequalificationId, "
                     + " l.loan_type_enum as loanType, l.loanpurpose_cv_id as loanPurposeId, cv.code_value as loanPurposeName,"
                     + " lp.id as loanProductId, lp.name as loanProductName, lp.description as loanProductDescription,"
                     + " coalesce(lp.required_guarantee_percent, 0) * l.principal_amount as requiredGuaranteeAmount,"
@@ -845,22 +873,12 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
                     + " lpvi.minimum_gap as minimuminstallmentgap, lpvi.maximum_gap as maximuminstallmentgap, "
                     + " lp.can_use_for_topup as canUseForTopup, " + " l.is_topup as isTopup, " + " topup.closure_loan_id as closureLoanId, "
                     + " l.total_recovered_derived as totalRecovered" + ", topuploan.account_no as closureLoanAccountNo, "
-                    + " (ifnull(sa.account_balance_derived, 0)- ifnull(sa.total_savings_amount_on_hold,0) - ifnull(on_hold_funds_derived,0)) as actualGuaranteeAmount, "
-                    + " topup.topup_amount as topupAmount " + " from m_loan l" //
+                    + actualGuaranteeAmount + ", " + " topup.topup_amount as topupAmount " + " from m_loan l" //
                     + " join m_product_loan lp on lp.id = l.product_id" //
                     + " left join m_loan_recalculation_details lir on lir.loan_id = l.id " + " join m_currency rc on rc."
                     + sqlGenerator.escape("code") + " = l.currency_code" //
                     + " left join m_client c on c.id = l.client_id" //
-                    + " left join m_group_client gcl on gcl.client_id = c.id" //
-                    + " left join m_group g on g.id = gcl.group_id" //
-                    + " left join m_group center on center.id = g.parent_id" //
-                    + " left join m_portfolio portfolio on portfolio.id = center.portfolio_id" //
-                    + " left join m_supervision supv on supv.id = portfolio.supervision_id" //
-                    + " left join m_agency agency on agency.id = supv.agency_id" //
-                    + " left join m_agency mag on mag.responsible_user_id = center.responsible_user_id "
-                    + " left join m_office centeroffice on centeroffice.id = center.office_id"
-                    + " left join m_office centerounder on centeroffice.hierarchy LIKE CONCAT(centerounder.hierarchy, '%')"
-                    + " left join m_prequalification_group mpg on mpg.id = g.prequalification_id" //
+                    + groupJoins //
                     + " left join m_loan_arrears_aging la on la.loan_id = l.id" //
                     + " left join m_fund f on f.id = l.fund_id" //
                     + " left join m_staff s on s.id = l.loan_officer_id" //
@@ -873,11 +891,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
                     + " left join ref_loan_transaction_processing_strategy lps on lps.id = l.loan_transaction_strategy_id"
                     + " left join m_product_loan_variable_installment_config lpvi on lpvi.loan_product_id = l.product_id"
                     + " left join m_loan_topup as topup on l.id = topup.loan_id"
-                    + " left join m_loan as topuploan on topuploan.id = topup.closure_loan_id"
-                    + " LEFT JOIN (SELECT DISTINCT sc.loan_id AS loan_id, sc.duedate AS first_duedate"
-                    + "            FROM m_loan_repayment_schedule sc " + "            WHERE sc.installment = 1 "
-                    + "            ORDER BY sc.duedate DESC " + "            ) mlrs ON mlrs.loan_id = l.id "
-                    + "left join m_savings_account sa on sa.client_id = c.id";
+                    + " left join m_loan as topuploan on topuploan.id = topup.closure_loan_id";
 
         }
 
@@ -3054,12 +3068,14 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
                     sqlGenerator.dateDiff(sqlGenerator.currentBusinessDate(), "laa.overdue_since_date_derived") + " as delinquentDays, ");
             sqlBuilder.append(sqlGenerator.currentBusinessDate()
                     + " as delinquentDate, coalesce(laa.total_overdue_derived, 0) as delinquentAmount, ");
-            sqlBuilder.append("lre.transactionDate as lastPaymentDate, coalesce(lre.amount, 0) as lastPaymentAmount ");
+            sqlBuilder.append("lre.transaction_date as lastPaymentDate, coalesce(lre.amount, 0) as lastPaymentAmount ");
             sqlBuilder.append("from m_loan l left join m_loan_arrears_aging laa on laa.loan_id = l.id ");
-            sqlBuilder.append(
-                    "left join (select lt.loan_id, lt.transaction_date as transactionDate, lt.amount as amount from m_loan_transaction lt ");
-            sqlBuilder.append(
-                    "where lt.is_reversed = false and lt.transaction_type_enum=2 order by lt.transaction_date desc limit 1) lre on lre.loan_id = l.id ");
+            sqlBuilder.append("left join m_loan_transaction lre on lre.id = (");
+            sqlBuilder.append("select lt.id from m_loan_transaction lt ");
+            sqlBuilder.append("where lt.loan_id = l.id and lt.is_reversed = false and lt.transaction_type_enum = 2 ");
+            sqlBuilder.append("order by lt.transaction_date desc, lt.id desc ");
+            sqlBuilder.append(sqlGenerator.limit(1));
+            sqlBuilder.append(") ");
             sqlBuilder.append("where l.id=? ");
             return sqlBuilder.toString();
         }
