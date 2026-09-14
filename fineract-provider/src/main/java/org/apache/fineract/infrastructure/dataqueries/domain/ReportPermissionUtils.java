@@ -16,14 +16,22 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.fineract.infrastructure.codes.service;
+package org.apache.fineract.infrastructure.dataqueries.domain;
 
-import java.util.Collection;
-import org.apache.fineract.infrastructure.codes.data.CodeCauseProcessMappingData;
+import org.apache.commons.lang3.StringUtils;
 
-public interface CodeCauseProcessMappingPlatformService {
+public final class ReportPermissionUtils {
 
-    Collection<CodeCauseProcessMappingData> retrieveAll();
+    private static final String READ_PREFIX = "READ_";
 
-    CodeCauseProcessMappingData retrieveOne(String processId, Integer currencyIntCode);
+    private ReportPermissionUtils() {
+        //
+    }
+
+    public static String generateReportPermissionCode(final String reportName) {
+        if (StringUtils.isBlank(reportName)) {
+            return null;
+        }
+        return READ_PREFIX + reportName.trim().replaceAll("\\s+", "_").toUpperCase();
+    }
 }

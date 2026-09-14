@@ -21,7 +21,7 @@ package org.apache.fineract.organisation.centerGroup.service;
 import java.util.HashSet;
 import java.util.Set;
 
-public class CenterGroupConstants {
+public final class CenterGroupConstants {
 
     private CenterGroupConstants() {
 

@@ -635,7 +635,9 @@ public class LumaAccountingProcessorForLoan extends LumaAccountingProcessor {
                 LOAN_CAUSAL, null, null, lumaBitacoraTransactionTypeEnum.getAmountType(), null, null, null, master, amountDifferential);
         master.addBitaCoraDetails(masterDetails);
 
-        if (master.isGreaterThanZero()) return master;
+        if (master.isGreaterThanZero()) {
+            return master;
+        }
         return null;
     }
 

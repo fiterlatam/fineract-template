@@ -23,7 +23,7 @@ import org.apache.fineract.organisation.prequalification.data.PrequalificationCh
 
 public interface PrequalificationChecklistReadPlatformService {
 
-    PrequalificationChecklistData retrieveHardPolicyValidationResults(final Long prequalificationId);
+    PrequalificationChecklistData retrieveHardPolicyValidationResults(Long prequalificationId);
 
     GenericValidationResultSet retrieveClientHardPolicyDetails(Long clientId);
 }

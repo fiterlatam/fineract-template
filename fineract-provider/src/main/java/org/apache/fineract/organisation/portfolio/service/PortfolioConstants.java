@@ -21,7 +21,7 @@ package org.apache.fineract.organisation.portfolio.service;
 import java.util.HashSet;
 import java.util.Set;
 
-public class PortfolioConstants {
+public final class PortfolioConstants {
 
     private PortfolioConstants() {
 

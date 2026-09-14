@@ -197,4 +197,79 @@
                 splitStatements="true"
                 stripComments="true"/>
     </changeSet>
+    <changeSet id="PUE_07_09_2026_ADD_PAE_REQUIRED_DOCUMENTS_SIN_GARANTIA_06" author="brian">
+        <preConditions onFail="MARK_RAN">
+                <sqlCheck expectedResult="0">
+                    select count(*) from pae_required_documents where category_id = (
+                    select id from m_code_value where code_id = (select id from m_code where code_name='PaeRequiredGuarantees' limit 1) and code_value='Sin guarantia' limit 1
+                    );
+                </sqlCheck>
+        </preConditions>
+        <sqlFile
+                encoding="utf8"
+                path="db/changelog/tenant/commands/paedocumentsupdates_06.sql"
+                relativeToChangelogFile="false"
+                splitStatements="true"
+                stripComments="true"/>
+    </changeSet>
+    <changeSet id="PUE_07_09_2026_ADD_PAE_REQUIRED_DOCUMENTS_FIADOR_ASALARIADO_07" author="brian">
+        <preConditions onFail="MARK_RAN">
+                <sqlCheck expectedResult="0">
+                    select count(*) from pae_required_documents where category_id = (
+                    select id from m_code_value where code_id = (select id from m_code where code_name='PaeRequiredGuarantees' limit 1) and code_value='Fiador asalariado' limit 1
+                    );
+                </sqlCheck>
+        </preConditions>
+        <sqlFile
+                encoding="utf8"
+                path="db/changelog/tenant/commands/paedocumentsupdates_07.sql"
+                relativeToChangelogFile="false"
+                splitStatements="true"
+                stripComments="true"/>
+    </changeSet>
+    <changeSet id="PUE_07_09_2026_ADD_PAE_REQUIRED_DOCUMENTS_FIADOR_MORAL_08" author="brian">
+        <preConditions onFail="MARK_RAN">
+                <sqlCheck expectedResult="0">
+                    select count(*) from pae_required_documents where category_id = (
+                    select id from m_code_value where code_id = (select id from m_code where code_name='PaeRequiredGuarantees' limit 1) and code_value='Fiador moral' limit 1
+                    );
+                </sqlCheck>
+        </preConditions>
+        <sqlFile
+                encoding="utf8"
+                path="db/changelog/tenant/commands/paedocumentsupdates_08.sql"
+                relativeToChangelogFile="false"
+                splitStatements="true"
+                stripComments="true"/>
+    </changeSet>
+    <changeSet id="PUE_07_09_2026_ADD_PAE_REQUIRED_DOCUMENTS_PRENDARIA_09" author="brian">
+        <preConditions onFail="MARK_RAN">
+                <sqlCheck expectedResult="0">
+                    select count(*) from pae_required_documents where category_id = (
+                    select id from m_code_value where code_id = (select id from m_code where code_name='PaeRequiredGuarantees' limit 1) and code_value='Prendaria' limit 1
+                    );
+                </sqlCheck>
+        </preConditions>
+        <sqlFile
+                encoding="utf8"
+                path="db/changelog/tenant/commands/paedocumentsupdates_09.sql"
+                relativeToChangelogFile="false"
+                splitStatements="true"
+                stripComments="true"/>
+    </changeSet>
+    <changeSet id="PUE_07_09_2026_ADD_PAE_REQUIRED_DOCUMENTS_DERECHOS_POSESORIOS_10" author="brian">
+        <preConditions onFail="MARK_RAN">
+                <sqlCheck expectedResult="0">
+                    select count(*) from pae_required_documents where category_id = (
+                    select id from m_code_value where code_id = (select id from m_code where code_name='PaeRequiredGuarantees' limit 1) and code_value='Derechos posesorios' limit 1
+                    );
+                </sqlCheck>
+        </preConditions>
+        <sqlFile
+                encoding="utf8"
+                path="db/changelog/tenant/commands/paedocumentsupdates_10.sql"
+                relativeToChangelogFile="false"
+                splitStatements="true"
+                stripComments="true"/>
+    </changeSet>
 </databaseChangeLog>

@@ -18,7 +18,9 @@
  */
 package org.apache.fineract.portfolio.cupo.api;
 
-public class CupoApiConstants {
+public final class CupoApiConstants {
+
+    private CupoApiConstants() {}
 
     public static final String CUPO_RESOURCE_NAME = "CUPO";
     public static final String CUPO_TRANSACTION_RESOURCE_NAME = "CUPOTRANSACTION";

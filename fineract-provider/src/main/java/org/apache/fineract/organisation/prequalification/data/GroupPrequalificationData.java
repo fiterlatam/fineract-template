@@ -196,7 +196,9 @@ public class GroupPrequalificationData {
             List<EnumOptionData> statusOptions) {
 
         Long prequalilficationTimespan = null;
-        if (timespan != null) prequalilficationTimespan = timespan.getValue();
+        if (timespan != null) {
+            prequalilficationTimespan = timespan.getValue();
+        }
         return new GroupPrequalificationData(null, null, null, null, null, null, null, null, null, null, null, null, null, agencies,
                 centerData, loanProducts, appUsers, prequalilficationTimespan, statusOptions);
     }

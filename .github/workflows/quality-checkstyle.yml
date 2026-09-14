@@ -1,0 +1,35 @@
+name: Quality Gate (Checkstyle)
+
+on:
+  pull_request:
+    branches:
+      - '**'
+  push:
+    branches:
+      - fiter/fb/quality
+      - fiter/fb/qa
+      - fiter/fb/main
+
+jobs:
+  checkstyle:
+    name: External HTTP client + Checkstyle
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+
+      - name: JDK 17 Setup
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: gradle
+
+      - name: Run Checkstyle (main sources)
+        # Break-glass: set repository variable BYPASS_CHECKSTYLE=true or pass -PbypassCheckstyle=true
+        # only with documented Tech Lead / Architect approval on the PR (see README).
+        env:
+          BYPASS_CHECKSTYLE: ${{ vars.BYPASS_CHECKSTYLE }}
+        run: |
+          chmod +x gradlew
+          ./gradlew :fineract-provider:checkstyleMain

@@ -18,7 +18,9 @@
  */
 package org.apache.fineract.accounting.journalentry.domain;
 
-public class BitacoraMasterConstants {
+public final class BitacoraMasterConstants {
+
+    private BitacoraMasterConstants() {}
 
     public static final String ACCOUNT_TYPE_PR = "PR";
     public static final String ACCOUNT_TYPE_AH = "AH";

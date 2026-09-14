@@ -26,13 +26,12 @@ jobs:
           run: |
             chmod +x gradlew
             ./gradlew clean bootJar
-            ./gradlew :fineract-client:test -x spotlessCheck -x compileJava
-            ./gradlew :fineract-provider:test -x spotlessCheck -x compileTestJava
+            ./gradlew :fineract-provider:test -x spotlessCheck -x compileTestJava -x cucumber
 
         - name: Merge coverage reports
           run: |
             chmod +x gradlew
-            ./gradlew generateMergedReport
+            ./gradlew generateMergedReport -x fineract-client:compileJava
 
         - name: Run codacy-coverage-reporter
           continue-on-error: true

@@ -23,29 +23,29 @@ import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 
 public interface ChequeWritePlatformService {
 
-    CommandProcessingResult createBatch(final JsonCommand command);
+    CommandProcessingResult createBatch(JsonCommand command);
 
-    CommandProcessingResult updateBatch(final Long batchId, final JsonCommand command);
+    CommandProcessingResult updateBatch(Long batchId, JsonCommand command);
 
-    CommandProcessingResult deleteBatch(final Long batchId, final JsonCommand command);
+    CommandProcessingResult deleteBatch(Long batchId, JsonCommand command);
 
-    CommandProcessingResult reassignCheque(final Long chequeId, final JsonCommand command);
+    CommandProcessingResult reassignCheque(Long chequeId, JsonCommand command);
 
-    CommandProcessingResult voidCheque(final Long chequeId, final JsonCommand command);
+    CommandProcessingResult voidCheque(Long chequeId, JsonCommand command);
 
-    CommandProcessingResult authorizedChequeReassignment(final Long chequeId, final JsonCommand command);
+    CommandProcessingResult authorizedChequeReassignment(Long chequeId, JsonCommand command);
 
-    CommandProcessingResult authorizedChequeVoidance(final Long chequeId, final JsonCommand command);
+    CommandProcessingResult authorizedChequeVoidance(Long chequeId, JsonCommand command);
 
-    CommandProcessingResult approveChequeIssuance(final JsonCommand command);
+    CommandProcessingResult approveChequeIssuance(JsonCommand command);
 
-    CommandProcessingResult authorizeChequeIssuance(final JsonCommand command);
+    CommandProcessingResult authorizeChequeIssuance(JsonCommand command);
 
-    CommandProcessingResult printCheques(final JsonCommand command);
+    CommandProcessingResult printCheques(JsonCommand command);
 
-    CommandProcessingResult printChequeBatches(final JsonCommand command);
+    CommandProcessingResult printChequeBatches(JsonCommand command);
 
-    CommandProcessingResult payGuaranteeByCheque(final JsonCommand command);
+    CommandProcessingResult payGuaranteeByCheque(JsonCommand command);
 
     void processBatchChequeRequestById(Long batchChequeRequestId);
 

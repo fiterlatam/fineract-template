@@ -237,7 +237,7 @@ public class PromissoryNoteTemplateTwo {
 
         private final Image logo;
 
-        public HeaderFooterEvent(Image logo) {
+        HeaderFooterEvent(Image logo) {
             this.logo = logo;
         }
 

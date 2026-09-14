@@ -108,8 +108,9 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
 
         String blistSql = "select count(*) from m_group where prequalification_id=?";
         Long attachedGroup = this.jdbcTemplate.queryForObject(blistSql, Long.class, prequalificationId);
-        if (attachedGroup <= 0 && prequalificationGroup.getPrequalificationType().equals(PrequalificationType.GROUP.getValue()))
+        if (attachedGroup <= 0 && prequalificationGroup.getPrequalificationType().equals(PrequalificationType.GROUP.getValue())) {
             throw new PrequalificationNotMappedException(prequalificationGroup.getPrequalificationNumber());
+        }
 
         final Long productId = prequalificationGroup.getLoanProduct().getId();
         List<ClientData> clientDatas = this.jdbcTemplate.query(clientDataMapper.schema(), clientDataMapper, productId, productId,
@@ -223,8 +224,9 @@ public class PrequalificationChecklistWritePlatformServiceImpl implements Prequa
             String pendingLoanRequest = "select count(*) from m_loan ml inner join m_client mc on mc.id = ml.client_id where mc.dpi=? AND ml.loan_status_id = 100 and ml.product_id = ?";
             Long loanCount = this.jdbcTemplate.queryForObject(pendingLoanRequest, Long.class, member.getDpi(),
                     group.getLoanProduct().getId());
-            if (loanCount <= 0)
+            if (loanCount <= 0) {
                 throw new MemberHasNoPendingLoanException(member.getName(), member.getDpi(), group.getLoanProduct().getName());
+            }
 
         }
     }

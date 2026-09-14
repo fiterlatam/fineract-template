@@ -43,6 +43,7 @@ public enum AgeLimitStatus {
             break;
             case 200:
                 enumeration = AgeLimitStatus.BLOCK;
+            break;
             case 300:
                 enumeration = AgeLimitStatus.CONTINUE;
             break;

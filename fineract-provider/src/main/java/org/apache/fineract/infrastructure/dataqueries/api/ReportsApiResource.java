@@ -64,7 +64,7 @@ import org.springframework.stereotype.Component;
 public class ReportsApiResource {
 
     private final Set<String> responseDataParameters = new HashSet<>(Arrays.asList("id", "reportName", "reportType", "reportSubType",
-            "reportCategory", "description", "reportSql", "coreReport", "useReport", "reportParameters"));
+            "reportCategory", "description", "reportSql", "coreReport", "useReport", "reportPermission", "reportParameters"));
 
     private final String resourceNameForPermissions = "REPORT";
     private final PlatformSecurityContext context;

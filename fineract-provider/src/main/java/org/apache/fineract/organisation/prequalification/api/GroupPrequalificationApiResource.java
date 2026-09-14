@@ -304,7 +304,6 @@ public class GroupPrequalificationApiResource {
 
             return this.toApiJsonSerializer.serialize(result);
         } catch (final Exception e) {
-            e.printStackTrace();
             throw e;
         }
     }
@@ -322,7 +321,6 @@ public class GroupPrequalificationApiResource {
 
             return this.toApiJsonSerializer.serialize(result);
         } catch (final Exception e) {
-            e.printStackTrace();
             throw e;
         }
     }
@@ -342,7 +340,6 @@ public class GroupPrequalificationApiResource {
 
             return this.toApiJsonSerializer.serialize(result);
         } catch (final Exception e) {
-            e.printStackTrace();
             throw e;
         }
     }
@@ -363,7 +360,6 @@ public class GroupPrequalificationApiResource {
 
             return this.toApiJsonSerializer.serialize(result);
         } catch (final Exception e) {
-            e.printStackTrace();
             throw e;
         }
     }

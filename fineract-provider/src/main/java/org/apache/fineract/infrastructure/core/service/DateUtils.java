@@ -141,7 +141,9 @@ public final class DateUtils {
     }
 
     public static String getDateInLetters(LocalDate date) {
-        if (date == null) return "";
+        if (date == null) {
+            return "";
+        }
 
         // Día en letras
         String dayLetters = numberToLetters(date.getDayOfMonth());

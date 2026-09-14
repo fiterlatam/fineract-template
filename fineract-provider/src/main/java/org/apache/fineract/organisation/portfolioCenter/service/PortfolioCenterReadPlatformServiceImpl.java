@@ -236,7 +236,7 @@ public class PortfolioCenterReadPlatformServiceImpl implements PortfolioCenterRe
 
         private final String schema;
 
-        public PortfolioCenterMapper() {
+        PortfolioCenterMapper() {
             final StringBuilder sqlBuilder = new StringBuilder(300);
             sqlBuilder.append(
                     "pc.id as id, pc.display_name as name, substring(pc.display_name, 1, 5) as centerCodeName, pc.portfolio_id as portfolioId, ");

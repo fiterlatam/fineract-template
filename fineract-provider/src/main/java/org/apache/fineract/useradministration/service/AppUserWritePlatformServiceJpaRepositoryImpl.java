@@ -337,7 +337,6 @@ public class AppUserWritePlatformServiceJpaRepositoryImpl implements AppUserWrit
                 // The X-Forwarded-For header can contain multiple IP addresses, in case of proxies.
                 // The first IP in the list is the original client.
                 clientIp = Iterables.get(Splitter.on(',').split(clientIp), 0);
-                ;
             }
         }
         Long userId = appUser.getId();
@@ -350,7 +349,9 @@ public class AppUserWritePlatformServiceJpaRepositoryImpl implements AppUserWrit
     @Override
     public AppUser selfResetUserPassword(Long userId, String requestData, PlatformPasswordEncoder platformPasswordEncoder) {
         Optional<AppUser> appUserOptional = this.appUserRepository.findById(userId);
-        if (appUserOptional.isEmpty()) throw new UserNotFoundException(userId);
+        if (appUserOptional.isEmpty()) {
+            throw new UserNotFoundException(userId);
+        }
         AppUser appUser = appUserOptional.get();
         JsonElement jsonElement = this.fromApiJsonHelper.parse(requestData);
         JsonObject asJsonObject = jsonElement.getAsJsonObject();

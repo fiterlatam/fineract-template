@@ -438,7 +438,9 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
             if (loanProduct.useBorrowerCycle()) {
                 Integer cycleNumber = null;
                 cycleNumber = this.fromJsonHelper.extractIntegerWithLocaleNamed("borrowerCycle", command.parsedJson());
-                if (cycleNumber == null) cycleNumber = 0;
+                if (cycleNumber == null) {
+                    cycleNumber = 0;
+                }
                 if (cycleNumber == 0) {
                     if (clientId != null) {
                         cycleNumber = this.loanReadPlatformService.retriveLoanCounter(clientId, loanProduct.getId());

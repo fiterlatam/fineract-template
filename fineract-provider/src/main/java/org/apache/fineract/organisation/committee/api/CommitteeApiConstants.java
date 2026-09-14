@@ -23,7 +23,9 @@ import java.util.HashSet;
 import java.util.Set;
 import org.apache.fineract.organisation.bank.data.BankData;
 
-public class CommitteeApiConstants {
+public final class CommitteeApiConstants {
+
+    private CommitteeApiConstants() {}
 
     // request parameters
     public static final String idParamName = "id";
@@ -37,7 +39,7 @@ public class CommitteeApiConstants {
      * These parameters will match the class level parameters of {@link BankData}. Where possible, we try to get
      * response parameters to match those of request parameters.
      */
-    protected static final Set<String> COMMITTEE_RESPONSE_DATA_PARAMETERS = new HashSet<>(Arrays.asList(idParamName, nameParamName,
+    public static final Set<String> COMMITTEE_RESPONSE_DATA_PARAMETERS = new HashSet<>(Arrays.asList(idParamName, nameParamName,
             userIdParamName, committeesParamName, availableUsersParamName, selectedUsersParamName));
 
 }

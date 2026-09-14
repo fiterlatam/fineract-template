@@ -27,10 +27,10 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.infrastructure.core.data.ApiParameterError;
 import org.apache.fineract.infrastructure.core.data.DataValidatorBuilder;
 import org.apache.fineract.infrastructure.core.exception.PlatformApiDataValidationException;
-import org.springframework.stereotype.Component;
 
-@Component
 public final class ClientIdentifierDocumentValidator {
+
+    private ClientIdentifierDocumentValidator() {}
 
     // Expresión regular para numero de DPI
     /*
@@ -167,7 +167,6 @@ public final class ClientIdentifierDocumentValidator {
         List<ApiParameterError> dataValidationErrors = new ArrayList<>();
 
         baseDataValidator = new DataValidatorBuilder(dataValidationErrors);
-        ;
 
         if (Objects.nonNull(nit)) {
 

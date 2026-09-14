@@ -22,7 +22,7 @@ import java.math.BigDecimal;
 import java.util.Date;
 import org.apache.fineract.useradministration.data.AppUserData;
 
-public class ExchangeData {
+public final class ExchangeData {
 
     private final Long id;
     private final Integer destinationCurrency;

@@ -330,7 +330,7 @@ public class CenterGroupPlanningServiceImpl implements CenterGroupPlanningServic
 
         private final String schema;
 
-        public PortfolioDetailedPlanningMapper() {
+        PortfolioDetailedPlanningMapper() {
             // FBR-193 - the query to get the center and group information must be based on m_group table
             final StringBuilder sqlBuilder = new StringBuilder(300);
             sqlBuilder.append("cvMeetingDay.code_value as meetingDayName, cg.id as centerGroupId, cg.display_name as centerGroupName, ");

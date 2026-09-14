@@ -56,6 +56,8 @@ final class ReportsApiResourceSwagger {
         public Boolean coreReport;
         @Schema(example = "true")
         public Boolean useReport;
+        @Schema(example = "READ_TRIAL_BALANCE")
+        public String reportPermission;
         public Collection<ReportParameterData> reportParameters;
 
     }

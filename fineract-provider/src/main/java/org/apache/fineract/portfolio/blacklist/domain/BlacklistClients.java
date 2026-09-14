@@ -124,7 +124,6 @@ public class BlacklistClients extends AbstractPersistableCustom {
     }
 
     public void updateStatus(final BlacklistStatus blacklistStatus) {
-        ;
         this.status = blacklistStatus.getValue();
     }
 

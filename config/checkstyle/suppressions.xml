@@ -23,10 +23,42 @@
     This file contains suppression rules for Checkstyle checks.
     Ideally only files that cannot be modified (e.g. third-party code)
     should be added here. All other violations should be fixed.
+
+    External HTTP client policy (ForbidDirectRestTemplate / ForbidDirectOkHttpClient /
+    ForbidRawHttpURLConnection):
+    - Adding a suppression is a break-glass / baseline exception and REQUIRES documented
+      Tech Lead or Architect approval on the Pull Request (see README).
+    - Prefer fixing call sites to use ExternalHttpClientFactory.
 -->
 
 <suppressions>
     <suppress files="[/\\]build[/\\]generated[/\\]" checks=".*"/>
     <!-- TODO: fix integration test formatting -->
     <suppress files="[/\\]integration-tests[/\\]src[/\\]test[/\\]main[/\\]" checks=".*"/>
+
+    <!--
+        Task B: HTTP client construction rules apply to production code only.
+        Unit/integration tests may mock or manually instantiate clients.
+    -->
+    <suppress files="[/\\]src[/\\]test[/\\]" id="ForbidDirectRestTemplate"/>
+    <suppress files="[/\\]src[/\\]test[/\\]" id="ForbidDirectOkHttpClient"/>
+    <suppress files="[/\\]src[/\\]test[/\\]" id="ForbidRawHttpURLConnection"/>
+
+    <!-- Sole allowed RestTemplate / OkHttpClient construction site -->
+    <suppress files="ExternalHttpClientFactory\.java" id="ForbidDirectRestTemplate"/>
+    <suppress files="ExternalHttpClientFactory\.java" id="ForbidDirectOkHttpClient"/>
+
+    <!--
+        Task C (baseline): legacy call sites that already apply timeouts via
+        ExternalHttpClientFactory (configureConnectionTimeouts / injected timeouts).
+        Do not copy this pattern for new code — use the factory APIs instead.
+    -->
+    <suppress files="TemplateMergeService\.java" id="ForbidRawHttpURLConnection"/>
+    <suppress files="Sender\.java" id="ForbidRawHttpURLConnection"/>
+
+    <!--
+        Client SDK builds OkHttp for talking TO Fineract, not server-side outbound
+        integrations. Out of scope for ExternalHttpClientFactory.
+    -->
+    <suppress files="FineractClient\.java" id="ForbidDirectOkHttpClient"/>
 </suppressions>

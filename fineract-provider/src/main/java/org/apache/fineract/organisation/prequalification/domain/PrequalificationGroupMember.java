@@ -142,7 +142,6 @@ public class PrequalificationGroupMember extends AbstractPersistableCustom {
     }
 
     public void updateStatus(final PrequalificationMemberIndication prequalificationStatus) {
-        ;
         this.status = prequalificationStatus.getValue();
     }
 

@@ -20,7 +20,9 @@ package org.apache.fineract.organisation.portfolio.data;
 
 import java.util.Comparator;
 
-public class PortfolioDetailedPlanningComparator {
+public final class PortfolioDetailedPlanningComparator {
+
+    private PortfolioDetailedPlanningComparator() {}
 
     public static Comparator<PortfolioDetailedPlanningData> createPortfolioDetailedPlanningComparator() {
         return Comparator.comparing(PortfolioDetailedPlanningData::getMeetingDate)

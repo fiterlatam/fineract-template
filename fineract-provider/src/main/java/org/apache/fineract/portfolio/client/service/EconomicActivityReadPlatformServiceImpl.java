@@ -97,7 +97,6 @@ public class EconomicActivityReadPlatformServiceImpl implements EconomicActivity
 
             return this.jdbcTemplate.query(sql, rm);
         } catch (final EmptyResultDataAccessException e) {
-            e.printStackTrace();
             return null;
         }
     }
@@ -112,7 +111,6 @@ public class EconomicActivityReadPlatformServiceImpl implements EconomicActivity
             final String sql = "select " + rm.schema();
             return this.jdbcTemplate.query(sql, rm);
         } catch (final EmptyResultDataAccessException e) {
-            e.printStackTrace();
             return null;
         }
     }

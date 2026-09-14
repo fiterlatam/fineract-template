@@ -25,6 +25,8 @@ import org.apache.fineract.organisation.portfolioCenter.domain.PortfolioCenterFr
 
 public final class PortfolioCenterGroupUtil {
 
+    private PortfolioCenterGroupUtil() {}
+
     /**
      *
      * @param startDate
@@ -82,10 +84,11 @@ public final class PortfolioCenterGroupUtil {
      * @return
      */
     private static boolean dateInRange(int day, int startDay, int endDay) {
-        if (day >= startDay && day <= endDay)
+        if (day >= startDay && day <= endDay) {
             return true;
-        else
+        } else {
             return false;
+        }
     }
 
     /**

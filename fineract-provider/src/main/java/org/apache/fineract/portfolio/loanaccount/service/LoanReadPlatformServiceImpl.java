@@ -1691,7 +1691,9 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
                 && loanProduct.getOwnerTypeOption().getId().intValue() == LoanProductOwnerType.PAE.getValue()) {
             Collection<CodeValueData> paeRequiredGuarantees = this.codeValueReadPlatformService
                     .retrieveCodeValuesByCode("PaeRequiredGuarantees");
-            if (!paeRequiredGuarantees.isEmpty()) paeRequiredGuaranteeDocuments = new ArrayList<>();
+            if (!paeRequiredGuarantees.isEmpty()) {
+                paeRequiredGuaranteeDocuments = new ArrayList<>();
+            }
             for (CodeValueData codeValue : Objects.requireNonNull(paeRequiredGuarantees)) {
                 List<PaeRequiredDocumentData> documentsList = this.paeRequiredDocumentReadPlatformService
                         .retrieveByCategory(codeValue.getId());
@@ -2733,7 +2735,9 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
     @Override
     public Collection<LoanAccountData> retrieveClientActiveLoansAccounts(Long clientId, LocalDate disbursementLocalDate) {
         final LoanMapper rm = new LoanMapper(sqlGenerator);
-        if (disbursementLocalDate == null) disbursementLocalDate = DateUtils.getBusinessLocalDate();
+        if (disbursementLocalDate == null) {
+            disbursementLocalDate = DateUtils.getBusinessLocalDate();
+        }
         final String sql = "select distinct " + rm.loanSchema() + " where l.client_id = ? and l.loan_status_id = ?";
         Collection<LoanAccountData> loanAccountData = this.jdbcTemplate.query(sql, rm,
                 new Object[] { clientId, LoanStatus.ACTIVE.getValue() });

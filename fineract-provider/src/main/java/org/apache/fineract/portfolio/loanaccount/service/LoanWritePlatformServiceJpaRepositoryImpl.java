@@ -977,8 +977,9 @@ public class LoanWritePlatformServiceJpaRepositoryImpl implements LoanWritePlatf
                 assemblerCommand.setJsonCommand(requestData.toString());
 
                 // release loan guarantee to make payment
-                if (holdTransaction.getAmount().compareTo(BigDecimal.ZERO) > 0)
+                if (holdTransaction.getAmount().compareTo(BigDecimal.ZERO) > 0) {
                     this.savingsAccountWritePlatformService.releaseLoanGuarantee(loanId, command, localDate, holdTransaction);
+                }
 
             }
             boolean isAccountTransfer = false;

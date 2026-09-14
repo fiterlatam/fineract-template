@@ -277,7 +277,7 @@ public class PromissoryNoteTemplateFive {
 
         private final Image logo;
 
-        public HeaderFooterEvent(Image logo) {
+        HeaderFooterEvent(Image logo) {
             this.logo = logo;
         }
 
