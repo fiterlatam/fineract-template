@@ -234,6 +234,13 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
         return clientData;
     }
 
+    @Override
+    public Long retrieveAgencyId(Long prequalificationId) {
+        final List<Long> agencyIds = this.jdbcTemplate.queryForList("SELECT agency_id FROM m_prequalification_group WHERE id = ?",
+                Long.class, prequalificationId);
+        return agencyIds.isEmpty() ? null : agencyIds.get(0);
+    }
+
     private DetailExtras loadDetailExtras(final Long groupId) {
         final List<DetailExtras> extras = this.jdbcTemplate.query("""
                 SELECT g.exception_comments AS exceptionComments,
