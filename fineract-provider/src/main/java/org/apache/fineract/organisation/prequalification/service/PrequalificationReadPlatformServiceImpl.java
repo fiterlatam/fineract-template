@@ -257,10 +257,9 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
     }
 
     private Map<Long, LoanData> loadLoanEnrichmentData(final List<MemberPrequalificationData> members) {
-        final List<Long> loanIds = members.stream().map(MemberPrequalificationData::getLoanId).filter(Objects::nonNull).distinct()
-                .toList();
+        final List<Long> loanIds = members.stream().map(MemberPrequalificationData::getLoanId).filter(Objects::nonNull).distinct().toList();
         if (loanIds.isEmpty()) {
-            return Collections.emptyMap();
+            return new HashMap<>();
         }
         final String inClause = loanIds.stream().map(id -> "?").collect(Collectors.joining(", "));
         final String loanSql = """
@@ -313,7 +312,8 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
         return loanDataById;
     }
 
-    private record DetailExtras(String exceptionComments, Integer status, Boolean requireCommitteeApproval) {}
+    private record DetailExtras(String exceptionComments, Integer status, Boolean requireCommitteeApproval) {
+    }
 
     private List<EnumOptionData> resolveCommitteeApprovalsTimeline(GroupPrequalificationData clientData, Integer status,
             Long prequalificationId, List<EnumOptionData> expectedTimeline) {
