@@ -30,6 +30,8 @@ public interface PrequalificationReadPlatformService {
 
     GroupPrequalificationData retrieveOne(Long groupId);
 
+    Long retrieveAgencyId(Long prequalificationId);
+
     GroupPrequalificationData prequalifyExistingGroup(Long groupId);
 
     Page<MemberPrequalificationData> retrieveAllMembers(SearchParameters searchParameters);

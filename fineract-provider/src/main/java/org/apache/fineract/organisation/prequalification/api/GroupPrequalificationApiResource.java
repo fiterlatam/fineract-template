@@ -178,33 +178,26 @@ public class GroupPrequalificationApiResource {
         final String hierarchy = this.context.authenticatedUser().getOffice().getHierarchy();
 
         MultivaluedMap<String, String> queryParameters = uriInfo.getQueryParameters();
+        final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(queryParameters);
 
         String type = queryParameters.getFirst("type");
         String groupingType = queryParameters.getFirst("groupingType");
         String groupId = queryParameters.getFirst("groupId");
-        Long agencyId = null;
-        Long centerId = null;
-        Collection<CenterData> centerData = null;
-        Collection<AgencyData> agencies = this.agencyReadPlatformService.retrieveByOfficeHierarchy(hierarchy);
-        Collection<AppUserData> appUsers = null;
-        Collection<LoanProductData> loanProducts = null;
-        GlobalConfigurationPropertyData timespan = null;
-        List<EnumOptionData> statusOptions = Arrays.asList(status(PrequalificationStatus.CONSENT_ADDED),
-                status(PrequalificationStatus.BLACKLIST_CHECKED), status(PrequalificationStatus.BLACKLIST_REJECTED),
-                status(PrequalificationStatus.COMPLETED), status(PrequalificationStatus.BURO_CHECKED),
-                status(PrequalificationStatus.HARD_POLICY_CHECKED), status(PrequalificationStatus.TIME_EXPIRED),
-                status(PrequalificationStatus.PREQUALIFICATION_UPDATE_REQUESTED));
-        if (StringUtils.equalsIgnoreCase(type, "list")) {
-            final GroupPrequalificationData clientIdentifierData = GroupPrequalificationData.template(agencies, centerData, loanProducts,
-                    appUsers, timespan, statusOptions);
-            final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(queryParameters);
-            return this.toApiJsonSerializer.serialize(settings, clientIdentifierData, PRE_QUALIFICATION_DATA_PARAMETERS);
-        }
-        if (!StringUtils.isBlank(groupId)) {
-            GroupPrequalificationData prequalificationGroup = this.prequalificationReadPlatformService.retrieveOne(Long.valueOf(groupId));
-            agencyId = prequalificationGroup.getAgencyId();
+
+        // Queue / list screens only need agencies + status filters — skip the heavy create-form lookups.
+        if (isQueueOrListTemplate(type)) {
+            Collection<AgencyData> agencies = resolveAgenciesForTemplate(hierarchy);
+            List<EnumOptionData> statusOptions = resolveTemplateStatusOptions(type);
+            final GroupPrequalificationData queueTemplate = GroupPrequalificationData.template(agencies, null, null, null, null,
+                    statusOptions);
+            return this.toApiJsonSerializer.serialize(settings, queueTemplate, PRE_QUALIFICATION_DATA_PARAMETERS);
         }
 
+        Long agencyId = null;
+        Long centerId = null;
+        if (!StringUtils.isBlank(groupId)) {
+            agencyId = this.prequalificationReadPlatformService.retrieveAgencyId(Long.valueOf(groupId));
+        }
         if (queryParameters.getFirst("agencyId") != null) {
             agencyId = NumberUtils.toLong(queryParameters.getFirst("agencyId"), Long.MAX_VALUE);
         }
@@ -212,47 +205,82 @@ public class GroupPrequalificationApiResource {
             centerId = NumberUtils.toLong(queryParameters.getFirst("centerId"), Long.MAX_VALUE);
         }
 
-        loanProducts = this.loanProductReadPlatformService.retrieveAllLoanProducts();
-        Integer prequalificationType = null;
-        if (StringUtils.isNotBlank(groupingType)) {
-            if (groupingType.equals("group")) {
-                prequalificationType = PrequalificationType.GROUP.getValue();
-            }
-
-            if (groupingType.equals("individual")) {
-                prequalificationType = PrequalificationType.INDIVIDUAL.getValue();
-            }
-
-            if (prequalificationType != null) {
-                loanProducts = this.loanProductReadPlatformService.retrieveAllLoanProductsForOwner(prequalificationType);
-            }
+        Collection<LoanProductData> loanProducts;
+        Integer prequalificationType = resolvePrequalificationType(groupingType);
+        if (prequalificationType != null) {
+            loanProducts = this.loanProductReadPlatformService.retrieveAllLoanProductsForOwner(prequalificationType);
+        } else {
+            loanProducts = this.loanProductReadPlatformService.retrieveAllLoanProducts();
         }
 
-        centerData = this.centerReadPlatformService.retrieveByOfficeHierarchy(hierarchy, agencyId);
-        agencies = this.agencyReadPlatformService.retrieveAllByAgencyLeader();
-        if (agencies.isEmpty()) {
+        Collection<CenterData> centerData = this.centerReadPlatformService.retrieveByOfficeHierarchy(hierarchy, agencyId);
+        Collection<AgencyData> agencies = resolveAgenciesForTemplate(hierarchy);
+        Collection<AppUserData> appUsers = this.appUserReadPlatformService.retrieveByOfficeHierarchy(hierarchy, centerId);
+        GlobalConfigurationPropertyData timespan = this.configurationReadPlatformService
+                .retrieveGlobalConfiguration("Prequalification Timespan");
+        List<EnumOptionData> statusOptions = resolveTemplateStatusOptions(type);
+
+        final GroupPrequalificationData clientIdentifierData = GroupPrequalificationData.template(agencies, centerData, loanProducts,
+                appUsers, timespan, statusOptions);
+        return this.toApiJsonSerializer.serialize(settings, clientIdentifierData, PRE_QUALIFICATION_DATA_PARAMETERS);
+    }
+
+    private boolean isQueueOrListTemplate(final String type) {
+        return StringUtils.equalsIgnoreCase(type, "list") || StringUtils.equalsIgnoreCase(type, "agency")
+                || StringUtils.equalsIgnoreCase(type, "analysis") || StringUtils.equalsIgnoreCase(type, "exceptionsqueue")
+                || StringUtils.equalsIgnoreCase(type, "committeeapprovals") || StringUtils.equalsIgnoreCase(type, "renegotiations")
+                || StringUtils.equalsIgnoreCase(type, "checked");
+    }
+
+    private Collection<AgencyData> resolveAgenciesForTemplate(final String hierarchy) {
+        Collection<AgencyData> agencies = this.agencyReadPlatformService.retrieveAllByAgencyLeader();
+        if (agencies == null || agencies.isEmpty()) {
             agencies = this.agencyReadPlatformService.retrieveByOfficeHierarchy(hierarchy);
         }
-        appUsers = this.appUserReadPlatformService.retrieveByOfficeHierarchy(hierarchy, centerId);
+        return agencies;
+    }
 
-        statusOptions = Arrays.asList(status(PrequalificationStatus.CONSENT_ADDED), status(PrequalificationStatus.BLACKLIST_CHECKED),
-                status(PrequalificationStatus.COMPLETED), status(PrequalificationStatus.BURO_CHECKED),
-                status(PrequalificationStatus.HARD_POLICY_CHECKED), status(PrequalificationStatus.TIME_EXPIRED),
-                status(PrequalificationStatus.PREQUALIFICATION_UPDATE_REQUESTED));
+    private Integer resolvePrequalificationType(final String groupingType) {
+        if (StringUtils.equals(groupingType, "group")) {
+            return PrequalificationType.GROUP.getValue();
+        }
+        if (StringUtils.equals(groupingType, "individual")) {
+            return PrequalificationType.INDIVIDUAL.getValue();
+        }
+        if (StringUtils.equals(groupingType, "pae")) {
+            return PrequalificationType.PAE.getValue();
+        }
+        return null;
+    }
 
+    private List<EnumOptionData> resolveTemplateStatusOptions(final String type) {
+        if (StringUtils.equalsIgnoreCase(type, "agency")) {
+            return Arrays.asList(status(PrequalificationStatus.AGENCY_LEAD_PENDING_APPROVAL),
+                    status(PrequalificationStatus.AGENCY_LEAD_PENDING_APPROVAL_WITH_EXCEPTIONS));
+        }
         if (StringUtils.equalsIgnoreCase(type, "analysis")) {
-            statusOptions = Arrays.asList(status(PrequalificationStatus.ANALYSIS_UNIT_PENDING_APPROVAL),
+            return Arrays.asList(status(PrequalificationStatus.ANALYSIS_UNIT_PENDING_APPROVAL),
                     status(PrequalificationStatus.ANALYSIS_UNIT_PENDING_APPROVAL_WITH_EXCEPTIONS));
         }
         if (StringUtils.equalsIgnoreCase(type, "exceptionsqueue")) {
-            statusOptions = Arrays.asList(status(PrequalificationStatus.AGENCY_LEAD_APPROVED_WITH_EXCEPTIONS));
+            return Arrays.asList(status(PrequalificationStatus.AGENCY_LEAD_APPROVED_WITH_EXCEPTIONS));
         }
-        timespan = this.configurationReadPlatformService.retrieveGlobalConfiguration("Prequalification Timespan");
-        final GroupPrequalificationData clientIdentifierData = GroupPrequalificationData.template(agencies, centerData, loanProducts,
-                appUsers, timespan, statusOptions);
-
-        final ApiRequestJsonSerializationSettings settings = this.apiRequestParameterHelper.process(queryParameters);
-        return this.toApiJsonSerializer.serialize(settings, clientIdentifierData, PRE_QUALIFICATION_DATA_PARAMETERS);
+        if (StringUtils.equalsIgnoreCase(type, "renegotiations")) {
+            return Arrays.asList(status(PrequalificationStatus.RENEGOTIATION_AGENCY_LEAD));
+        }
+        if (StringUtils.equalsIgnoreCase(type, "checked")) {
+            return Arrays.asList(status(PrequalificationStatus.BURO_CHECKED));
+        }
+        if (StringUtils.equalsIgnoreCase(type, "list")) {
+            return Arrays.asList(status(PrequalificationStatus.CONSENT_ADDED), status(PrequalificationStatus.BLACKLIST_CHECKED),
+                    status(PrequalificationStatus.BLACKLIST_REJECTED), status(PrequalificationStatus.COMPLETED),
+                    status(PrequalificationStatus.BURO_CHECKED), status(PrequalificationStatus.HARD_POLICY_CHECKED),
+                    status(PrequalificationStatus.TIME_EXPIRED), status(PrequalificationStatus.PREQUALIFICATION_UPDATE_REQUESTED));
+        }
+        return Arrays.asList(status(PrequalificationStatus.CONSENT_ADDED), status(PrequalificationStatus.BLACKLIST_CHECKED),
+                status(PrequalificationStatus.COMPLETED), status(PrequalificationStatus.BURO_CHECKED),
+                status(PrequalificationStatus.HARD_POLICY_CHECKED), status(PrequalificationStatus.TIME_EXPIRED),
+                status(PrequalificationStatus.PREQUALIFICATION_UPDATE_REQUESTED));
     }
 
     @GET
