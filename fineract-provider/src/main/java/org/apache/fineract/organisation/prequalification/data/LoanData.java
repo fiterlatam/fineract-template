@@ -19,11 +19,13 @@
 package org.apache.fineract.organisation.prequalification.data;
 
 import java.math.BigDecimal;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 
 @Data
 @Builder
+@AllArgsConstructor
 public class LoanData {
 
     private Long clientId;
@@ -35,4 +37,19 @@ public class LoanData {
     private BigDecimal principalAmount;
     private Boolean isTopup;
     private String loanCycleCompleted;
+
+    private BigDecimal quotaAmount;
+    private BigDecimal interestRatePerPeriod;
+    private Integer period;
+    private String collateral;
+    private String destination;
+
+    public LoanData(BigDecimal quotaAmount, BigDecimal rateAmount, Integer period, String collateral, String destination) {
+        this.quotaAmount = quotaAmount;
+        this.interestRatePerPeriod = rateAmount;
+        this.period = period;
+        this.collateral = collateral;
+        this.destination = destination;
+    }
+
 }

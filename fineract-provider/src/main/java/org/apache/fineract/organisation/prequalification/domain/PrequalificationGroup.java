@@ -97,6 +97,9 @@ public class PrequalificationGroup extends AbstractPersistableCustom {
     @OneToMany(mappedBy = "prequalificationGroup", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<PrequalificationGroupMember> members;
 
+    @Column(name = "supervision_office_id")
+    private Long supervisionOfficeId;
+
     public static PrequalificationGroup fromJson(final AppUser appUser, final AppUser facilitator, final Agency agency, final Group group,
             final LoanProduct loanProduct, PrequalificationGroup parentGroup, final JsonCommand command, String requalificationGroupName) {
         String groupName = command.stringValueOfParameterNamed("groupName");
@@ -151,6 +154,10 @@ public class PrequalificationGroup extends AbstractPersistableCustom {
 
     public void updateAgency(final Agency agency) {
         this.agency = agency;
+    }
+
+    public void updateSupervisionOfficeId(final Long supervisionOfficeId) {
+        this.supervisionOfficeId = supervisionOfficeId;
     }
 
     public void updateCenter(final Long centerId) {
