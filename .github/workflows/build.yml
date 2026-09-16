@@ -10,8 +10,6 @@ jobs:
       - name: Check out code
         uses: actions/checkout@v3
 
-      - uses: kamiazya/setup-graphviz@v1
-
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:

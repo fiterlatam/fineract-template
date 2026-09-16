@@ -49,8 +49,8 @@ import org.apache.fineract.infrastructure.core.service.PlatformEmailSendExceptio
 import org.apache.fineract.infrastructure.core.service.PlatformEmailService;
 import org.apache.fineract.infrastructure.security.constants.TwoFactorConstants;
 import org.apache.fineract.infrastructure.security.data.OTPDeliveryMethod;
-import org.apache.fineract.infrastructure.security.data.OTPRequest;
 import org.apache.fineract.infrastructure.security.domain.BasicPasswordEncodablePlatformUser;
+import org.apache.fineract.infrastructure.security.domain.OTPRequest;
 import org.apache.fineract.infrastructure.security.domain.OTPRequestRepository;
 import org.apache.fineract.infrastructure.security.domain.PlatformUser;
 import org.apache.fineract.infrastructure.security.domain.TFAccessToken;
@@ -375,11 +375,11 @@ public class AppUserWritePlatformServiceJpaRepositoryImpl implements AppUserWrit
         if (appUser == null) {
             throw new UsernameNotFoundException(username);
         }
-        OTPRequest otpRequest = otpRequestRepository.getOTPRequestForUser(appUser);
-        if (otpRequest == null || !otpRequest.isValid() || !otpRequest.getToken().equalsIgnoreCase(otp)) {
+        OTPRequest otpRequest = otpRequestRepository.findByUser(appUser);
+        if (otpRequest == null || !otpRequest.isValid() || !otpRequest.matchesToken(otp)) {
             throw new OTPTokenInvalidException();
         }
-        otpRequestRepository.deleteOTPRequestForUser(appUser);
+        otpRequestRepository.deleteAllByUser(appUser);
         String newPassword = this.accessTokenGenerationService.generateRandomToken().substring(0, 8);
 
         final PlatformUser dummyPlatformUser = new BasicPasswordEncodablePlatformUser(appUser.getId(), "", newPassword);
@@ -426,30 +426,39 @@ public class AppUserWritePlatformServiceJpaRepositoryImpl implements AppUserWrit
             if (smsDelivery == null) {
                 throw new OTPDeliveryMethodInvalidException();
             }
-            final OTPRequest request = generateNewToken(smsDelivery, extendedAccessToken);
+            final OTPRequest request = generateNewToken(user, smsDelivery, extendedAccessToken);
             final String smsText = configurationService.getFormattedSmsTextFor(user, request);
             SmsMessage smsMessage = SmsMessage.pendingSms(null, null, null, user.getStaff(), smsText, user.getStaff().mobileNo(), null,
                     false);
             this.smsMessageRepository.save(smsMessage);
             smsMessageScheduledJobService.sendTriggeredMessage(Collections.singleton(smsMessage), configurationService.getSMSProviderId());
-            otpRequestRepository.addOTPRequest(user, request);
-            return request;
+            return persistOTPRequest(user, request);
         } else if (TwoFactorConstants.EMAIL_DELIVERY_METHOD_NAME.equalsIgnoreCase(deliveryMethodName)) {
             OTPDeliveryMethod emailDelivery = getEmailDeliveryMethodForUser(user);
             if (emailDelivery == null) {
                 throw new OTPDeliveryMethodInvalidException();
             }
-            final OTPRequest request = generateNewToken(emailDelivery, extendedAccessToken);
+            final OTPRequest request = generateNewToken(user, emailDelivery, extendedAccessToken);
             final String emailSubject = configurationService.getFormattedEmailSubjectFor(user, request);
             final String emailBody = configurationService.getFormattedEmailBodyFor(user, request);
             final EmailDetail emailData = new EmailDetail(emailSubject, emailBody, user.getEmail(),
                     user.getFirstname() + " " + user.getLastname());
             emailService.sendDefinedEmail(emailData);
-            otpRequestRepository.addOTPRequest(user, request);
-            return request;
+            return persistOTPRequest(user, request);
         }
 
         throw new OTPDeliveryMethodInvalidException();
+    }
+
+    private OTPRequest persistOTPRequest(final AppUser user, final OTPRequest request) {
+        // Enforce one active OTP per user: update the existing row in place when present, otherwise insert a new one.
+        // The twofactor_otp_request table also has a UNIQUE(appuser_id) constraint as a safety net.
+        final OTPRequest existing = otpRequestRepository.findByUser(user);
+        if (existing != null) {
+            existing.refreshFrom(request);
+            return otpRequestRepository.save(existing);
+        }
+        return otpRequestRepository.save(request);
     }
 
     private OTPDeliveryMethod getSMSDeliveryMethodForUser(final AppUser user) {
@@ -482,11 +491,11 @@ public class AppUserWritePlatformServiceJpaRepositoryImpl implements AppUserWrit
                 Integer.toString(accessTokenExtendedLiveTime));
     }
 
-    private OTPRequest generateNewToken(final OTPDeliveryMethod deliveryMethod, final boolean extendedAccessToken) {
+    private OTPRequest generateNewToken(final AppUser user, final OTPDeliveryMethod deliveryMethod, final boolean extendedAccessToken) {
         int tokenLiveTime = configurationService.getOTPTokenLiveTime();
         int otpLength = configurationService.getOTPTokenLength();
         String token = new RandomOTPGenerator(otpLength).generate();
-        return OTPRequest.create(token, tokenLiveTime, extendedAccessToken, deliveryMethod);
+        return OTPRequest.create(user, token, tokenLiveTime, extendedAccessToken, deliveryMethod);
     }
 
     /*

@@ -31,7 +31,7 @@ import java.util.Map;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.security.constants.TwoFactorConfigurationConstants;
 import org.apache.fineract.infrastructure.security.constants.TwoFactorConstants;
-import org.apache.fineract.infrastructure.security.data.OTPRequest;
+import org.apache.fineract.infrastructure.security.domain.OTPRequest;
 import org.apache.fineract.infrastructure.security.domain.TwoFactorConfiguration;
 import org.apache.fineract.infrastructure.security.domain.TwoFactorConfigurationRepository;
 import org.apache.fineract.useradministration.domain.AppUser;

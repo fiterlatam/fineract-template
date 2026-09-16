@@ -162,5 +162,9 @@
     <include file="parts/0139-FSF-95_AddConfigurationForRunningBalancesUpdate.xml" relativeToChangelogFile="true"/>
     <include file="parts/0140-ACCOUNTING_MANUAL_ENTRTIES CONFIGURATION.xml" relativeToChangelogFile="true"/>
     <include file="parts/0148-FBR_ADD_2FA_CONFIGURATIONS.xml" relativeToChangelogFile="true"/>
-    <include file="parts/PUE_2026_04_22_INDEX_JOURNAL_ENTRIES_TABLE.xml" relativeToChangelogFile="true"/>
+    <include file="parts/0149_FBR_create_2fa_otp_request_table.xml" relativeToChangelogFile="true"/>
+    <include file="parts/PUE_2026_09_01_PREQUALIFICATION_LIST_PERFORMANCE_INDEXES.xml" relativeToChangelogFile="true"/>
+    <include file="parts/PUE_2026_09_01_ADD_SUPERVISION_OFFICE_TO_PREQUALIFICATION.xml" relativeToChangelogFile="true"/>
+    <include file="parts/PUE_2026_09_11_PREQUALIFICATION_DETAIL_PERFORMANCE_INDEXES.xml" relativeToChangelogFile="true"/>
+    <include file="parts/PUE_2026_09_16_BACKFILL_INDIVIDUAL_PREQUALIFICATION_AGENCY.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>
