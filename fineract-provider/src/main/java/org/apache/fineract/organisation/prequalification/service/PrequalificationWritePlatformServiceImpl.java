@@ -124,7 +124,6 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
     private final PlatformSecurityContext context;
     private final PrequalificationDataValidator dataValidator;
     private final LoanProductRepository loanProductRepository;
-    private final ClientReadPlatformService clientReadPlatformService;
     private final CodeValueReadPlatformService codeValueReadPlatformService;
     private final PrequalificationGroupRepositoryWrapper prequalificationGroupRepositoryWrapper;
     private final PreQualificationStatusLogRepository preQualificationLogRepository;
@@ -173,7 +172,6 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         this.context = context;
         this.dataValidator = dataValidator;
         this.loanProductRepository = loanProductRepository;
-        this.clientReadPlatformService = clientReadPlatformService;
         this.codeValueReadPlatformService = codeValueReadPlatformService;
         this.prequalificationGroupRepositoryWrapper = prequalificationGroupRepositoryWrapper;
         this.groupRepositoryWrapper = groupRepositoryWrapper;
@@ -521,7 +519,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         List<PrequalificationGroupMember> members = assembleMembersForUpdate(command, prequalificationGroup,
                 prequalificationGroup.getAddedBy());
         prequalificationGroup.updateMembers(members);
-        if (prequalificationGroup.isPrequalificationTypeIndividual() || prequalificationGroup.isPrequalificationTypePAE()) {
+        if (prequalificationGroup.isPrequalificationTypeIndividual()) {
             applySupervisionOfficeContext(prequalificationGroup,
                     PrequalificationType.fromInt(prequalificationGroup.getPrequalificationType()), prequalificationGroup.getAgency(),
                     members);
@@ -1266,7 +1264,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
             }
             return;
         }
-        if (PrequalificationType.INDIVIDUAL.equals(prequalificationType) || PrequalificationType.PAE.equals(prequalificationType)) {
+        if (PrequalificationType.INDIVIDUAL.equals(prequalificationType)) {
             if (members == null || members.isEmpty()) {
                 return;
             }
@@ -1318,61 +1316,6 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
     }
 
     private record MemberOfficeContext(Long agencyId, Long supervisionOfficeId) {
-    }
-
-    private void updateLoanAssociated(JsonCommand jsonCommand) {
-        final Long groupId = jsonCommand.getGroupId();
-        Loan loan = loanRepositoryWrapper.retrieveByPrequalificationId(groupId);
-        if (loan == null) {
-            throw new NotFoundException("Loan with group id " + groupId + " not found");
-        }
-        modify(loan.getId(), jsonCommand);
-    }
-
-    private void modify(Long loanId, JsonCommand command) {
-
-        final BigDecimal rate = command.bigDecimalValueOfParameterNamed("interestRatePerPeriod");
-        final BigDecimal principal = command.bigDecimalValueOfParameterNamed("principal");
-        final Long loanTermFrequency = command.longValueOfParameterNamed("loanTermFrequency");
-
-        CommandSource source = commandSourceRepository.findByLoanIdAndLastModification(loanId);
-        JsonElement element = JsonParser.parseString(source.getCommandAsJson());
-        JsonObject object = element.getAsJsonObject();
-
-        object.addProperty("interestRatePerPeriod", rate);
-        object.addProperty("principal", principal);
-        object.addProperty("loanTermFrequency", loanTermFrequency);
-        object.addProperty("numberOfRepayments", loanTermFrequency);
-        element = JsonParser.parseString(object.toString());
-        JsonCommand jsonCommand = JsonCommand.fromJsonElement(loanId, element, command.getFromApiJsonHelper());
-        jsonCommand.setJsonCommand(object.toString());
-
-        loanApplicationWritePlatformService.modifyApplication(loanId, jsonCommand);
-    }
-
-    @Override
-    public void addExceptionCommentsToPrequalification(Long groupId, String comment, String description) {
-        PrequalificationGroup prequalificationGroup = this.prequalificationGroupRepositoryWrapper.findOneWithNotFoundDetection(groupId);
-        boolean isException = false;
-        if (PrequalificatoinApiConstants.exceptionComments.equalsIgnoreCase(description)) {
-            prequalificationGroup.updateExceptionComments(comment);
-            isException = true;
-        } else {
-            prequalificationGroup.updateComments(comment);
-        }
-        Integer fromStatus = prequalificationGroup.getStatus();
-        Integer toStatus = fromStatus;
-
-        PrequalificationStatusLog lastLog = this.preQualificationStatusLogRepository.findTopByPrequalificationGroupIdOrderByIdDesc(groupId);
-        if (lastLog != null) {
-            fromStatus = lastLog.getFromStatus();
-            toStatus = lastLog.getToStatus();
-        }
-        this.prequalificationGroupRepositoryWrapper.saveAndFlush(prequalificationGroup);
-        AppUser addedBy = this.context.getAuthenticatedUserIfPresent();
-        PrequalificationStatusLog statusLog = PrequalificationStatusLog.fromJson(addedBy, fromStatus, toStatus, comment,
-                prequalificationGroup, null, null, isException);
-        this.preQualificationLogRepository.saveAndFlush(statusLog);
     }
 
 }

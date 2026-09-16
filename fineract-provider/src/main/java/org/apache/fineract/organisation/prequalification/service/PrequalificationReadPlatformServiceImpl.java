@@ -30,9 +30,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
-
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -46,14 +44,13 @@ import org.apache.fineract.infrastructure.core.service.Page;
 import org.apache.fineract.infrastructure.core.service.PaginationHelper;
 import org.apache.fineract.infrastructure.core.service.SearchParameters;
 import org.apache.fineract.infrastructure.core.service.database.DatabaseSpecificSQLGenerator;
-import org.apache.fineract.infrastructure.dataqueries.service.GenericDataService;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.infrastructure.security.utils.ColumnValidator;
 import org.apache.fineract.organisation.prequalification.data.BuroData;
 import org.apache.fineract.organisation.prequalification.data.GroupPrequalificationData;
+import org.apache.fineract.organisation.prequalification.data.LoanData;
 import org.apache.fineract.organisation.prequalification.data.MemberPrequalificationData;
 import org.apache.fineract.organisation.prequalification.domain.BuroCheckClassification;
-import org.apache.fineract.organisation.prequalification.domain.PreQualificationStatusLogRepository;
 import org.apache.fineract.organisation.prequalification.domain.PreQualificationsEnumerations;
 import org.apache.fineract.organisation.prequalification.domain.PreQualificationsMemberEnumerations;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationMemberIndication;
@@ -85,21 +82,19 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
     private final PrequalificationIndividualMappingsMapper prequalificationIndividualMappingsMapper = new PrequalificationIndividualMappingsMapper();
     private final PrequalificationsMemberMapper prequalificationsMemberMapper = new PrequalificationsMemberMapper();
     private final DatabaseSpecificSQLGenerator sqlGenerator;
-    private final GenericDataService genericDataService;
     private final PrequalificationChecklistReadPlatformService prequalificationChecklistReadPlatformService;
 
     @Autowired
     public PrequalificationReadPlatformServiceImpl(final PlatformSecurityContext context, final PaginationHelper paginationHelper,
             final DatabaseSpecificSQLGenerator sqlGenerator, final ColumnValidator columnValidator,
             final CodeValueReadPlatformService codeValueReadPlatformService, final JdbcTemplate jdbcTemplate,
-            GenericDataService genericDataService,PrequalificationChecklistReadPlatformService prequalificationChecklistReadPlatformService) {
+            PrequalificationChecklistReadPlatformService prequalificationChecklistReadPlatformService) {
         this.context = context;
         this.codeValueReadPlatformService = codeValueReadPlatformService;
         this.jdbcTemplate = jdbcTemplate;
         this.paginationHelper = paginationHelper;
         this.sqlGenerator = sqlGenerator;
         this.columnValidator = columnValidator;
-        this.genericDataService = genericDataService;
         this.prequalificationChecklistReadPlatformService = prequalificationChecklistReadPlatformService;
     }
 
@@ -221,24 +216,7 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
                 memberPrequalificationData.setQuotaAmount(loanData.getQuotaAmount());
             }
             clientData.updateMembers(members);
-
-            final DetailExtras detailExtras = loadDetailExtras(groupId);
-            clientData.setExceptionComment(detailExtras.exceptionComments());
-            clientData.setComments(ObjectUtils.defaultIfNull(clientData.getComments(), ""));
             clientData.setLatestComments(ObjectUtils.defaultIfNull(clientData.getLatestComments(), clientData.getComments()));
-
-            List<PrequalificationStatusLog> prequalificationStatusLogs = this.preQualificationLogRepository.groupStatusLogs(groupId);
-            List<PrequalificationTimeline> currentStatusTimeline = resolveCurrentStatusTimeline(clientData, prequalificationStatusLogs);
-            List<EnumOptionData> expectedTimeline = resolveFutureStatusTimeline();
-            if (Boolean.TRUE.equals(detailExtras.requireCommitteeApproval())) {
-                expectedTimeline = resolveCommitteeApprovalsTimeline(clientData, detailExtras.status(), groupId, expectedTimeline);
-            }
-            clientData.updateCurrentStatusTimeline(currentStatusTimeline);
-            clientData.updateExpectedStatusTimeline(expectedTimeline);
-
-            List<Renegotiation> renegotiations = this.renegotiationsRepositorWrapper.getRenegotiationByPrequalificationId(groupId);
-            List<RenegotiationData> renegotiationData = renegotiations.stream().map(RenegotiationData::of).toList();
-            clientData.updateRenegotiations(renegotiationData);
         }
         return clientData;
     }
@@ -248,19 +226,6 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
         final List<Long> agencyIds = this.jdbcTemplate.queryForList("SELECT agency_id FROM m_prequalification_group WHERE id = ?",
                 Long.class, prequalificationId);
         return agencyIds.isEmpty() ? null : agencyIds.get(0);
-    }
-
-    private DetailExtras loadDetailExtras(final Long groupId) {
-        final List<DetailExtras> extras = this.jdbcTemplate.query("""
-                SELECT g.exception_comments AS exceptionComments,
-                       g.status AS status,
-                       lp.required_committee_approval AS requireCommitteeApproval
-                FROM m_prequalification_group g
-                INNER JOIN m_product_loan lp ON lp.id = g.product_id
-                WHERE g.id = ?
-                """, (rs, rowNum) -> new DetailExtras(rs.getString("exceptionComments"), JdbcSupport.getInteger(rs, "status"),
-                rs.getBoolean("requireCommitteeApproval")), groupId);
-        return extras.isEmpty() ? new DetailExtras("", null, false) : extras.get(0);
     }
 
     private Map<Long, LoanData> loadLoanEnrichmentData(final List<MemberPrequalificationData> members) {
@@ -317,72 +282,6 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
                             rs.getString("collateral"), rs.getString("destination")));
         }, loanIds.toArray());
         return loanDataById;
-    }
-
-    private record DetailExtras(String exceptionComments, Integer status, Boolean requireCommitteeApproval) {
-    }
-
-    private List<EnumOptionData> resolveCommitteeApprovalsTimeline(GroupPrequalificationData clientData, Integer status,
-            Long prequalificationId, List<EnumOptionData> expectedTimeline) {
-        BigDecimal totalApprovedAmount = clientData.getTotalApprovedAmount();
-        if (status != null && status >= PrequalificationStatus.HARD_POLICY_CHECKED.getValue()
-                && !status.equals(PrequalificationStatus.TIME_EXPIRED.getValue())) {
-            PrequalificationChecklistData prequalificationChecklistData = this.prequalificationChecklistReadPlatformService
-                    .retrieveHardPolicyValidationResults(prequalificationId);
-            List<List<String>> rows = prequalificationChecklistData.getMembers().getRows();
-            AtomicReference<Integer> redCountRef = new AtomicReference<>(0);
-            for (List<String> innerList : rows) {
-                innerList.forEach(item -> {
-                    if ("RED".equalsIgnoreCase(item) || "ORANGE".equalsIgnoreCase(item) || "YELLOW".equalsIgnoreCase(item)) {
-                        redCountRef.getAndSet(redCountRef.get() + 1);
-                    }
-                });
-            }
-            Integer errorWarningsCount = redCountRef.get();
-            final String membersql = "select " + this.committeeApprovalsMapper.schema() + " "
-                    + "WHERE ? BETWEEN c.from_amount AND c.to_amount " + "AND ( " + "    (? > c.limit AND c.condition = 'GREATER_THAN') "
-                    + "    OR (? <= c.limit AND c.condition = 'LESS_THAN') ) ORDER BY cv.code_value desc;";
-
-            List<CommitteeApprovalsData> members = this.jdbcTemplate.query(membersql, this.committeeApprovalsMapper,
-                    new Object[] { totalApprovedAmount, errorWarningsCount, errorWarningsCount });
-            if (!members.isEmpty()) {
-                members.forEach(committeeApprovalsData -> {
-                    expectedTimeline.add(committeeApprovalsData.getApprovalData());
-                });
-            }
-        }
-        return expectedTimeline;
-    }
-
-    private List<EnumOptionData> resolveFutureStatusTimeline() {
-        List<EnumOptionData> statusTimeline = new ArrayList<>();
-        statusTimeline.add(PreQualificationsEnumerations.status(PrequalificationStatus.PENDING));
-        statusTimeline.add(PreQualificationsEnumerations.status(PrequalificationStatus.BLACKLIST_CHECKED));
-        statusTimeline.add(PreQualificationsEnumerations.status(PrequalificationStatus.CONSENT_ADDED));
-        statusTimeline.add(PreQualificationsEnumerations.status(PrequalificationStatus.BURO_CHECKED));
-        statusTimeline.add(PreQualificationsEnumerations.status(PrequalificationStatus.HARD_POLICY_CHECKED));
-        statusTimeline.add(PreQualificationsEnumerations.status(PrequalificationStatus.AGENCY_LEAD_PENDING_APPROVAL));
-        statusTimeline.add(PreQualificationsEnumerations.status(PrequalificationStatus.ANALYSIS_UNIT_PENDING_APPROVAL));
-        return statusTimeline;
-    }
-
-    private List<PrequalificationTimeline> resolveCurrentStatusTimeline(GroupPrequalificationData prequalificationData,
-            List<PrequalificationStatusLog> statusLogList) {
-        List<PrequalificationTimeline> statusTimeline = new ArrayList<>();
-        long index = 1L;
-        final String createdAt = prequalificationData.getCreatedAt() != null ? prequalificationData.getCreatedAt().toString() : "";
-        statusTimeline.add(new PrequalificationTimeline(PreQualificationsEnumerations.status(PrequalificationStatus.PENDING),
-                prequalificationData.getAddedBy(), createdAt, "Prequalification created", index));
-        index++;
-        Collections.sort(statusLogList);
-        for (PrequalificationStatusLog status : statusLogList) {
-            EnumOptionData statusData = PreQualificationsEnumerations.status(status.getToStatus());
-            PrequalificationTimeline prequalificationTimeline = new PrequalificationTimeline(statusData,
-                    status.getAddedBy().getDisplayName(), status.getDateCreated().toString(), status.getComments(), index);
-            statusTimeline.add(prequalificationTimeline);
-            index++;
-        }
-        return statusTimeline;
     }
 
     @Override

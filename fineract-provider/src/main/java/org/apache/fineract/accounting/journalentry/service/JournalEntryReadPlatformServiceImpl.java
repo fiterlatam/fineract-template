@@ -314,8 +314,8 @@ public class JournalEntryReadPlatformServiceImpl implements JournalEntryReadPlat
             whereClose = " and ";
         }
         if (searchParameters.isSavingsIdPassed()) {
-            whereClauseBuilder.append(whereClose)
-                    .append(" journalEntry.savings_transaction_id in (select id from m_savings_account_transaction where savings_account_id = ?)");
+            whereClauseBuilder.append(whereClose).append(
+                    " journalEntry.savings_transaction_id in (select id from m_savings_account_transaction where savings_account_id = ?)");
             parameters.add(searchParameters.getSavingsId());
             whereClose = " and ";
         }
