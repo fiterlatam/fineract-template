@@ -213,4 +213,6 @@
     <include file="parts/PUE_2026_08_27_UPDATE_PREQUALIFICATION_PERMISSIONS_GROUPING.xml" relativeToChangelogFile="true"/>
     <include file="parts/PUE_2026_09_01_PREQUALIFICATION_LIST_PERFORMANCE_INDEXES.xml" relativeToChangelogFile="true"/>
     <include file="parts/PUE_2026_09_01_ADD_SUPERVISION_OFFICE_TO_PREQUALIFICATION.xml" relativeToChangelogFile="true"/>
+    <include file="parts/PUE_2026_09_11_PREQUALIFICATION_DETAIL_PERFORMANCE_INDEXES.xml" relativeToChangelogFile="true"/>
+    <include file="parts/PUE_2026_09_16_BACKFILL_INDIVIDUAL_PREQUALIFICATION_AGENCY.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>

@@ -1664,7 +1664,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
                 return;
             }
             prequalificationGroup.updateSupervisionOfficeId(memberOfficeContext.supervisionOfficeId());
-            if (prequalificationGroup.getAgency() == null && memberOfficeContext.agencyId() != null) {
+            if (memberOfficeContext.agencyId() != null) {
                 prequalificationGroup
                         .updateAgency(this.agencyRepositoryWrapper.findOneWithNotFoundDetection(memberOfficeContext.agencyId()));
             }
