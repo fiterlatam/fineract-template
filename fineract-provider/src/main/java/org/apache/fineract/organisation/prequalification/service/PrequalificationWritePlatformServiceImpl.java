@@ -197,9 +197,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
 
         }
         Optional<LoanProduct> productOption = this.loanProductRepository.findById(productId);
-        if (productOption.isEmpty()) {
-            throw new LoanProductNotFoundException(productId);
-        }
+        if (productOption.isEmpty()) throw new LoanProductNotFoundException(productId);
         LoanProduct loanProduct = productOption.get();
 
         AppUser facilitator = null;
@@ -475,9 +473,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
             LoanProduct newLoanProduct = null;
             if (newValue != null) {
                 Optional<LoanProduct> productOption = this.loanProductRepository.findById(newValue);
-                if (productOption.isEmpty()) {
-                    throw new LoanProductNotFoundException(newValue);
-                }
+                if (productOption.isEmpty()) throw new LoanProductNotFoundException(newValue);
                 newLoanProduct = productOption.get();
             }
             prequalificationGroup.updateProduct(newLoanProduct);
@@ -548,9 +544,8 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
             Integer status = prequalificationGroup.getStatus();
             List<PrequalificationStatusLog> statusLogList = this.preQualificationLogRepository.groupStatusLogs(status,
                     prequalificationGroup);
-            if (statusLogList.isEmpty()) {
+            if (statusLogList.isEmpty())
                 throw new PrequalificationStatusNotCompletedException(PrequalificationStatus.fromInt(status).toString());
-            }
 
             // retrieve latest log update assignee
             PrequalificationStatusLog statusLog = statusLogList.get(0);
@@ -790,8 +785,10 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
                 }
             }
         } catch (Exception e) {
-            LOG.error("Error updating expired prequalifications", e);
-            throw new JobExecutionException(List.of(e));
+            e.printStackTrace();
+            List<Throwable> problems = new ArrayList<>();
+            problems.add(e);
+            throw new JobExecutionException(problems);
         }
 
     }
@@ -1207,12 +1204,9 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
                 loan.getLoanProductRelatedDetail().getInterestCalculationPeriodMethod().getValue());
         jsonObject.addProperty("interestType", loan.getLoanProductRelatedDetail().getInterestMethod().getValue());
         jsonObject.addProperty("loanType", AccountType.fromInt(loan.getLoanType()).getName());
-        if (renegotiationById.getProposedInterest() != null) {
+        if (renegotiationById.getProposedInterest() != null)
             jsonObject.addProperty("interestRatePerPeriod", renegotiationById.getProposedInterest());
-        }
-        if (renegotiationById.getProposedAmount() != null) {
-            jsonObject.addProperty("principal", renegotiationById.getProposedAmount());
-        }
+        if (renegotiationById.getProposedAmount() != null) jsonObject.addProperty("principal", renegotiationById.getProposedAmount());
         jsonObject.addProperty("isEqualAmortization", loan.getLoanProductRelatedDetail().isEqualAmortization());
         jsonObject.addProperty("amortizationType", loan.getLoanProductRelatedDetail().getAmortizationMethod().getValue());
 
@@ -1482,9 +1476,8 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
 
         Integer status = prequalificationGroup.getStatus();
         List<PrequalificationStatusLog> statusLogList = this.preQualificationLogRepository.groupStatusLogs(status, prequalificationGroup);
-        if (statusLogList.isEmpty()) {
+        if (statusLogList.isEmpty())
             throw new PrequalificationStatusNotCompletedException(PrequalificationStatus.fromInt(status).toString());
-        }
 
         // retrieve latest log update assignee
         PrequalificationStatusLog prequalificationStatusLog = statusLogList.get(0);
@@ -1500,9 +1493,8 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         PrequalificationGroup prequalificationGroup = groupMember.getPrequalificationGroup();
         Integer status = prequalificationGroup.getStatus();
         List<PrequalificationStatusLog> statusLogList = this.preQualificationLogRepository.groupStatusLogs(status, prequalificationGroup);
-        if (statusLogList.isEmpty()) {
+        if (statusLogList.isEmpty())
             throw new PrequalificationStatusNotCompletedException(PrequalificationStatus.fromInt(status).toString());
-        }
 
         PrequalificationStatusLog prequalificationStatusLog = statusLogList.get(0);
         prequalificationStatusLog.updateSubStatus(PrequalificationSubStatus.RE_VALIDATE.getValue());
@@ -1677,7 +1669,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
                 return;
             }
             prequalificationGroup.updateSupervisionOfficeId(memberOfficeContext.supervisionOfficeId());
-            if (prequalificationGroup.getAgency() == null && memberOfficeContext.agencyId() != null) {
+            if (memberOfficeContext.agencyId() != null) {
                 prequalificationGroup
                         .updateAgency(this.agencyRepositoryWrapper.findOneWithNotFoundDetection(memberOfficeContext.agencyId()));
             }
