@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements. See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership. The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License. You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied. See the License for the
+    specific language governing permissions and limitations
+    under the License.
+
+-->
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.1.xsd">
+
+    <changeSet id="1" author="Fiter">
+        <sql>
+            <![CDATA[
+                UPDATE m_prequalification_group g
+                INNER JOIN (
+                    SELECT
+                        mpgm.group_id,
+                        MIN(ms.agency_id) AS agency_id
+                    FROM m_prequalification_group_members mpgm
+                    INNER JOIN m_client mc ON mc.dpi = mpgm.dpi
+                    INNER JOIN m_group_client mgc ON mgc.client_id = mc.id
+                    INNER JOIN m_group mg ON mg.id = mgc.group_id
+                    INNER JOIN m_group center ON center.id = mg.parent_id
+                    INNER JOIN m_portfolio mp ON mp.id = center.portfolio_id
+                    INNER JOIN m_supervision ms ON ms.id = mp.supervision_id
+                    WHERE ms.agency_id IS NOT NULL
+                    GROUP BY mpgm.group_id
+                ) memberAgency ON memberAgency.group_id = g.id
+                SET g.agency_id = memberAgency.agency_id
+                WHERE g.prequalification_type_enum = 1;
+            ]]>
+        </sql>
+    </changeSet>
+
+    <changeSet id="2" author="Fiter">
+        <sql>
+            <![CDATA[
+                UPDATE m_prequalification_group g
+                INNER JOIN m_supervision ms on ms.agency_id = g.agency_id
+                SET g.supervision_office_id = ms.linked_office_id
+                WHERE g.prequalification_type_enum =2;
+            ]]>
+        </sql>
+    </changeSet>
+
+</databaseChangeLog>
