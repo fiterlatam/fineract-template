@@ -623,7 +623,7 @@ public class JsonParserHelper {
             final ApiParameterError error = ApiParameterError.parameterErrorWithValue("validation.msg.invalid.integer.format",
                     "The parameter `" + parameterName + "` has value: " + numericalValueFormatted
                             + " which is invalid integer value for provided locale of [" + clientApplicationLocale.toString() + "].",
-                    parameterName, numericalValueFormatted,parameterName, numericalValueFormatted, clientApplicationLocale);
+                    parameterName, numericalValueFormatted, parameterName, numericalValueFormatted, clientApplicationLocale);
             dataValidationErrors.add(error);
 
             throw new PlatformApiDataValidationException("validation.msg.validation.errors.exist", "Validation errors exist.",
