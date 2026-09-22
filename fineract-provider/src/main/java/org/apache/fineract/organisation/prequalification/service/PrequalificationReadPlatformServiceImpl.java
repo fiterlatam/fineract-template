@@ -622,6 +622,7 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
                     + PrequalificationStatus.PRE_COMMITTEE_D_PENDING_APPROVAL_WITH_EXCEPTIONS.getValue().toString();
             default -> statusValues = PrequalificationStatus.INVALID.getValue().toString();
         }
+
         return statusValues;
     }
 
