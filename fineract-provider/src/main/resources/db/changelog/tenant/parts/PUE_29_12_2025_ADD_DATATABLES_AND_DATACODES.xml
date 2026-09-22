@@ -1998,7 +1998,7 @@
         </preConditions>
         <sql>
             ALTER TABLE `p_solicitante`
-                CHANGE COLUMN `record_crediticio_PDA` `creditRecordPDAOptions_cd_record_crediticio_PDA` integer;
+                CHANGE COLUMN `pda_options_pae_cd_record_crediticio_PDA` `creditRecordPDAOptions_cd_record_crediticio_PDA` integer;
         </sql>
     </changeSet>
     <changeSet id="15042026_2" author="brian">
