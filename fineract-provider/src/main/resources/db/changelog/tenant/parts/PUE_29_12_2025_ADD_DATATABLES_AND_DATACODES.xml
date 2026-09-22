@@ -2099,7 +2099,7 @@
                 DROP COLUMN  guarantee_cd_garantia;
         </sql>
     </changeSet>
-    <changeSet id="" author="brian">
+    <changeSet id="29042026_2" author="brian">
         <preConditions onFail="MARK_RAN">
                 <columnExists tableName="p_solicitante" columnName="guarantee_cd_garantia"/>
         </preConditions>
