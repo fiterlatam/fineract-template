@@ -199,4 +199,6 @@
     <include file="parts/PUE_2026_04_29_DECIMAL_FIELD_UPDATES.xml" relativeToChangelogFile="true"/>
     <include file="parts/PUE_2026_05_01_INDEX_PREQUALIFICATION_TABLE.xml" relativeToChangelogFile="true"/>
     <include file="parts/PUE_2026_08_27_UPDATE_PREQUALIFICATION_PERMISSIONS_GROUPING.xml" relativeToChangelogFile="true"/>
+    <include file="parts/PUE_2026_09_07_INSERT_COMMITTEE_APPROVAL_LIMITS.xml" relativeToChangelogFile="true"/>
+    <include file="parts/PUE_2026_09_29_ADD_PLAN_NEGOCIO_COLUMNS_P_SOLICITANTE.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>
