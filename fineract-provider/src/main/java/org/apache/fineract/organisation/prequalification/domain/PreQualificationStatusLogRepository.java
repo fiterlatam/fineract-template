@@ -32,7 +32,7 @@ public interface PreQualificationStatusLogRepository
     @Query("SELECT sl FROM PrequalificationStatusLog sl WHERE sl.prequalificationGroup = :preqGroup AND sl.toStatus = :status ORDER BY sl.id desc")
     List<PrequalificationStatusLog> groupStatusLogs(@Param("status") Integer status, @Param("preqGroup") PrequalificationGroup preqGroup);
 
-    @Query("SELECT sl FROM PrequalificationStatusLog sl WHERE sl.prequalificationGroup.id = :preqGroup ORDER BY sl.id desc")
+    @Query("SELECT sl FROM PrequalificationStatusLog sl JOIN FETCH sl.addedBy WHERE sl.prequalificationGroup.id = :preqGroup ORDER BY sl.id desc")
     List<PrequalificationStatusLog> groupStatusLogs(@Param("preqGroup") Long preqGroup);
 
     PrequalificationStatusLog findTopByPrequalificationGroupIdOrderByIdDesc(Long groupId);

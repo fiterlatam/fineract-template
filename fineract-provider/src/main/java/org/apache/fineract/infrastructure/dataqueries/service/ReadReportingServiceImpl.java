@@ -414,7 +414,7 @@ public class ReadReportingServiceImpl implements ReadReportingService {
                 sql += " where exists" + " (select 'f'" + " from m_appuser_role ur " + " join m_role role on role.id = ur.role_id"
                         + " join m_role_permission rp_perm on rp_perm.role_id = role.id"
                         + " join m_permission perm on perm.id = rp_perm.permission_id" + " where ur.appuser_id = " + userId
-                        + " and (perm.code in ('ALL_FUNCTIONS', 'ALL_FUNCTIONS_READ', 'REPORTING_SUPER_USER') or perm.code = r.report_permission)) ";
+                        + " and (perm.code in ('ALL_FUNCTIONS', 'REPORTING_SUPER_USER') or perm.code = r.report_permission)) ";
                 sql += " order by r.id, rp.parameter_id";
             }
 
