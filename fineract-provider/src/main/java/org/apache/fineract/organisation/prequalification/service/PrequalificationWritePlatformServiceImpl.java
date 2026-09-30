@@ -224,6 +224,8 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
             if (facilitatorId != null) {
                 facilitator = this.appUserRepository.findById(facilitatorId).orElseThrow(() -> new UserNotFoundException(facilitatorId));
             }
+        } else if (agencyId != null) {
+            agency = this.agencyRepositoryWrapper.findOneWithNotFoundDetection(agencyId);
         }
 
         AppUser addedBy = this.context.getAuthenticatedUserIfPresent();
@@ -1669,7 +1671,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
                 return;
             }
             prequalificationGroup.updateSupervisionOfficeId(memberOfficeContext.supervisionOfficeId());
-            if (memberOfficeContext.agencyId() != null) {
+            if (prequalificationGroup.getAgency() == null && memberOfficeContext.agencyId() != null) {
                 prequalificationGroup
                         .updateAgency(this.agencyRepositoryWrapper.findOneWithNotFoundDetection(memberOfficeContext.agencyId()));
             }
