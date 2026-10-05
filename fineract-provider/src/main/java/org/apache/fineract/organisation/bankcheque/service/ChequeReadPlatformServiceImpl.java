@@ -31,8 +31,10 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 import java.util.stream.Collectors;
+import javax.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.binary.Base64;
@@ -61,7 +63,6 @@ import org.apache.fineract.organisation.bankcheque.data.ChequeData;
 import org.apache.fineract.organisation.bankcheque.data.ChequeSearchParams;
 import org.apache.fineract.organisation.bankcheque.data.GuaranteeData;
 import org.apache.fineract.organisation.bankcheque.domain.BankChequeStatus;
-import org.apache.fineract.organisation.bankcheque.exception.BankChequeException;
 import org.apache.fineract.organisation.bankcheque.exception.BatchChequeRequestNotFoundException;
 import org.apache.fineract.organisation.bankcheque.exception.BatchNotFoundException;
 import org.apache.fineract.organisation.office.domain.OfficeHierarchyLevel;
@@ -80,7 +81,6 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
-import javax.annotation.PostConstruct;
 
 @Component
 @Slf4j
@@ -474,51 +474,6 @@ public class ChequeReadPlatformServiceImpl implements ChequeReadPlatformService 
             }
         }
         return guaranteeDataList;
-    }
-
-    private String resolveCaseIdByDpi(final String dpi, final Long clientId) {
-        final String loanAdditionalSql = """
-                SELECT clap.case_id
-                FROM m_client_loan_additional_properties clap
-                INNER JOIN m_client c ON c.id = clap.client_id
-                WHERE c.dpi = ? AND clap.case_id IS NOT NULL AND TRIM(clap.case_id) <> ''
-                ORDER BY clap.id DESC
-                LIMIT 1
-                """;
-        final String paeAdditionalSql = """
-                SELECT pae.case_id
-                FROM m_pae_loan_additional_data pae
-                INNER JOIN m_loan l ON l.id = pae.loan_id
-                INNER JOIN m_client c ON c.id = l.client_id
-                WHERE c.dpi = ? AND pae.case_id IS NOT NULL AND TRIM(pae.case_id) <> ''
-                ORDER BY pae.id DESC
-                LIMIT 1
-                """;
-        final String bankChequeSql = """
-                SELECT mbc.case_id
-                FROM m_bank_check mbc
-                WHERE mbc.numero_cliente = ? AND mbc.case_id IS NOT NULL AND TRIM(mbc.case_id) <> ''
-                  AND mbc.guarantee_id IS NOT NULL
-                ORDER BY mbc.id DESC
-                LIMIT 1
-                """;
-        String caseId = this.queryLatestCaseId(loanAdditionalSql, dpi);
-        if (StringUtils.isBlank(caseId)) {
-            caseId = this.queryLatestCaseId(paeAdditionalSql, dpi);
-        }
-        if (StringUtils.isBlank(caseId)) {
-            caseId = this.queryLatestCaseId(bankChequeSql, dpi);
-        }
-        if (StringUtils.isBlank(caseId)) {
-            throw new BankChequeException("guarantee.case.id.not.found.for.dpi",
-                    "Case ID not found for client DPI " + dpi + " and client id " + clientId);
-        }
-        return caseId;
-    }
-
-    private String queryLatestCaseId(final String sql, final String dpi) {
-        final List<String> caseIds = this.jdbcTemplate.query(sql, (rs, rowNum) -> rs.getString("case_id"), dpi);
-        return caseIds.isEmpty() ? null : caseIds.get(0);
     }
 
     @Override
