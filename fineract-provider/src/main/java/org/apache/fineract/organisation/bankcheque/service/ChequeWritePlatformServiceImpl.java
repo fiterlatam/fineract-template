@@ -881,13 +881,6 @@ public class ChequeWritePlatformServiceImpl implements ChequeWritePlatformServic
         cheque.setPrintedBy(currentUser);
         cheque.setPrintedDate(localDate);
         this.chequeBatchRepositoryWrapper.updateCheque(cheque);
-        if (Boolean.TRUE.equals(chequeData.getReassingedCheque()) && chequeData.getReassignedFrom() != null) {
-            Cheque reassignedCheque = this.chequeBatchRepositoryWrapper.findOneChequeWithNotFoundDetection(chequeData.getReassignedFrom());
-            reassignedCheque.setStatus(BankChequeStatus.VOIDED.getValue());
-            reassignedCheque.setVoidedDate(localDate);
-            reassignedCheque.setVoidedBy(currentUser);
-            this.chequeBatchRepositoryWrapper.updateCheque(reassignedCheque);
-        }
     }
 
     public String extractDecimals(BigDecimal value) {
