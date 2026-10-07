@@ -92,6 +92,7 @@ import org.apache.fineract.organisation.prequalification.domain.LoanAdditionProp
 import org.apache.fineract.organisation.prequalification.domain.LoanAdditionalPropertiesRepository;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationGroup;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationGroupRepositoryWrapper;
+import org.apache.fineract.organisation.prequalification.domain.PrequalificationStatus;
 import org.apache.fineract.organisation.prequalification.domain.pae_entities.LoanAdditionalDataPAEEntity;
 import org.apache.fineract.organisation.prequalification.domain.pae_entities.LoanAdditionalDataPAERepository;
 import org.apache.fineract.organisation.prequalification.exception.PrequalificationNotProvidedException;
@@ -3149,6 +3150,12 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                 final Note note = Note.loanNote(loan, noteText);
                 this.noteRepository.save(note);
             }
+        }
+
+        PrequalificationGroup prequalificationGroup = loan.getPrequalificationGroup();
+        if (prequalificationGroup !=null){
+            prequalificationGroup.updateStatus(PrequalificationStatus.WITHDRAWN_BY_CLIENT);
+            this.prequalificationGroupRepositoryWrapper.saveAndFlush(prequalificationGroup);
         }
 
         return new CommandProcessingResultBuilder() //
