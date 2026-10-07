@@ -122,6 +122,8 @@ public final class PreQualificationsEnumerations {
                     "PRE_COMMITTEE_D_PENDING_APPROVAL_WITH_EXCEPTIONS");
             case RENEGOTIATION_AGENCY_LEAD -> new EnumOptionData(PrequalificationStatus.RENEGOTIATION_AGENCY_LEAD.getValue().longValue(),
                     PrequalificationStatus.RENEGOTIATION_AGENCY_LEAD.getCode(), "RENEGOTIATION_AGENCY_LEAD");
+            case WITHDRAWN_BY_CLIENT -> new EnumOptionData(PrequalificationStatus.WITHDRAWN_BY_CLIENT.getValue().longValue(),
+                    PrequalificationStatus.WITHDRAWN_BY_CLIENT.getCode(), "WITHDRAWN_BY_CLIENT");
             default -> new EnumOptionData(PrequalificationStatus.INVALID.getValue().longValue(), PrequalificationStatus.INVALID.getCode(),
                     "INVALID");
         };

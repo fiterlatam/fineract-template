@@ -63,7 +63,7 @@ public enum PrequalificationStatus {
                                                                                                                                                                                     0,
                                                                                                                                                                                     "prequalification.status.invalid"), RENEGOTIATION_AGENCY_LEAD(
                                                                                                                                                                                             1007,
-                                                                                                                                                                                            "prequalification.status.renegotiations");
+                                                                                                                                                                                            "prequalification.status.renegotiations"), WITHDRAWN_BY_CLIENT(304, "prequalification.status.withdrawn");
 
     private final Integer value;
     private final String code;
@@ -143,6 +143,8 @@ public enum PrequalificationStatus {
             break;
             case 914:
                 enumeration = PrequalificationStatus.PRE_COMMITTEE_A_PENDING_APPROVAL_WITH_EXCEPTIONS;
+            case 304:
+                enumeration = PrequalificationStatus.WITHDRAWN_BY_CLIENT;
             break;
         }
         return enumeration;
@@ -209,6 +211,8 @@ public enum PrequalificationStatus {
             clientStatus = PrequalificationStatus.PRE_COMMITTEE_A_PENDING_APPROVAL_WITH_EXCEPTIONS;
         } else if (status.equalsIgnoreCase(PrequalificationStatus.RENEGOTIATION_AGENCY_LEAD.toString())) {
             clientStatus = PrequalificationStatus.RENEGOTIATION_AGENCY_LEAD;
+        } else if (status.equalsIgnoreCase(PrequalificationStatus.WITHDRAWN_BY_CLIENT.toString())) {
+            clientStatus = PrequalificationStatus.WITHDRAWN_BY_CLIENT;
         } else {
             clientStatus = PrequalificationStatus.INVALID;
         }
