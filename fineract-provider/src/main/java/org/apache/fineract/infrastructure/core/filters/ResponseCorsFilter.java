@@ -39,21 +39,15 @@ public class ResponseCorsFilter implements ContainerResponseFilter {
     @Override
     public void filter(final ContainerRequestContext request, final ContainerResponseContext response) {
 
-        final String origin = request.getHeaders().getFirst("Origin");
-        if (StringUtils.hasText(origin)) {
-            response.getHeaders().putSingle("Access-Control-Allow-Origin", origin);
-            response.getHeaders().putSingle("Access-Control-Allow-Credentials", "true");
-        } else {
-            response.getHeaders().putSingle("Access-Control-Allow-Origin", "*");
-        }
+        response.getHeaders().add("Access-Control-Allow-Origin", "*");
         // .header("Access-Control-Expose-Headers",
         // "Fineract-Platform-TenantId")
-        response.getHeaders().putSingle("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+        response.getHeaders().add("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
 
         final String reqHead = request.getHeaders().getFirst("Access-Control-Request-Headers");
 
         if (null != reqHead && StringUtils.hasText(reqHead)) {
-            response.getHeaders().putSingle("Access-Control-Allow-Headers", reqHead);
+            response.getHeaders().add("Access-Control-Allow-Headers", reqHead);
         }
     }
 }
