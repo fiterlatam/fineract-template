@@ -924,7 +924,7 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             this.schema = """
                     	m.id AS id,
                     	m.name,
-                    	ml.id as loanId,
+                    	MAX(ml.id) as loanId,
                     	m.status,
                     	m.comments as comments,
                     	m.agency_bureau_status as agencyBureauStatus,
