@@ -253,6 +253,9 @@ public class GroupPrequalificationApiResource {
         if (StringUtils.equals(groupingType, "individual")) {
             return PrequalificationType.INDIVIDUAL.getValue();
         }
+        if (StringUtils.equals(groupingType, "pae")) {
+            return PrequalificationType.PAE.getValue();
+        }
         return null;
     }
 
@@ -267,6 +270,9 @@ public class GroupPrequalificationApiResource {
         }
         if (StringUtils.equalsIgnoreCase(type, "exceptionsqueue")) {
             return Arrays.asList(status(PrequalificationStatus.AGENCY_LEAD_APPROVED_WITH_EXCEPTIONS));
+        }
+        if (StringUtils.equalsIgnoreCase(type, "renegotiations")) {
+            return Arrays.asList(status(PrequalificationStatus.RENEGOTIATION_AGENCY_LEAD));
         }
         if (StringUtils.equalsIgnoreCase(type, "checked")) {
             return Arrays.asList(status(PrequalificationStatus.BURO_CHECKED));
