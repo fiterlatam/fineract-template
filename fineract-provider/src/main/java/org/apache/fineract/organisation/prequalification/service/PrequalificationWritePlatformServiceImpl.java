@@ -105,7 +105,6 @@ import org.apache.fineract.organisation.prequalification.serialization.Prequalif
 import org.apache.fineract.portfolio.accountdetails.domain.AccountType;
 import org.apache.fineract.portfolio.blacklist.domain.BlacklistStatus;
 import org.apache.fineract.portfolio.client.service.ClientChargeWritePlatformServiceJpaRepositoryImpl;
-import org.apache.fineract.portfolio.client.service.ClientReadPlatformService;
 import org.apache.fineract.portfolio.common.domain.PeriodFrequencyType;
 import org.apache.fineract.portfolio.group.domain.Group;
 import org.apache.fineract.portfolio.group.domain.GroupRepositoryWrapper;
@@ -1162,8 +1161,8 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
                 .withReportToPrint(reportToPrint).withLoanId(loanId).build();
     }
 
-    private CommandProcessingResult approveRenegotiation(PrequalificationGroup prequalificationGroup, AppUser addedBy,
-                                                         JsonCommand command, Renegotiation renegotiationById) {
+    private CommandProcessingResult approveRenegotiation(PrequalificationGroup prequalificationGroup, AppUser addedBy, JsonCommand command,
+            Renegotiation renegotiationById) {
 
         // approve renegotiation
         renegotiationById.setStatus("APPROVED");
@@ -1319,7 +1318,8 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
             final boolean isApproved = PrequalificationStatus.COMPLETED.equals(prequalificationStatus)
                     && (memberPrequalificationData.getIsSelected() || prequalificationGroup.isPrequalificationTypeIndividual());
             final boolean isRejected = PrequalificationStatus.REJECTED.equals(prequalificationStatus)
-                    || (memberPrequalificationData.getIsSelected() != null && !memberPrequalificationData.getIsSelected() && PrequalificationStatus.COMPLETED.equals(prequalificationStatus)
+                    || (memberPrequalificationData.getIsSelected() != null && !memberPrequalificationData.getIsSelected()
+                            && PrequalificationStatus.COMPLETED.equals(prequalificationStatus)
                             && prequalificationGroup.isPrequalificationTypeGroup());
             final BigDecimal approvedLoanAmount = prequalificationGroupMember.getApprovedAmount();
             final String dpi = prequalificationGroupMember.getDpi();
@@ -1529,9 +1529,9 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
             List<PrequalificationGroupMember> members = prequalificationGroup.getMembers();
             BigDecimal totalApprovedAmount = BigDecimal.ZERO;
             for (PrequalificationGroupMember member : members) {
-                if (member.getApprovedAmount().compareTo(member.getRequestedAmount())>=0){
+                if (member.getApprovedAmount().compareTo(member.getRequestedAmount()) >= 0) {
                     totalApprovedAmount = totalApprovedAmount.add(member.getApprovedAmount());
-                }else{
+                } else {
                     totalApprovedAmount = totalApprovedAmount.add(member.getRequestedAmount());
                 }
             }

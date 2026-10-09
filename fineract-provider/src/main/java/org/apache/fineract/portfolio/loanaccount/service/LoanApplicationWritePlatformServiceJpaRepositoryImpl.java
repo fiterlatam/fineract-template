@@ -171,7 +171,6 @@ import org.apache.fineract.portfolio.loanapplicationdraft.service.LoanApplicatio
 import org.apache.fineract.portfolio.loanproduct.LoanProductConstants;
 import org.apache.fineract.portfolio.loanproduct.data.LoanProductData;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProduct;
-import org.apache.fineract.portfolio.loanproduct.domain.LoanProductOwnerType;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProductRelatedDetail;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanProductRepository;
 import org.apache.fineract.portfolio.loanproduct.domain.LoanTransactionProcessingStrategy;
@@ -3132,7 +3131,7 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
         }
 
         PrequalificationGroup prequalificationGroup = loan.getPrequalificationGroup();
-        if (prequalificationGroup !=null){
+        if (prequalificationGroup != null) {
             prequalificationGroup.updateStatus(PrequalificationStatus.WITHDRAWN_BY_CLIENT);
             this.prequalificationGroupRepositoryWrapper.saveAndFlush(prequalificationGroup);
         }

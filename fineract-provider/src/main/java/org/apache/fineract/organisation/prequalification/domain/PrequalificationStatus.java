@@ -63,7 +63,9 @@ public enum PrequalificationStatus {
                                                                                                                                                                                     0,
                                                                                                                                                                                     "prequalification.status.invalid"), RENEGOTIATION_AGENCY_LEAD(
                                                                                                                                                                                             1007,
-                                                                                                                                                                                            "prequalification.status.renegotiations"), WITHDRAWN_BY_CLIENT(304, "prequalification.status.withdrawn");
+                                                                                                                                                                                            "prequalification.status.renegotiations"), WITHDRAWN_BY_CLIENT(
+                                                                                                                                                                                                    304,
+                                                                                                                                                                                                    "prequalification.status.withdrawn");
 
     private final Integer value;
     private final String code;

@@ -208,7 +208,8 @@ public class PrequalificationReadPlatformServiceImpl implements Prequalification
             List<PrequalificationStatusLog> prequalificationStatusLogs = this.preQualificationLogRepository.groupStatusLogs(groupId);
             List<PrequalificationTimeline> currentStatusTimeline = resolveCurrentStatusTimeline(group.get(), prequalificationStatusLogs);
             List<EnumOptionData> expectedTimeline = resolveFutureStatusTimeline();
-            if (group.get().getLoanProduct().getRequireCommitteeApproval() != null && group.get().getLoanProduct().getRequireCommitteeApproval()) {
+            if (group.get().getLoanProduct().getRequireCommitteeApproval() != null
+                    && group.get().getLoanProduct().getRequireCommitteeApproval()) {
                 expectedTimeline = resolveCommitteeApprovalsTimeline(clientData, group.get(), expectedTimeline);
             }
             clientData.updateCurrentStatusTimeline(currentStatusTimeline);

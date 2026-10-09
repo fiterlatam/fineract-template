@@ -276,7 +276,6 @@ ALTER TABLE m_product_loan_variations_borrower_cycle MODIFY min_value DECIMAL(19
 ALTER TABLE m_provisioning_criteria_definition MODIFY provision_percentage DECIMAL(5,2);
 ALTER TABLE m_rate MODIFY percentage DECIMAL(10,2);
 ALTER TABLE m_repayment_with_post_dated_checks MODIFY amount DECIMAL(20,2);
-ALTER TABLE m_restructure_credit_requests MODIFY extension_amount DECIMAL(10,2);
 ALTER TABLE m_restructure_credit_requests MODIFY total_loan_amount DECIMAL(19,2);
 ALTER TABLE m_restructure_credits_loans_mapping MODIFY outstanding_balance DECIMAL(19,2);
 ALTER TABLE m_savings_account_charge MODIFY amount DECIMAL(19,2);

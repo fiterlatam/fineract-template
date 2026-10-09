@@ -203,9 +203,7 @@ public class GroupPrequalificationApiResource {
 
         Long agencyId = null;
         Long centerId = null;
-        if (!StringUtils.isBlank(groupId)) {
-            agencyId = this.prequalificationReadPlatformService.retrieveAgencyId(Long.valueOf(groupId));
-        }
+
         if (queryParameters.getFirst("agencyId") != null) {
             agencyId = NumberUtils.toLong(queryParameters.getFirst("agencyId"), Long.MAX_VALUE);
         }

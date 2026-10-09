@@ -18,17 +18,18 @@
  */
 package org.apache.fineract.infrastructure.codes.data;
 
+import java.util.Collection;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.fineract.organisation.paedocumentation.data.PaeRequiredDocumentData;
-
-import java.util.Collection;
 
 /**
  * Immutable data object represent code-value data in system.
  */
 public class CodeValueDataExtended extends CodeValueData {
-    @Getter @Setter
+
+    @Getter
+    @Setter
     private Collection<PaeRequiredDocumentData> extraData;
 
     public CodeValueDataExtended(Long id) {
@@ -36,12 +37,12 @@ public class CodeValueDataExtended extends CodeValueData {
     }
 
     public static CodeValueDataExtended instance(final Long id, final String name, final Integer position, final String description,
-                                         final boolean isActive, final boolean mandatory) {
+            final boolean isActive, final boolean mandatory) {
         return new CodeValueDataExtended(id, name, position, description, isActive, mandatory);
     }
 
     private CodeValueDataExtended(final Long id, final String name, final Integer position, final String description, final boolean active,
-                          final boolean mandatory) {
+            final boolean mandatory) {
         super(id, name, position, description, active, mandatory);
     }
 

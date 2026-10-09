@@ -210,7 +210,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
             final AccountDetailsReadPlatformService accountDetailsReadPlatformService, final LoanRepositoryWrapper loanRepositoryWrapper,
             final ColumnValidator columnValidator, DatabaseSpecificSQLGenerator sqlGenerator, PaginationHelper paginationHelper,
             LoanAdditionalPropertiesRepository loanAdditionalPropertiesRepository, AgencyReadPlatformService agencyReadPlatformService,
-            PaeRequiredDocumentReadPlatformService paeRequiredDocumentReadPlatformService) {
+            PaeRequiredDocumentReadPlatformService paeRequiredDocumentReadPlatformService,LoanAdditionalDataPAERepository loanAdditionalDataPAERepository) {
         this.context = context;
         this.loanRepositoryWrapper = loanRepositoryWrapper;
         this.applicationCurrencyRepository = applicationCurrencyRepository;
@@ -239,6 +239,7 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
         this.loanAdditionalPropertiesRepository = loanAdditionalPropertiesRepository;
         this.agencyReadPlatformService = agencyReadPlatformService;
         this.paeRequiredDocumentReadPlatformService = paeRequiredDocumentReadPlatformService;
+        this.loanAdditionalDataPAERepository = loanAdditionalDataPAERepository;
     }
 
     @Override
