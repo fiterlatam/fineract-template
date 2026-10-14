@@ -25,6 +25,7 @@
 
 
     <changeSet author="aocampo" id="006-create-p_fiador-datatable">
+        <validCheckSum>ANY</validCheckSum>
 
         <dropTable tableName="p_fiador" cascadeConstraints="true"/>
 
@@ -41,7 +42,7 @@
             <column name="primer_apellido" type="varchar(100)"/>
             <column name="segundo_apellido" type="varchar(100)"/>
             <column name="apellido_casada" type="varchar(100)"/>
-            <column name="DPI_fiador_tercero" type="integer"/>
+            <column name="DPI_fiador_tercero" type="varchar(50)"/>
             <column name="fecha_vencimiento_DPI" type="DATE"/>
             <column name="direccion_notificaciones" type="TEXT"/>
             <column name="fecha_nacimiento" type="DATE"/>
@@ -90,6 +91,13 @@
                                  onDelete="NO ACTION"
                                  onUpdate="NO ACTION"/>
 
+    </changeSet>
+
+    <changeSet author="aocampo" id="007-alter-p_fiador-dpi-to-varchar">
+        <preConditions onFail="MARK_RAN">
+            <columnExists tableName="p_fiador" columnName="DPI_fiador_tercero"/>
+        </preConditions>
+        <modifyDataType tableName="p_fiador" columnName="DPI_fiador_tercero" newDataType="varchar(50)"/>
     </changeSet>
 
     <changeSet author="aocampo" id="001-fix-p_garante-primary-key">
