@@ -218,11 +218,11 @@ public final class ResultsetColumnHeaderData implements Serializable {
         return "mediumint".equalsIgnoreCase(this.columnType);
     }
 
-    private boolean isBigInt() {
+    public boolean isBigInt() {
         return "bigint".equalsIgnoreCase(this.columnType) || "int8".equalsIgnoreCase(this.columnType);
     }
 
-    private boolean isLong() {
+    public boolean isLong() {
         return "LONG".equalsIgnoreCase(this.columnType) || "LONGLONG".equalsIgnoreCase(this.columnType);
         // Refer org.drizzle.jdbc.internal.mysql.MySQLType.java
     }
