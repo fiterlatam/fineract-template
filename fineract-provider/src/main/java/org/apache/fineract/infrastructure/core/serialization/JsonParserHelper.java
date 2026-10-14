@@ -89,7 +89,7 @@ public class JsonParserHelper {
 
     public String extractStringNamed(final String parameterName, final JsonElement element, final Set<String> parametersPassedInRequest) {
         String stringValue = null;
-        if (element.isJsonObject()) {
+        if (element != null && element.isJsonObject()) {
             final JsonObject object = element.getAsJsonObject();
             if (object.has(parameterName) && object.get(parameterName).isJsonPrimitive()) {
                 parametersPassedInRequest.add(parameterName);
@@ -623,7 +623,78 @@ public class JsonParserHelper {
             final ApiParameterError error = ApiParameterError.parameterErrorWithValue("validation.msg.invalid.integer.format",
                     "The parameter `" + parameterName + "` has value: " + numericalValueFormatted
                             + " which is invalid integer value for provided locale of [" + clientApplicationLocale.toString() + "].",
-                    parameterName, numericalValueFormatted, numericalValueFormatted, clientApplicationLocale);
+                    parameterName, numericalValueFormatted, parameterName, numericalValueFormatted, clientApplicationLocale);
+            dataValidationErrors.add(error);
+
+            throw new PlatformApiDataValidationException("validation.msg.validation.errors.exist", "Validation errors exist.",
+                    dataValidationErrors, e);
+        }
+    }
+
+    public Long convertToLong(final String numericalValueFormatted, final String parameterName, final Locale clientApplicationLocale) {
+
+        if (clientApplicationLocale == null) {
+
+            final List<ApiParameterError> dataValidationErrors = new ArrayList<>();
+            final String defaultMessage = new StringBuilder(
+                    "The parameter `" + parameterName + "` requires a `locale` parameter to be passed with it.").toString();
+            final ApiParameterError error = ApiParameterError.parameterError("validation.msg.missing.locale.parameter", defaultMessage,
+                    parameterName);
+            dataValidationErrors.add(error);
+
+            throw new PlatformApiDataValidationException("validation.msg.validation.errors.exist", "Validation errors exist.",
+                    dataValidationErrors);
+        }
+
+        try {
+            Long number = null;
+
+            if (StringUtils.isNotBlank(numericalValueFormatted)) {
+
+                String source = numericalValueFormatted.trim();
+
+                final NumberFormat format = NumberFormat.getInstance(clientApplicationLocale);
+                final DecimalFormat df = (DecimalFormat) format;
+                final DecimalFormatSymbols symbols = df.getDecimalFormatSymbols();
+                df.setParseBigDecimal(true);
+
+                // http://bugs.sun.com/view_bug.do?bug_id=4510618
+                final char groupingSeparator = symbols.getGroupingSeparator();
+                if (groupingSeparator == '\u00a0') {
+                    source = source.replaceAll(" ", Character.toString('\u00a0'));
+                }
+
+                final Number parsedNumber = df.parse(source);
+
+                if (source.contains(Character.toString(symbols.getDecimalSeparator()))) {
+                    throw new ParseException(source, 0);
+                }
+
+                if (parsedNumber instanceof BigDecimal) {
+                    final BigDecimal bd = (BigDecimal) parsedNumber;
+                    try {
+                        number = bd.longValueExact();
+                    } catch (final ArithmeticException ae) {
+                        throw new ParseException(source, 0);
+                    }
+                } else {
+                    final double parsedNumberDouble = parsedNumber.doubleValue();
+                    final long parsedNumberLong = parsedNumber.longValue();
+                    if (!Double.valueOf(parsedNumberDouble).equals(Double.valueOf(Long.valueOf(parsedNumberLong)))) {
+                        throw new ParseException(source, 0);
+                    }
+                    number = parsedNumberLong;
+                }
+            }
+
+            return number;
+        } catch (final ParseException e) {
+
+            final List<ApiParameterError> dataValidationErrors = new ArrayList<>();
+            final ApiParameterError error = ApiParameterError.parameterErrorWithValue("validation.msg.invalid.integer.format",
+                    "The parameter `" + parameterName + "` has value: " + numericalValueFormatted
+                            + " which is invalid integer value for provided locale of [" + clientApplicationLocale.toString() + "].",
+                    parameterName, numericalValueFormatted, parameterName, numericalValueFormatted, clientApplicationLocale);
             dataValidationErrors.add(error);
 
             throw new PlatformApiDataValidationException("validation.msg.validation.errors.exist", "Validation errors exist.",
@@ -646,7 +717,7 @@ public class JsonParserHelper {
             final List<ApiParameterError> dataValidationErrors = new ArrayList<>();
             final ApiParameterError error = ApiParameterError.parameterErrorWithValue("validation.msg.invalid.integer",
                     "The parameter `" + parameterName + "` has value: " + numericalValueFormatted + " which is invalid integer.",
-                    parameterName, numericalValueFormatted, numericalValueFormatted);
+                    parameterName, numericalValueFormatted, parameterName, numericalValueFormatted);
             dataValidationErrors.add(error);
 
             throw new PlatformApiDataValidationException("validation.msg.validation.errors.exist", "Validation errors exist.",
@@ -701,7 +772,7 @@ public class JsonParserHelper {
             final ApiParameterError error = ApiParameterError.parameterErrorWithValue("validation.msg.invalid.decimal.format",
                     "The parameter `" + parameterName + "` has value: " + numericalValueFormatted
                             + " which is invalid decimal value for provided locale of [" + clientApplicationLocale + "].",
-                    parameterName, numericalValueFormatted, numericalValueFormatted, clientApplicationLocale);
+                    parameterName, numericalValueFormatted, parameterName, numericalValueFormatted, clientApplicationLocale);
             dataValidationErrors.add(error);
 
             throw new PlatformApiDataValidationException("validation.msg.validation.errors.exist", "Validation errors exist.",

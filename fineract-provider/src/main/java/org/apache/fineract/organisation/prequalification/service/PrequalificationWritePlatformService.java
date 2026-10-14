@@ -36,7 +36,7 @@ public interface PrequalificationWritePlatformService {
 
     CommandProcessingResult requestUpdates(Long entityId, JsonCommand command);
 
-    CommandProcessingResult sendForAnalysis(Long entityId, JsonCommand command);
+    CommandProcessingResult sendForAnalysis(Long entityId, JsonCommand command, Boolean withExceptions);
 
     CommandProcessingResult sendToAgency(Long entityId, JsonCommand command);
 
@@ -45,4 +45,11 @@ public interface PrequalificationWritePlatformService {
     CommandProcessingResult assignPrequalification(Long entityId, JsonCommand command);
 
     void uploadMemberDocs(Long memberId);
+
+    void addExceptionCommentsToPrequalification(Long blacklistId, String comment, String description);
+
+    CommandProcessingResult sendToFirstPhaseApproveCommitteeD(Long entityId, JsonCommand command, boolean withExceptions,
+            boolean nextPhase);
+
+    CommandProcessingResult restartFlow(Long entityId, JsonCommand command);
 }

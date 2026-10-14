@@ -205,7 +205,8 @@ public class EntityDatatableChecksWritePlatformServiceImpl implements EntityData
                 }
             }
             if (reqDatatables.size() > 0) {
-                throw new DatatableEntryRequiredException(reqDatatables.toString());
+                LOG.info("\"error.msg.entry.required.in.datatable {} skipped", reqDatatables.toString());
+                // throw new DatatableEntryRequiredException(reqDatatables.toString());
             }
         }
 
@@ -215,36 +216,71 @@ public class EntityDatatableChecksWritePlatformServiceImpl implements EntityData
     @Override
     public boolean saveDatatables(final Long status, final String entity, final Long entityId, final Long productId,
             final JsonArray datatableDatas) {
+
         final AppUser user = this.context.authenticatedUser();
         boolean isMakerCheckerEnabled = false;
-        if (datatableDatas != null && datatableDatas.size() > 0) {
-            for (JsonElement element : datatableDatas) {
-                final String datatableName = this.fromApiJsonHelper.extractStringNamed("registeredTableName", element);
-                final JsonObject datatableData = this.fromApiJsonHelper.extractJsonObjectNamed("data", element);
 
-                if (datatableName == null || datatableData == null) {
+        if (datatableDatas != null && datatableDatas.size() > 0) {
+
+            for (JsonElement element : datatableDatas) {
+
+                final JsonObject jsonObject = element.getAsJsonObject();
+
+                final String datatableName = this.fromApiJsonHelper.extractStringNamed("registeredTableName", element);
+
+                final JsonElement dataElement = jsonObject.get("data");
+
+                if (datatableName == null || dataElement == null) {
+
                     final ApiParameterError error = ApiParameterError.generalError(
                             "registeredTableName.and.data.parameters.must.be.present.in.each.list.items.in.datatables",
                             "registeredTableName and data parameters must be present in each list items in datatables");
+
                     List<ApiParameterError> errors = new ArrayList<>();
                     errors.add(error);
                     throw new PlatformApiDataValidationException(errors);
                 }
+
                 final String taskPermissionName = "CREATE_" + datatableName;
                 user.validateHasPermissionTo(taskPermissionName);
+
                 if (this.configurationDomainService.isMakerCheckerEnabledForTask(taskPermissionName)) {
                     isMakerCheckerEnabled = true;
                 }
+
                 try {
-                    this.readWriteNonCoreDataService.createNewDatatableEntry(datatableName, entityId, datatableData.toString());
+
+                    if (dataElement.isJsonArray()) {
+
+                        JsonArray dataArray = dataElement.getAsJsonArray();
+
+                        for (JsonElement row : dataArray) {
+                            this.readWriteNonCoreDataService.createNewDatatableEntry(datatableName, entityId,
+                                    row.getAsJsonObject().toString());
+                        }
+
+                    }
+
+                    else if (dataElement.isJsonObject()) {
+
+                        this.readWriteNonCoreDataService.createNewDatatableEntry(datatableName, entityId,
+                                dataElement.getAsJsonObject().toString());
+
+                    } else {
+                        throw new IllegalStateException("Data must be JsonObject or JsonArray");
+                    }
+
                 } catch (PlatformApiDataValidationException e) {
+
                     for (ApiParameterError error : e.getErrors()) {
                         error.setParameterName("datatables." + datatableName + "." + error.getParameterName());
                     }
+
                     throw e;
                 }
             }
         }
+
         return isMakerCheckerEnabled;
     }
 

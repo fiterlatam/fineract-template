@@ -18,6 +18,7 @@
  */
 package org.apache.fineract.portfolio.loanaccount.service;
 
+import static org.apache.fineract.portfolio.loanaccount.domain.LoanRepository.AGENCY_LEAD_BY_LOAN_ID_MOD;
 import static org.apache.fineract.portfolio.loanproduct.service.LoanEnumerations.interestType;
 
 import java.math.BigDecimal;
@@ -34,11 +35,14 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.accounting.common.AccountingRuleType;
 import org.apache.fineract.infrastructure.codes.data.CodeValueData;
+import org.apache.fineract.infrastructure.codes.data.CodeValueDataExtended;
 import org.apache.fineract.infrastructure.codes.domain.CodeValue;
 import org.apache.fineract.infrastructure.codes.domain.CodeValueRepositoryWrapper;
 import org.apache.fineract.infrastructure.codes.service.CodeValueReadPlatformService;
@@ -62,11 +66,16 @@ import org.apache.fineract.organisation.monetary.domain.ApplicationCurrency;
 import org.apache.fineract.organisation.monetary.domain.ApplicationCurrencyRepositoryWrapper;
 import org.apache.fineract.organisation.monetary.domain.MonetaryCurrency;
 import org.apache.fineract.organisation.monetary.domain.Money;
+import org.apache.fineract.organisation.paedocumentation.data.PaeRequiredDocumentData;
+import org.apache.fineract.organisation.paedocumentation.service.PaeRequiredDocumentReadPlatformService;
 import org.apache.fineract.organisation.prequalification.data.GroupPrequalificationData;
 import org.apache.fineract.organisation.prequalification.data.LoanAdditionalData;
+import org.apache.fineract.organisation.prequalification.data.LoanAdditionalDataPAE;
 import org.apache.fineract.organisation.prequalification.domain.LoanAdditionProperties;
 import org.apache.fineract.organisation.prequalification.domain.LoanAdditionalPropertiesRepository;
 import org.apache.fineract.organisation.prequalification.domain.PrequalificationType;
+import org.apache.fineract.organisation.prequalification.domain.pae_entities.LoanAdditionalDataPAEEntity;
+import org.apache.fineract.organisation.prequalification.domain.pae_entities.LoanAdditionalDataPAERepository;
 import org.apache.fineract.organisation.prequalification.service.PrequalificationReadPlatformServiceImpl;
 import org.apache.fineract.organisation.staff.data.StaffData;
 import org.apache.fineract.organisation.staff.service.StaffReadPlatformService;
@@ -132,6 +141,7 @@ import org.apache.fineract.portfolio.loanaccount.loanschedule.data.OverdueLoanSc
 import org.apache.fineract.portfolio.loanproduct.data.LoanProductData;
 import org.apache.fineract.portfolio.loanproduct.data.TransactionProcessingStrategyData;
 import org.apache.fineract.portfolio.loanproduct.domain.InterestMethod;
+import org.apache.fineract.portfolio.loanproduct.domain.LoanProductOwnerType;
 import org.apache.fineract.portfolio.loanproduct.service.LoanDropdownReadPlatformService;
 import org.apache.fineract.portfolio.loanproduct.service.LoanEnumerations;
 import org.apache.fineract.portfolio.loanproduct.service.LoanProductReadPlatformService;
@@ -180,8 +190,10 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
     private final ColumnValidator columnValidator;
     private final DatabaseSpecificSQLGenerator sqlGenerator;
     private final LoanAdditionalPropertiesRepository loanAdditionalPropertiesRepository;
+    private final LoanAdditionalDataPAERepository loanAdditionalDataPAERepository;
     private final AgencyReadPlatformService agencyReadPlatformService;
     private final PrequalificationReadPlatformServiceImpl.PrequalificationIndividualMappingsMapper prequalificationIndividualMappingsMapper = new PrequalificationReadPlatformServiceImpl.PrequalificationIndividualMappingsMapper();
+    private final PaeRequiredDocumentReadPlatformService paeRequiredDocumentReadPlatformService;
 
     @Autowired
     public LoanReadPlatformServiceImpl(final PlatformSecurityContext context,
@@ -197,7 +209,8 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
             final ConfigurationDomainService configurationDomainService, final CodeValueRepositoryWrapper codeValueRepositoryWrapper,
             final AccountDetailsReadPlatformService accountDetailsReadPlatformService, final LoanRepositoryWrapper loanRepositoryWrapper,
             final ColumnValidator columnValidator, DatabaseSpecificSQLGenerator sqlGenerator, PaginationHelper paginationHelper,
-            LoanAdditionalPropertiesRepository loanAdditionalPropertiesRepository, AgencyReadPlatformService agencyReadPlatformService) {
+            LoanAdditionalPropertiesRepository loanAdditionalPropertiesRepository, AgencyReadPlatformService agencyReadPlatformService,
+            PaeRequiredDocumentReadPlatformService paeRequiredDocumentReadPlatformService,LoanAdditionalDataPAERepository loanAdditionalDataPAERepository) {
         this.context = context;
         this.loanRepositoryWrapper = loanRepositoryWrapper;
         this.applicationCurrencyRepository = applicationCurrencyRepository;
@@ -225,6 +238,8 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
         this.codeValueRepositoryWrapper = codeValueRepositoryWrapper;
         this.loanAdditionalPropertiesRepository = loanAdditionalPropertiesRepository;
         this.agencyReadPlatformService = agencyReadPlatformService;
+        this.paeRequiredDocumentReadPlatformService = paeRequiredDocumentReadPlatformService;
+        this.loanAdditionalDataPAERepository = loanAdditionalDataPAERepository;
     }
 
     @Override
@@ -267,6 +282,15 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
                                 final LoanAdditionProperties loanAdditionProperties = loanAdditionalPropertiesList.get(0);
                                 final LoanAdditionalData loanAdditionalData = loanAdditionProperties.toData();
                                 loanAccountData.setLoanAdditionalData(loanAdditionalData);
+                            }
+                        }
+                        if (prequalificationType != null && PrequalificationType.PAE.name().equals(prequalificationType.getValue())) {
+                            Optional<LoanAdditionalDataPAEEntity> paeAdditionals = this.loanAdditionalDataPAERepository
+                                    .findByLoanId(loanId);
+                            if (!paeAdditionals.isEmpty()) {
+                                final LoanAdditionalDataPAEEntity loanAdditionProperties = paeAdditionals.get();
+                                final LoanAdditionalDataPAE loanAdditionalData = loanAdditionProperties.toDTO();
+                                loanAccountData.setLoanAdditionalDataPAE(loanAdditionalData);
                             }
                         }
                     }
@@ -1660,11 +1684,28 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
         } else if (loanProduct.canUseForTopup() && groupId != null) {
             activeLoanOptions = this.accountDetailsReadPlatformService.retrieveGroupActiveLoanAccountSummary(groupId);
         }
+        // for product that is PAE add the required guarantee options
+        Collection<CodeValueDataExtended> paeRequiredGuaranteeDocuments = null;
+        if (loanProduct.getOwnerTypeOption() != null
+                && loanProduct.getOwnerTypeOption().getId().intValue() == LoanProductOwnerType.PAE.getValue()) {
+            Collection<CodeValueData> paeRequiredGuarantees = this.codeValueReadPlatformService
+                    .retrieveCodeValuesByCode("PaeRequiredGuarantees");
+            if (!paeRequiredGuarantees.isEmpty()) paeRequiredGuaranteeDocuments = new ArrayList<>();
+            for (CodeValueData codeValue : Objects.requireNonNull(paeRequiredGuarantees)) {
+                List<PaeRequiredDocumentData> documentsList = this.paeRequiredDocumentReadPlatformService
+                        .retrieveByCategory(codeValue.getId());
+                CodeValueDataExtended cartegoryDocuments = CodeValueDataExtended.instance(codeValue.getId(), codeValue.getName(),
+                        codeValue.getPosition(), codeValue.getDescription(), codeValue.isActive(), codeValue.isMandatory());
+                cartegoryDocuments.setExtraData(documentsList);
+                paeRequiredGuaranteeDocuments.add(cartegoryDocuments);
+            }
+        }
 
         return LoanAccountData.loanProductWithTemplateDefaults(loanProduct, loanTermFrequencyTypeOptions, repaymentFrequencyTypeOptions,
                 repaymentFrequencyNthDayTypeOptions, repaymentFrequencyDaysOfWeekTypeOptions, repaymentStrategyOptions,
                 interestRateFrequencyTypeOptions, amortizationTypeOptions, interestTypeOptions, interestCalculationPeriodTypeOptions,
-                fundOptions, chargeOptions, loanPurposeOptions, loanCollateralOptions, loanCycleCounter, activeLoanOptions);
+                fundOptions, chargeOptions, loanPurposeOptions, loanCollateralOptions, loanCycleCounter, activeLoanOptions,
+                paeRequiredGuaranteeDocuments);
     }
 
     @Override
@@ -2681,6 +2722,11 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
         }
 
         return groupLoanAdditionalData;
+    }
+
+    @Override
+    public Map<String, Object> retrieveBasicDataForLoanPromissoryTemplate(Long loanId) {
+        return this.jdbcTemplate.queryForMap(AGENCY_LEAD_BY_LOAN_ID_MOD, loanId);
     }
 
     private static final class AdditionalGroupLoanData implements RowMapper<GroupLoanAdditionalData> {

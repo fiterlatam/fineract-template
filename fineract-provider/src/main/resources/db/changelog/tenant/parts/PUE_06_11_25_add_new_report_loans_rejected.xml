@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements. See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership. The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License. You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied. See the License for the
+    specific language governing permissions and limitations
+    under the License.
+
+-->
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.1.xsd">
+
+    <changeSet id="1" author="Jacobo Vargas">
+
+        <!--report for rejected loans -->
+        <insert tableName="stretchy_report">
+            <column name="report_name" value="Rejected Loans Report"/>
+            <column name="report_type" value="Table"/>
+            <column name="report_category" value="Loan"/>
+            <column name="report_sql">
+                <![CDATA[
+                SELECT
+                    lo.account_no AS loan,
+                    ag.name AS agencia,
+                    pr.name AS producto,
+                    '' AS cartera,
+                    cl.external_id AS codigo_cliente,
+                    cl.display_name AS nombre_cliente,
+                    CONCAT(gu.firstname, ' ', gu.lastname) AS usuario_registro,
+                    CONCAT(addBy.firstname, ' ', addBy.lastname) AS asesor_ci,
+                    CONCAT(agl.firstname, ' ', agl.lastname) AS lider_agencia,
+                    DATE(pg.created_at) AS fecha_ingreso,
+                    '' AS fecha_analisis,
+                    DATE(lo.rejectedon_date) AS fecha_rechazo,
+                    cvr.code_value AS motivo_rechazo,
+                    pl.comments AS comentario_rechazo,
+                    CASE pl.from_status
+                        WHEN 100 THEN 'Pendiente'
+                        WHEN 300 THEN 'Rechazado'
+                        WHEN 400 THEN 'Revisión de lista negra completada'
+                        WHEN 500 THEN 'Rechazado por lista negra'
+                        WHEN 600 THEN 'Consulta a buró completada'
+                        WHEN 700 THEN 'Revisión de políticas duras completada'
+                        WHEN 701 THEN 'Consentimiento agregado'
+                        WHEN 800 THEN 'Tiempo expirado'
+                        WHEN 900 THEN 'Completado'
+                        WHEN 902 THEN 'Pendiente de aprobación (Líder de agencia)'
+                        WHEN 903 THEN 'Solicitud de actualización de pre-calificación'
+                        WHEN 904 THEN 'Pendiente de aprobación con excepciones (Líder de agencia)'
+                        WHEN 905 THEN 'Aprobado con excepciones (Líder de agencia)'
+                        WHEN 1001 THEN 'Pendiente de aprobación (Unidad de análisis)'
+                        WHEN 1002 THEN 'Pendiente de aprobación con excepciones (Unidad de análisis)'
+                        WHEN 1003 THEN 'Pendiente de aprobación (Comité D)'
+                        WHEN 1004 THEN 'Pendiente de aprobación (Comité C)'
+                        WHEN 1005 THEN 'Pendiente de aprobación (Comité B)'
+                        WHEN 1006 THEN 'Pendiente de aprobación (Comité A)'
+                        ELSE 'Inválido'
+                    END AS etapa_rechazo,
+                    CONCAT(rej.firstname, ' ', rej.lastname) AS persona_que_rechazo,
+                    lo.principal_amount AS monto,
+                    lo.term_frequency AS plazo,
+                    lo.annual_nominal_interest_rate AS tasa,
+                    lc.description AS garantia
+                FROM m_loan lo
+                LEFT JOIN m_loan_collateral lc ON lc.loan_id = lo.id
+                LEFT JOIN m_client cl ON cl.id = lo.client_id
+                LEFT JOIN m_prequalification_group pg ON pg.id = lo.prequalification_id
+                LEFT JOIN m_product_loan pr ON pr.id = lo.product_id
+                LEFT JOIN m_agency ag ON ag.id = pg.agency_id
+                LEFT JOIN m_appuser agl ON agl.id = ag.responsible_user_id
+                LEFT JOIN (
+                    SELECT
+                        p1.*
+                    FROM m_prequalification_status_log p1
+                    INNER JOIN (
+                        SELECT
+                            prequalification_id,
+                            MAX(id) AS max_id
+                        FROM m_prequalification_status_log
+                        GROUP BY prequalification_id
+                    ) p2 ON p1.prequalification_id = p2.prequalification_id
+                         AND p1.id = p2.max_id
+                ) pl ON pl.prequalification_id = lo.prequalification_id
+                LEFT JOIN m_code_value cvr ON pl.reason_code_id = cvr.id
+                LEFT JOIN m_appuser gu ON gu.id = lo.created_by
+                LEFT JOIN m_appuser addBy ON addBy.id = pg.added_by
+                LEFT JOIN m_appuser rej ON rej.id = pl.updatedby_id
+                WHERE lo.loan_status_id = 500
+                  AND DATE(lo.rejectedon_date) >= '${startDate}'
+                  AND DATE(lo.rejectedon_date) <= '${endDate}'
+            ]]>
+            </column>
+            <column name="description" value="Loan report in status rejected"/>
+            <column name="core_report" valueNumeric="0"/>
+            <column name="use_report" valueNumeric="1"/>
+            <column name="self_service_user_report" valueNumeric="0"/>
+        </insert>
+
+        <!-- Insert report parameters -->
+        <sql>
+            INSERT INTO stretchy_report_parameter (report_id, parameter_id, report_parameter_name)
+            SELECT r.id, p.id, 'startDate'
+            FROM stretchy_report r
+                     JOIN stretchy_parameter p ON p.parameter_name = 'startDateSelect'
+            WHERE r.report_name = 'Rejected Loans Report';
+
+            INSERT INTO stretchy_report_parameter (report_id, parameter_id, report_parameter_name)
+            SELECT r.id, p.id, 'endDate'
+            FROM stretchy_report r
+                     JOIN stretchy_parameter p ON p.parameter_name = 'endDateSelect'
+            WHERE r.report_name = 'Rejected Loans Report';
+        </sql>
+    </changeSet>
+
+</databaseChangeLog>

@@ -45,6 +45,7 @@ public class CommandProcessingResult implements Serializable {
     private final Long gsimId;
     private final Long glimId;
     private Boolean rollbackTransaction;
+    private String reportToPrint;
 
     public static CommandProcessingResult fromCommandProcessingResult(CommandProcessingResult commandResult) {
         return new CommandProcessingResult(commandResult.commandId, commandResult.officeId, commandResult.groupId, commandResult.clientId,
@@ -63,9 +64,11 @@ public class CommandProcessingResult implements Serializable {
     public static CommandProcessingResult fromDetails(final Long commandId, final Long officeId, final Long groupId, final Long clientId,
             final Long loanId, final Long savingsId, final String resourceIdentifier, final Long entityId, final Long gsimId,
             final Long glimId, final Map<String, Object> creditBureauReportData, final String transactionId,
-            final Map<String, Object> changes, final Long productId, final Boolean rollbackTransaction, final Long subResourceId) {
+            final Map<String, Object> changes, final Long productId, final Boolean rollbackTransaction, final Long subResourceId,
+            String reportToPrint) {
         return new CommandProcessingResult(commandId, officeId, groupId, clientId, loanId, savingsId, resourceIdentifier, entityId,
-                transactionId, changes, productId, gsimId, glimId, creditBureauReportData, rollbackTransaction, subResourceId);
+                transactionId, changes, productId, gsimId, glimId, creditBureauReportData, rollbackTransaction, subResourceId,
+                reportToPrint);
     }
 
     public static CommandProcessingResult commandOnlyResult(final Long commandId) {
@@ -141,6 +144,30 @@ public class CommandProcessingResult implements Serializable {
         this.creditBureauReportData = creditBureauReportData;
         this.rollbackTransaction = rollbackTransaction;
         this.subResourceId = subResourceId;
+    }
+
+    private CommandProcessingResult(final Long commandId, final Long officeId, final Long groupId, final Long clientId, final Long loanId,
+            final Long savingsId, final String resourceIdentifier, final Long resourceId, final String transactionId,
+            final Map<String, Object> changesOnly, final Long productId, final Long gsimId, final Long glimId,
+            final Map<String, Object> creditBureauReportData, Boolean rollbackTransaction, final Long subResourceId,
+            final String reportToPrint) {
+        this.commandId = commandId;
+        this.officeId = officeId;
+        this.groupId = groupId;
+        this.clientId = clientId;
+        this.loanId = loanId;
+        this.savingsId = savingsId;
+        this.resourceIdentifier = resourceIdentifier;
+        this.resourceId = resourceId;
+        this.changes = changesOnly;
+        this.transactionId = transactionId;
+        this.productId = productId;
+        this.gsimId = gsimId;
+        this.glimId = glimId;
+        this.creditBureauReportData = creditBureauReportData;
+        this.rollbackTransaction = rollbackTransaction;
+        this.subResourceId = subResourceId;
+        this.reportToPrint = reportToPrint;
     }
 
     protected CommandProcessingResult(final Long resourceId, final Long officeId, final Long commandId,

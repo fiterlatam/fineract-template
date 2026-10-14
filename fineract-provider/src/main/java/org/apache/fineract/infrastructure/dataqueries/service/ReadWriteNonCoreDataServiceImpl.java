@@ -1272,9 +1272,7 @@ public class ReadWriteNonCoreDataServiceImpl implements ReadWriteNonCoreDataServ
     @Override
     public CommandProcessingResult deleteDatatableEntry(final String dataTableName, final Long appTableId, final Long datatableId) {
         validateDatatableName(dataTableName);
-        if (isDatatableAttachedToEntityDatatableCheck(dataTableName)) {
-            throw new DatatableEntryRequiredException(dataTableName, appTableId);
-        }
+
         final String appTable = queryForApplicationTableName(dataTableName);
         final CommandProcessingResult commandProcessingResult = checkMainResourceExistsWithinScope(appTable, appTableId);
 
@@ -1835,11 +1833,20 @@ public class ReadWriteNonCoreDataServiceImpl implements ReadWriteNonCoreDataServ
                     paramValue = tmpDateTime.toString();
                 }
             } else if (columnHeader.isIntegerDisplayType()) {
-                final Integer tmpInt = this.helper.convertToInteger(paramValue, columnHeader.getColumnName(), clientApplicationLocale);
-                if (tmpInt == null) {
-                    paramValue = null;
+                if (columnHeader.isBigInt() || columnHeader.isLong()) {
+                    final Long tmpLong = this.helper.convertToLong(paramValue, columnHeader.getColumnName(), clientApplicationLocale);
+                    if (tmpLong == null) {
+                        paramValue = null;
+                    } else {
+                        paramValue = tmpLong.toString();
+                    }
                 } else {
-                    paramValue = tmpInt.toString();
+                    final Integer tmpInt = this.helper.convertToInteger(paramValue, columnHeader.getColumnName(), clientApplicationLocale);
+                    if (tmpInt == null) {
+                        paramValue = null;
+                    } else {
+                        paramValue = tmpInt.toString();
+                    }
                 }
             } else if (columnHeader.isDecimalDisplayType()) {
                 final BigDecimal tmpDecimal = this.helper.convertFrom(paramValue, columnHeader.getColumnName(), clientApplicationLocale);

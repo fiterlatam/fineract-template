@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements. See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership. The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License. You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied. See the License for the
+    specific language governing permissions and limitations
+    under the License.
+
+-->
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.1.xsd">
+
+    <changeSet author="brian" id="1787814221623-1">
+        <comment>
+            Move every prequalification workflow permission into grouping "prequalification".
+        </comment>
+        <update tableName="m_permission">
+            <column name="grouping" value="prequalification"/>
+            <where>
+                code IN (
+                    'CREATE_PREQUALIFICATIONS',
+                    'VIEW_PREQUALIFICATIONS',
+                    'UPDATE_PREQUALIFICATIONS',
+                    'ASSIGN_PREQUALIFICATIONS',
+                    'VIEW_INDIVIDUALPREQUALIFICATIONS',
+                    'VIEW_GROUP_PREQUALIFICATIONS',
+                    'UPDATE_PREQUALIFICATIONMEMBER',
+                    'REQUESTUPDATE_PREQUALIFICATIONS',
+                    'RESTARTFLOW_PREQUALIFICATIONS',
+                    'VALIDATEHARDPOLICIES_PREQUALIFICATION_CHECKLIST',
+                    'REVALIDATEHARDPOLICY_PREQUALIFICATIONS',
+                    'VALIDATE_BUREAU',
+                    'VIEW_AGENCY_LEAD',
+                    'APPROVE_AGENCY_LEAD',
+                    'SENDTOAGENCY_PREQUALIFICATIONS',
+                    'VIEW_ANALYSIS_QUEUE',
+                    'REQUESTANALYSIS_PREQUALIFICATIONS',
+                    'PROCESSANALYSIS_PREQUALIFICATIONS',
+                    'APPROVEANALYSIS_PREQUALIFICATIONS',
+                    'REJECTANALYSIS_PREQUALIFICATIONS',
+                    'VIEW_AGENCY_EXCEPTIONS_QUEUE',
+                    'SENDTOEXCEPTION_PREQUALIFICATIONS',
+                    'CREATE_COMMITTEE',
+                    'READ_COMMITTEE',
+                    'UPDATE_COMMITTEE',
+                    'DELETE_COMMITTEE',
+                    'VIEW_COMMITTEE_APPROVALS',
+                    'SENDTOCOMMITEE_PREQUALIFICATIONS',
+                    'RECOMMENDCOMMITTEE_PREQUALIFICATIONS',
+                    'APPROVECOMMITTEE_PREQUALIFICATIONS',
+                    'APPROVECOMMITEE_PREQUALIFICATIONS',
+                    'APPROVECOMMITEEWHITEXC_PREQUALIFICATIONS',
+                    'APPROVECOMMITEEWITEXC_PREQUALIFICATIONS',
+                    'APPROVEPREVIOUSCOMMITEE_PREQUALIFICATIONS',
+                    'VIEW_RENEGOTIATIONS',
+                    'SENDTORENEGOTIATION_PREQUALIFICATIONS',
+                    'APPROVERENEGOTIATION_PREQUALIFICATIONS',
+                    'REJECTRENEGOTIATION_PREQUALIFICATIONS'
+                )
+            </where>
+        </update>
+    </changeSet>
+
+</databaseChangeLog>

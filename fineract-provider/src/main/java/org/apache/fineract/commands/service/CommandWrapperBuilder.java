@@ -18,6 +18,7 @@
  */
 package org.apache.fineract.commands.service;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.commands.domain.CommandWrapper;
 import org.apache.fineract.infrastructure.accountnumberformat.service.AccountNumberFormatConstants;
 import org.apache.fineract.organisation.bankcheque.api.BankChequeApiConstants;
@@ -3937,16 +3938,17 @@ public class CommandWrapperBuilder {
         return this;
     }
 
-    public CommandWrapperBuilder updatePrequalificationMemberDetails(Long memberId) {
+    public CommandWrapperBuilder updatePrequalificationMemberDetails(Long memberId, Long groupId) {
         this.actionName = "UPDATE";
         this.entityName = "PREQUALIFICATIONMEMBER";
         this.entityId = memberId;
         this.href = "/prequalification/" + memberId;
+        this.groupId = groupId;
         return this;
     }
 
-    public CommandWrapperBuilder processAnalysisRequest(Long prequalificationId) {
-        this.actionName = "PROCESSANALYSIS";
+    public CommandWrapperBuilder processAnalysisRequest(Long prequalificationId, String action) {
+        this.actionName = StringUtils.upperCase(action);
         this.entityName = "PREQUALIFICATIONS";
         this.entityId = prequalificationId;
         this.href = "/prequalification/checklist/" + prequalificationId;
@@ -4009,4 +4011,43 @@ public class CommandWrapperBuilder {
         this.href = "/savingsaccounts/" + accountId + "rebalance";
         return this;
     }
+
+    public CommandWrapperBuilder createPaeDocuments() {
+        this.actionName = "ADD";
+        this.entityName = "PAE_DOCUMENTS";
+        this.href = "/paedocumentation";
+        return this;
+    }
+
+    public CommandWrapperBuilder deletePaeDocuments(final Long documentId) {
+        this.actionName = "DELETE";
+        this.entityName = "PAE_DOCUMENTS";
+        this.entityId = documentId;
+        this.href = "/paedocumentation/" + documentId;
+        return this;
+    }
+
+    public CommandWrapperBuilder updatePromissoryNoteTemplate() {
+        this.actionName = "UPDATE";
+        this.entityName = "PROMISSORY_NOTE";
+        this.entityId = null;
+        this.href = "/runreports/promissorynote";
+        return this;
+    }
+
+    public CommandWrapperBuilder createLoanApplicationDraft() {
+        this.actionName = "CREATE";
+        this.entityName = "LOAN_APPLICATION_DRAFT";
+        this.href = "/loandraft";
+        return this;
+    }
+
+    public CommandWrapperBuilder updateLoanApplicationDraft(final Long draftId) {
+        this.actionName = "UPDATE";
+        this.entityName = "LOAN_APPLICATION_DRAFT";
+        this.entityId = draftId;
+        this.href = "/loandraft/" + draftId;
+        return this;
+    }
+
 }

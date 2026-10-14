@@ -225,6 +225,7 @@ public class LoanDropdownReadPlatformServiceImpl implements LoanDropdownReadPlat
     @Override
     public List<EnumOptionData> retrieveLoanProductOwnerTypes() {
         return Arrays.asList(LoanEnumerations.loanProductOwnerType(LoanProductOwnerType.GROUP),
-                LoanEnumerations.loanProductOwnerType(LoanProductOwnerType.INDIVIDUAL));
+                LoanEnumerations.loanProductOwnerType(LoanProductOwnerType.INDIVIDUAL),
+                LoanEnumerations.loanProductOwnerType(LoanProductOwnerType.PAE));
     }
 }

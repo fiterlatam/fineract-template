@@ -156,9 +156,15 @@ public class S3ContentRepository implements ContentRepository {
             if (log.isDebugEnabled()) {
                 log.debug("Uploading a new object to S3 {}", LogParameterEscapeUtil.escapeLogParameter(s3UploadLocation));
             }
-            this.s3Client.putObject(new PutObjectRequest(this.s3BucketName, s3UploadLocation, inputStream, new ObjectMetadata()));
+            final byte[] bytes = inputStream.readAllBytes();
+            ObjectMetadata metadata = new ObjectMetadata();
+            metadata.setContentLength(bytes.length);
+
+            this.s3Client.putObject(new PutObjectRequest(this.s3BucketName, s3UploadLocation, new ByteArrayInputStream(bytes), metadata));
         } catch (AmazonClientException ase) {
             throw new ContentManagementException(filename, ase.getMessage(), ase);
+        } catch (IOException e) {
+            throw new ContentManagementException(filename, e.getMessage(), e);
         }
     }
 

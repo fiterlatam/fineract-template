@@ -34,6 +34,7 @@ import java.util.Date;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import lombok.Getter;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
@@ -52,6 +53,7 @@ public final class JsonCommand {
 
     private String jsonCommand;
     private final JsonElement parsedCommand;
+    @Getter
     private final FromJsonHelper fromApiJsonHelper;
     private final Long commandId;
     private final Long resourceId;

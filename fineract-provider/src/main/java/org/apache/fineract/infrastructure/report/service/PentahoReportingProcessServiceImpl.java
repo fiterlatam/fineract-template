@@ -18,6 +18,7 @@
  */
 package org.apache.fineract.infrastructure.report.service;
 
+import com.google.gson.Gson;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -33,6 +34,7 @@ import org.apache.fineract.infrastructure.core.api.ApiParameterHelper;
 import org.apache.fineract.infrastructure.core.config.FineractProperties;
 import org.apache.fineract.infrastructure.core.exception.PlatformDataIntegrityException;
 import org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil;
+import org.apache.fineract.infrastructure.dataqueries.service.promissoryNoteTemplates.templates.ResolutionCommiteeReport;
 import org.apache.fineract.infrastructure.report.annotation.ReportService;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.pentaho.reporting.engine.classic.core.ClassicEngineBoot;
@@ -67,11 +69,15 @@ public class PentahoReportingProcessServiceImpl implements ReportingProcessServi
 
     private final PlatformSecurityContext context;
     private final FineractProperties fineractProperties;
+    private final ResolutionCommiteeReport resolutionCommiteeReport;
+
     @Value("${fineract.configuration.pentahoFolderName}")
     private String pentahoFolderName;
 
     @Autowired
-    public PentahoReportingProcessServiceImpl(final PlatformSecurityContext context, final FineractProperties fineractProperties) {
+    public PentahoReportingProcessServiceImpl(final PlatformSecurityContext context, final FineractProperties fineractProperties,
+            ResolutionCommiteeReport resolutionCommiteeReport) {
+        this.resolutionCommiteeReport = resolutionCommiteeReport;
         ClassicEngineBoot.getInstance().start();
         this.context = context;
         this.fineractProperties = fineractProperties;
@@ -79,6 +85,10 @@ public class PentahoReportingProcessServiceImpl implements ReportingProcessServi
 
     @Override
     public Response processRequest(final String reportName, final MultivaluedMap<String, String> queryParams) {
+        if (reportName != null && reportName.equalsIgnoreCase("Commitee Approval Report")) {
+            String json = new Gson().toJson(queryParams);
+            return Response.ok().entity(resolutionCommiteeReport.generatePdf(json)).type("application/pdf").build();
+        }
         final var outputTypeParam = queryParams.getFirst("output-type");
         final var reportParams = getReportParams(queryParams);
         final var locale = ApiParameterHelper.extractLocale(queryParams);

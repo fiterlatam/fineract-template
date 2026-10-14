@@ -43,6 +43,7 @@ import org.apache.fineract.infrastructure.core.serialization.DefaultToApiJsonSer
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.organisation.prequalification.data.GenericValidationResultSet;
 import org.apache.fineract.organisation.prequalification.data.PrequalificationChecklistData;
+import org.apache.fineract.organisation.prequalification.domain.PrequalificationGroupRepositoryWrapper;
 import org.apache.fineract.organisation.prequalification.service.PrequalificationChecklistReadPlatformService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
@@ -60,7 +61,9 @@ public class PrequalificationChecklistApiResource {
     private final DefaultToApiJsonSerializer<GenericValidationResultSet> memberToApiJsonSerializery;
     private final PrequalificationChecklistReadPlatformService prequalificationChecklistReadPlatformService;
     private final PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService;
+    private final PrequalificationGroupRepositoryWrapper prequalificationGroupRepositoryWrapper;
     private final String resourceNameForPermissions = "PREQUALIFICATION";
+
     private final Set<String> prequalificationChecklistDataParameters = new HashSet<>(
             Arrays.asList("id", "name", "description", "color", "loanProductId", "loanProductName", "prequalificationNumber",
                     "prequalificationName", "reference", "conditionalOperator", "firstValue", "secondValue", "valueList"));
@@ -70,13 +73,15 @@ public class PrequalificationChecklistApiResource {
             DefaultToApiJsonSerializer<GenericValidationResultSet> memberToApiJsonSerializery, final PlatformSecurityContext context,
             DefaultToApiJsonSerializer<PrequalificationChecklistData> toApiJsonSerializer,
             PrequalificationChecklistReadPlatformService prequalificationChecklistReadPlatformService,
-            PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService) {
+            PortfolioCommandSourceWritePlatformService commandsSourceWritePlatformService,
+            PrequalificationGroupRepositoryWrapper prequalificationGroupRepositoryWrapper) {
         this.apiRequestParameterHelper = apiRequestParameterHelper;
         this.context = context;
         this.toApiJsonSerializer = toApiJsonSerializer;
         this.memberToApiJsonSerializery = memberToApiJsonSerializery;
         this.prequalificationChecklistReadPlatformService = prequalificationChecklistReadPlatformService;
         this.commandsSourceWritePlatformService = commandsSourceWritePlatformService;
+        this.prequalificationGroupRepositoryWrapper = prequalificationGroupRepositoryWrapper;
     }
 
     @GET
@@ -121,22 +126,22 @@ public class PrequalificationChecklistApiResource {
             final CommandWrapper validateCommandRequest = builder.sendGroupForAnalysis(prequalificationId).build();
             result = this.commandsSourceWritePlatformService.logCommandSource(validateCommandRequest);
         } else if (is(commandParam, "sendtoexception")) {
-            final CommandWrapper validateCommandRequest = builder.processAnalysisRequest(prequalificationId).build();
+            final CommandWrapper validateCommandRequest = builder.processAnalysisRequest(prequalificationId, commandParam).build();
             result = this.commandsSourceWritePlatformService.logCommandSource(validateCommandRequest);
         } else if (is(commandParam, "sendtoagency")) {
-            final CommandWrapper validateCommandRequest = builder.processAnalysisRequest(prequalificationId).build();
+            final CommandWrapper validateCommandRequest = builder.processAnalysisRequest(prequalificationId, commandParam).build();
             result = this.commandsSourceWritePlatformService.logCommandSource(validateCommandRequest);
         } else if (is(commandParam, "rejectanalysis")) {
-            final CommandWrapper validateCommandRequest = builder.processAnalysisRequest(prequalificationId).build();
+            final CommandWrapper validateCommandRequest = builder.processAnalysisRequest(prequalificationId, commandParam).build();
             result = this.commandsSourceWritePlatformService.logCommandSource(validateCommandRequest);
         } else if (is(commandParam, "approveanalysis")) {
-            final CommandWrapper validateCommandRequest = builder.processAnalysisRequest(prequalificationId).build();
+            final CommandWrapper validateCommandRequest = builder.processAnalysisRequest(prequalificationId, commandParam).build();
             result = this.commandsSourceWritePlatformService.logCommandSource(validateCommandRequest);
         } else if (is(commandParam, "assigntoself")) {
             final CommandWrapper validateCommandRequest = builder.assigntoPrequalificationSelf(prequalificationId).build();
             result = this.commandsSourceWritePlatformService.logCommandSource(validateCommandRequest);
         } else {
-            final CommandWrapper commandRequest = builder.processAnalysisRequest(prequalificationId).build();
+            final CommandWrapper commandRequest = builder.processAnalysisRequest(prequalificationId, commandParam).build();
             result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
         }
 

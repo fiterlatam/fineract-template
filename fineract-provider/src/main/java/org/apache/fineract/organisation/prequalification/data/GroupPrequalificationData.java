@@ -26,7 +26,10 @@ import java.util.List;
 import lombok.Data;
 import org.apache.fineract.infrastructure.configuration.data.GlobalConfigurationPropertyData;
 import org.apache.fineract.infrastructure.core.data.EnumOptionData;
+import org.apache.fineract.infrastructure.core.service.Page;
 import org.apache.fineract.organisation.agency.data.AgencyData;
+import org.apache.fineract.organisation.committee.data.CommitteeData;
+import org.apache.fineract.organisation.prequalification.domain.PrequalificationTimeline;
 import org.apache.fineract.portfolio.group.data.CenterData;
 import org.apache.fineract.portfolio.loanproduct.data.LoanProductData;
 import org.apache.fineract.useradministration.data.AppUserData;
@@ -40,7 +43,7 @@ public class GroupPrequalificationData {
     private final Long id;
     private final String productName;
 
-    private final Long productId;
+    private Long productId;
     private final String prequalificationNumber;
     private final String groupName;
     private final String portforlioName;
@@ -61,7 +64,7 @@ public class GroupPrequalificationData {
 
     private final String facilitatorName;
     private final Long facilitatorId;
-    private final String comments;
+    private String comments;
     private final Long groupId;
     private final LocalDateTime createdAt;
     private final Collection<AgencyData> agencies;
@@ -82,6 +85,14 @@ public class GroupPrequalificationData {
     private String assignedUserName;
     private String latestComments;
     private Long linkedGroupId;
+    private List<PrequalificationTimeline> currentTimeline;
+    private List<EnumOptionData> expectedTimeline;
+
+    private String exceptionComment;
+    private List<RenegotiationData> renegotiations;
+    private List<String> exceptionListComments;
+    private List<String> listComments;
+    private Page<CommitteeData> committeeDataPage;
 
     public GroupPrequalificationData(final Long id, final String productName, final String prequalificationNumber, final String agencyName,
             final String portforlioName, final String centerName, final String groupName, final String addedBy,
@@ -222,5 +233,21 @@ public class GroupPrequalificationData {
 
     public void updateMembers(Collection<MemberPrequalificationData> groupMembers) {
         this.groupMembers = groupMembers;
+    }
+
+    public void updateCurrentStatusTimeline(List<PrequalificationTimeline> prequalificationTimelines) {
+        this.currentTimeline = prequalificationTimelines;
+    }
+
+    public void updateExpectedStatusTimeline(List<EnumOptionData> expectedTimeline) {
+        this.expectedTimeline = expectedTimeline;
+    }
+
+    public void updateRenegotiations(List<RenegotiationData> renegotiations) {
+        this.renegotiations = renegotiations;
+    }
+
+    public void setProductId(Long productId) {
+        this.productId = productId;
     }
 }

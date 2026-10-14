@@ -42,6 +42,6 @@ public class SendPrequalificationToAnalysisCommandHandler implements NewCommandS
     @Override
     public CommandProcessingResult processCommand(final JsonCommand command) {
 
-        return this.prequalificationWritePlatformService.sendForAnalysis(command.entityId(), command);
+        return this.prequalificationWritePlatformService.sendForAnalysis(command.entityId(), command, false);
     }
 }

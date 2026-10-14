@@ -1222,4 +1222,8 @@ public class Client extends AbstractAuditableWithUTCDateTimeCustom {
     public void setEducationLevel(Long educationLevel) {
         this.educationLevel = educationLevel;
     }
+
+    public ClientContactInformation getClientContactInformation() {
+        return this.contactInformation;
+    }
 }
