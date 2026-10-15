@@ -53,4 +53,37 @@
         </sql>
     </changeSet>
 
+    <changeSet id="2" author="Fiter">
+        <sql>
+            <![CDATA[
+                UPDATE m_prequalification_group g
+                INNER JOIN (
+                    SELECT ranked.group_id, ranked.agency_id
+                    FROM (
+                        SELECT
+                            pg.id AS group_id,
+                            ma.id AS agency_id,
+                            ROW_NUMBER() OVER (
+                                PARTITION BY pg.id
+                                ORDER BY LENGTH(agencyOffice.hierarchy) DESC, ma.id
+                            ) AS rn
+                        FROM m_prequalification_group pg
+                        INNER JOIN m_appuser au ON au.id = pg.added_by
+                        INNER JOIN m_office userOffice ON userOffice.id = au.office_id
+                        INNER JOIN m_agency ma ON ma.linked_office_id IS NOT NULL
+                        INNER JOIN m_office agencyOffice ON agencyOffice.id = ma.linked_office_id
+                        WHERE pg.agency_id IS NULL
+                          AND pg.prequalification_type_enum = 1
+                          AND (userOffice.hierarchy LIKE CONCAT(agencyOffice.hierarchy, '%')
+                               OR agencyOffice.hierarchy LIKE CONCAT(userOffice.hierarchy, '%'))
+                    ) ranked
+                    WHERE ranked.rn = 1
+                ) userAgency ON userAgency.group_id = g.id
+                SET g.agency_id = userAgency.agency_id
+                WHERE g.agency_id IS NULL
+                  AND g.prequalification_type_enum = 1;
+            ]]>
+        </sql>
+    </changeSet>
+
 </databaseChangeLog>
