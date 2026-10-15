@@ -634,7 +634,7 @@ public class ChequeWritePlatformServiceImpl implements ChequeWritePlatformServic
         final String email = requestedBy.getEmail();
         if (StringUtils.isNotBlank(email) && batchChequeReport != null) {
             final EmailMessageWithAttachmentData emailMessage = EmailMessageWithAttachmentData.createNew(email,
-                    "Los cheques solicitados han sido procesados. Se adjunta el archivo generado.",
+                    "Los cheques solicitados han sido procesados. Se adjunta el archivo generado. Para los cheques: (" + batchChequeRequest.getChequeIds() + ")",
                     "Impresión de cheques - lote " + batchChequeRequestId, List.of(batchChequeReport));
             this.emailMessageJobEmailService.sendEmailWithAttachment(emailMessage);
         } else if (StringUtils.isBlank(email)) {
