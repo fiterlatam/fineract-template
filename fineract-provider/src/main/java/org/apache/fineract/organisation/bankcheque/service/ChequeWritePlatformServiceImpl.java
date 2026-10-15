@@ -462,9 +462,9 @@ public class ChequeWritePlatformServiceImpl implements ChequeWritePlatformServic
     public CommandProcessingResult printChequeBatches(JsonCommand command) {
         final AppUser currentUser = this.context.authenticatedUser();
         List<PrintChequeCommand> printChequeCommandList = this.printChequeCommandFromApiJsonDeserializer.commandFromApiJson(command.json());
-        if (CollectionUtils.isEmpty(printChequeCommandList) || printChequeCommandList.size() < 2) {
+        if (CollectionUtils.isEmpty(printChequeCommandList)) {
             throw new BankChequeException("print.cheque.batches",
-                    "Batch print requires more than one cheque. Use printcheques for a single cheque.");
+                    "Batch print requires atleast one cheque.");
         }
         for (final PrintChequeCommand printChequeCommand : printChequeCommandList) {
             final Cheque cheque = this.chequeBatchRepositoryWrapper.findOneChequeWithNotFoundDetection(printChequeCommand.getChequeId());
