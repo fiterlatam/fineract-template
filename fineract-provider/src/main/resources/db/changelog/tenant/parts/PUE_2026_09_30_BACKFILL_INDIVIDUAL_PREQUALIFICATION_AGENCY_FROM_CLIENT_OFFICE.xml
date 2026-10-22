@@ -86,4 +86,28 @@
         </sql>
     </changeSet>
 
+    <changeSet id="3" author="Fiter">
+        <sql>
+            <![CDATA[
+            UPDATE m_prequalification_group g
+                INNER JOIN (
+                SELECT
+                mpgm.group_id,
+                MIN(ms.agency_id) AS agency_id
+                FROM m_prequalification_group_members mpgm
+                INNER JOIN m_client mc ON mc.dpi = mpgm.dpi
+                INNER JOIN m_group_client mgc ON mgc.client_id = mc.id
+                INNER JOIN m_group mg ON mg.id = mgc.group_id
+                INNER JOIN m_group center ON center.id = mg.parent_id
+                INNER JOIN m_portfolio mp ON mp.id = center.portfolio_id
+                INNER JOIN m_supervision ms ON ms.id = mp.supervision_id
+                WHERE ms.agency_id IS NOT NULL
+                GROUP BY mpgm.group_id
+                ) memberAgency ON memberAgency.group_id = g.id
+                SET g.agency_id = memberAgency.agency_id
+            WHERE g.prequalification_type_enum = 1;
+            ]]>
+        </sql>
+    </changeSet>
+
 </databaseChangeLog>
