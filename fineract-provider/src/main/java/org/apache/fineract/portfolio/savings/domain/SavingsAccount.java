@@ -3841,7 +3841,8 @@ public class SavingsAccount extends AbstractPersistableCustom {
     }
 
     public void holdAmount(BigDecimal amount) {
-        this.savingsOnHoldAmount = getSavingsHoldAmount().add(amount);
+        // round like the hold transaction so releasing it leaves no sub-cent residue
+        this.savingsOnHoldAmount = getSavingsHoldAmount().add(Money.of(getCurrency(), amount).getAmount());
     }
 
     public void releaseOnHoldAmount(BigDecimal amount) {
