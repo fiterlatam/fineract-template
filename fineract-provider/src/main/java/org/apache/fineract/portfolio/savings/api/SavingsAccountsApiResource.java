@@ -487,6 +487,9 @@ public class SavingsAccountsApiResource {
         } else if (is(commandParam, "rebalanceaccount")) {
             final CommandWrapper commandRequest = builder.recalculateSavingsAccountBalances(accountId).build();
             result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
+        } else if (is(commandParam, "remediateholddates")) {
+            final CommandWrapper commandRequest = builder.remediateSavingsAccountHoldReleaseDates(accountId).build();
+            result = this.commandsSourceWritePlatformService.logCommandSource(commandRequest);
         }
 
         if (result == null) {

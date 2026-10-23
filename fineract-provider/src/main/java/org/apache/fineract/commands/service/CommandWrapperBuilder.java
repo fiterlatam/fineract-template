@@ -4012,6 +4012,15 @@ public class CommandWrapperBuilder {
         return this;
     }
 
+    public CommandWrapperBuilder remediateSavingsAccountHoldReleaseDates(Long accountId) {
+        this.actionName = "REMEDIATEHOLDDATES";
+        this.entityName = "SAVINGSACCOUNT";
+        this.entityId = accountId;
+        this.savingsId = accountId;
+        this.href = "/savingsaccounts/" + accountId + "?command=remediateholddates";
+        return this;
+    }
+
     public CommandWrapperBuilder createPaeDocuments() {
         this.actionName = "ADD";
         this.entityName = "PAE_DOCUMENTS";

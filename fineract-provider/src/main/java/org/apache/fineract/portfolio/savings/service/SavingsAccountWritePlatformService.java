@@ -127,4 +127,6 @@ public interface SavingsAccountWritePlatformService {
             SavingsAccountTransaction holdTransaction);
 
     CommandProcessingResult recalculateRunningBalances(Long savingsId);
+
+    CommandProcessingResult remediateHoldReleaseDates(Long savingsId);
 }
