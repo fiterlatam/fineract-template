@@ -222,6 +222,8 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
             if (facilitatorId != null) {
                 facilitator = this.appUserRepository.findById(facilitatorId).orElseThrow(() -> new UserNotFoundException(facilitatorId));
             }
+        } else if (agencyId != null) {
+            agency = this.agencyRepositoryWrapper.findOneWithNotFoundDetection(agencyId);
         }
 
         AppUser addedBy = this.context.getAuthenticatedUserIfPresent();
@@ -1640,11 +1642,39 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         return PrequalificationType.INVALID;
     }
 
+<<<<<<< HEAD
     private void updateLoanAssociated(JsonCommand jsonCommand) {
         final Long groupId = jsonCommand.getGroupId();
         Loan loan = loanRepositoryWrapper.retrieveByPrequalificationId(groupId);
         if (loan == null) {
             throw new NotFoundException("Loan with group id " + groupId + " not found");
+=======
+    private void applySupervisionOfficeContext(final PrequalificationGroup prequalificationGroup,
+            final PrequalificationType prequalificationType, final Agency agency, final List<PrequalificationGroupMember> members) {
+        if (PrequalificationType.GROUP.equals(prequalificationType)) {
+            if (agency != null) {
+                prequalificationGroup.updateSupervisionOfficeId(resolveSupervisionOfficeIdFromAgency(agency.getId()));
+            }
+            return;
+        }
+        if (PrequalificationType.INDIVIDUAL.equals(prequalificationType)) {
+            if (members == null || members.isEmpty()) {
+                return;
+            }
+            final String memberDpi = members.get(0).getDpi();
+            if (StringUtils.isBlank(memberDpi)) {
+                return;
+            }
+            final MemberOfficeContext memberOfficeContext = resolveMemberOfficeContext(memberDpi);
+            if (memberOfficeContext == null) {
+                return;
+            }
+            prequalificationGroup.updateSupervisionOfficeId(memberOfficeContext.supervisionOfficeId());
+            if (prequalificationGroup.getAgency() == null && memberOfficeContext.agencyId() != null) {
+                prequalificationGroup
+                        .updateAgency(this.agencyRepositoryWrapper.findOneWithNotFoundDetection(memberOfficeContext.agencyId()));
+            }
+>>>>>>> origin/fiter/fb/main
         }
         modify(loan.getId(), jsonCommand);
     }
