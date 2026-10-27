@@ -162,7 +162,6 @@
     <include file="parts/0139-FSF-95_AddConfigurationForRunningBalancesUpdate.xml" relativeToChangelogFile="true"/>
     <include file="parts/0140-ACCOUNTING_MANUAL_ENTRTIES CONFIGURATION.xml" relativeToChangelogFile="true"/>
     <include file="parts/0148-FBR_ADD_2FA_CONFIGURATIONS.xml" relativeToChangelogFile="true"/>
-<<<<<<< HEAD
     <include file="parts/0149-PUENTE_AL_EXITO_COMMITTEE_APPROVAL_LIMITS.xml" relativeToChangelogFile="true"/>
     <include file="parts/PUE_01_11_25_add_new_column_to_prequalification_tables.xml" relativeToChangelogFile="true"/>
     <include file="parts/PUE_04_11_25_add_new_code_rejected_prequalification.xml" relativeToChangelogFile="true"/>
@@ -202,12 +201,10 @@
     <include file="parts/PUE_2026_08_27_UPDATE_PREQUALIFICATION_PERMISSIONS_GROUPING.xml" relativeToChangelogFile="true"/>
     <include file="parts/PUE_2026_09_07_INSERT_COMMITTEE_APPROVAL_LIMITS.xml" relativeToChangelogFile="true"/>
     <include file="parts/PUE_2026_09_29_ADD_PLAN_NEGOCIO_COLUMNS_P_SOLICITANTE.xml" relativeToChangelogFile="true"/>
-=======
     <include file="parts/0149_FBR_create_2fa_otp_request_table.xml" relativeToChangelogFile="true"/>
     <include file="parts/PUE_2026_09_01_PREQUALIFICATION_LIST_PERFORMANCE_INDEXES.xml" relativeToChangelogFile="true"/>
     <include file="parts/PUE_2026_09_01_ADD_SUPERVISION_OFFICE_TO_PREQUALIFICATION.xml" relativeToChangelogFile="true"/>
     <include file="parts/PUE_2026_09_11_PREQUALIFICATION_DETAIL_PERFORMANCE_INDEXES.xml" relativeToChangelogFile="true"/>
     <include file="parts/PUE_2026_09_16_BACKFILL_INDIVIDUAL_PREQUALIFICATION_AGENCY.xml" relativeToChangelogFile="true"/>
     <include file="parts/PUE_2026_09_30_BACKFILL_INDIVIDUAL_PREQUALIFICATION_AGENCY_FROM_CLIENT_OFFICE.xml" relativeToChangelogFile="true"/>
->>>>>>> origin/fiter/fb/main
 </databaseChangeLog>

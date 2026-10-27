@@ -1642,13 +1642,15 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         return PrequalificationType.INVALID;
     }
 
-<<<<<<< HEAD
     private void updateLoanAssociated(JsonCommand jsonCommand) {
         final Long groupId = jsonCommand.getGroupId();
         Loan loan = loanRepositoryWrapper.retrieveByPrequalificationId(groupId);
         if (loan == null) {
             throw new NotFoundException("Loan with group id " + groupId + " not found");
-=======
+        }
+        modify(loan.getId(), jsonCommand);
+    }
+
     private void applySupervisionOfficeContext(final PrequalificationGroup prequalificationGroup,
             final PrequalificationType prequalificationType, final Agency agency, final List<PrequalificationGroupMember> members) {
         if (PrequalificationType.GROUP.equals(prequalificationType)) {
@@ -1674,9 +1676,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
                 prequalificationGroup
                         .updateAgency(this.agencyRepositoryWrapper.findOneWithNotFoundDetection(memberOfficeContext.agencyId()));
             }
->>>>>>> origin/fiter/fb/main
         }
-        modify(loan.getId(), jsonCommand);
     }
 
     private void modify(Long loanId, JsonCommand command) {
