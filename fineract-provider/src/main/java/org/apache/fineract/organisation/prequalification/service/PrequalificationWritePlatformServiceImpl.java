@@ -1275,25 +1275,35 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
                 return;
             }
             final MemberOfficeContext memberOfficeContext = resolveMemberOfficeContext(memberDpi);
-            if (memberOfficeContext == null) {
-                return;
-            }
-            prequalificationGroup.updateSupervisionOfficeId(memberOfficeContext.supervisionOfficeId());
-            if (prequalificationGroup.getAgency() == null && memberOfficeContext.agencyId() != null) {
+            if (memberOfficeContext != null && memberOfficeContext.supervisionOfficeId() != null) {
+                prequalificationGroup.updateSupervisionOfficeId(memberOfficeContext.supervisionOfficeId());
+                if (prequalificationGroup.getAgency() == null && memberOfficeContext.agencyId() != null) {
+                    prequalificationGroup
+                            .updateAgency(this.agencyRepositoryWrapper.findOneWithNotFoundDetection(memberOfficeContext.agencyId()));
+                }
+            } else if (prequalificationGroup.getAgency() != null) {
+                // Member without center/portfolio supervision: fall back to the selected agency's office
                 prequalificationGroup
-                        .updateAgency(this.agencyRepositoryWrapper.findOneWithNotFoundDetection(memberOfficeContext.agencyId()));
+                        .updateSupervisionOfficeId(resolveSupervisionOfficeIdFromAgency(prequalificationGroup.getAgency().getId()));
             }
         }
     }
 
+    /**
+     * Resolves the office the agency's users work in (m_supervision.linked_office_id, e.g. agency 14 Chicacao -> office
+     * 21), falling back to the agency's region (m_agency.linked_office_id) when the agency has no supervision
+     * configured. The prequalification list filters by office hierarchy, so a sibling office of another agency would
+     * hide the record.
+     */
     private Long resolveSupervisionOfficeIdFromAgency(final Long agencyId) {
         if (agencyId == null) {
             return null;
         }
         final List<Long> officeIds = this.jdbcTemplate.queryForList("""
-                SELECT MIN(mo.id)
+                SELECT COALESCE(
+                    (SELECT MIN(ms.linked_office_id) FROM m_supervision ms WHERE ms.agency_id = ma.id),
+                    ma.linked_office_id)
                 FROM m_agency ma
-                INNER JOIN m_office mo ON ma.linked_office_id = mo.parent_id
                 WHERE ma.id = ?
                 """, Long.class, agencyId);
         return officeIds.isEmpty() ? null : officeIds.get(0);
