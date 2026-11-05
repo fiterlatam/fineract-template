@@ -4009,4 +4009,12 @@ public class CommandWrapperBuilder {
         this.href = "/savingsaccounts/" + accountId + "rebalance";
         return this;
     }
+
+    public CommandWrapperBuilder fixNegativeGuaranteeHolds() {
+        this.actionName = "FIX";
+        this.entityName = "NEGATIVEHOLDS";
+        this.entityId = null;
+        this.href = "/guaranteeaccounts/negativeholds?command=fix";
+        return this;
+    }
 }
