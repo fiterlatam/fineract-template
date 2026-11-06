@@ -30,10 +30,12 @@ import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import javax.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
@@ -45,6 +47,7 @@ import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResultBuilder;
 import org.apache.fineract.infrastructure.core.domain.JdbcSupport;
+import org.apache.fineract.infrastructure.core.exception.GeneralPlatformDomainRuleException;
 import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
 import org.apache.fineract.infrastructure.core.serialization.JsonParserHelper;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
@@ -203,6 +206,7 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         final Boolean individualPrequalification = command.booleanPrimitiveValueOfParameterNamed("individual");
 
         this.dataValidator.validateForCreate(command.json());
+        validateNoDuplicateMemberDpi(command);
         final Long productId = command.longValueOfParameterNamed(PrequalificatoinApiConstants.productIdParamName);
         final Long centerGroupId = command.longValueOfParameterNamed(PrequalificatoinApiConstants.groupIdParamName);
         final Long agencyId = command.longValueOfParameterNamed(PrequalificatoinApiConstants.agencyIdParamName);
@@ -450,6 +454,8 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
         PrequalificationGroup prequalificationGroup = prequalificationGroupRepositoryWrapper.findOneWithNotFoundDetection(groupId);
 
         this.dataValidator.validateUpdate(command.json());
+        validateNoDuplicateMemberDpi(command);
+        lockAndVerifyMembersNotModifiedConcurrently(prequalificationGroup);
 
         final Map<String, Object> changes = prequalificationGroup.update(command);
 
@@ -627,6 +633,50 @@ public class PrequalificationWritePlatformServiceImpl implements Prequalificatio
                 .withCommandId(command.commandId()) //
                 .withResourceIdAsString(memberId.toString()) //
                 .build();
+    }
+
+    /**
+     * Rechaza la solicitud si el mismo DPI viene más de una vez en la lista de integrantes.
+     */
+    private void validateNoDuplicateMemberDpi(JsonCommand command) {
+        final JsonArray groupMembers = command.arrayOfParameterNamed(PrequalificatoinApiConstants.membersParamName);
+        if (ObjectUtils.isEmpty(groupMembers)) {
+            return;
+        }
+        final Set<String> dpis = new HashSet<>();
+        for (JsonElement memberElement : groupMembers) {
+            final JsonElement dpiElement = memberElement.getAsJsonObject().get(PrequalificatoinApiConstants.memberDpiParamName);
+            if (dpiElement == null || dpiElement.isJsonNull() || StringUtils.isBlank(dpiElement.getAsString())) {
+                continue;
+            }
+            final String dpi = dpiElement.getAsString().trim();
+            if (!dpis.add(dpi)) {
+                throw new GeneralPlatformDomainRuleException("error.msg.prequalification.member.duplicate.dpi",
+                        "El DPI " + dpi + " está repetido en los integrantes de la precalificación.", dpi);
+            }
+        }
+    }
+
+    /**
+     * Serializa las ediciones concurrentes de una misma precalificación (por ejemplo, un doble clic con la red lenta).
+     * La segunda petición espera el bloqueo de la fila hasta que la primera confirma; si para entonces los integrantes
+     * ya no son los que esta transacción cargó, se rechaza en lugar de volver a insertar los integrantes nuevos.
+     */
+    private void lockAndVerifyMembersNotModifiedConcurrently(PrequalificationGroup prequalificationGroup) {
+        final Long groupId = prequalificationGroup.getId();
+        this.jdbcTemplate.queryForObject("SELECT id FROM m_prequalification_group WHERE id = ? FOR UPDATE", Long.class, groupId);
+
+        // Lectura con bloqueo: ve lo último confirmado aunque la transacción tenga una vista anterior (REPEATABLE READ)
+        final Set<Long> committedMemberIds = new HashSet<>(this.jdbcTemplate
+                .queryForList("SELECT id FROM m_prequalification_group_members WHERE group_id = ? FOR UPDATE", Long.class, groupId));
+        final Set<Long> loadedMemberIds = new HashSet<>();
+        if (prequalificationGroup.getMembers() != null) {
+            prequalificationGroup.getMembers().forEach(member -> loadedMemberIds.add(member.getId()));
+        }
+        if (!committedMemberIds.equals(loadedMemberIds)) {
+            throw new GeneralPlatformDomainRuleException("error.msg.prequalification.modified.concurrently", "La precalificación " + groupId
+                    + " fue modificada por otra operación al mismo tiempo. Recargue la pantalla e intente de nuevo.", groupId);
+        }
     }
 
     private List<PrequalificationGroupMember> assembleMembersForUpdate(JsonCommand command, PrequalificationGroup prequalificationGroup,
