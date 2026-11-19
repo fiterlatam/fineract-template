@@ -34,16 +34,22 @@ public final class NegativeHoldPairData {
     private final LocalDate fechaHold;
     private final LocalDate fechaRelease;
     private final BigDecimal saldoHold;
+    /** PROPIO o CRUZADO (ver NegativeHoldsApiConstants). */
+    private final String tipo;
+    /** Retención negativa que este par corrige (en PROPIO es la misma retención del par). */
+    private final Long retencionNegativaId;
     private final List<String> problemas = new ArrayList<>();
 
     public NegativeHoldPairData(final Long holdId, final Long releaseId, final BigDecimal monto, final LocalDate fechaHold,
-            final LocalDate fechaRelease, final BigDecimal saldoHold) {
+            final LocalDate fechaRelease, final BigDecimal saldoHold, final String tipo, final Long retencionNegativaId) {
         this.holdId = holdId;
         this.releaseId = releaseId;
         this.monto = monto;
         this.fechaHold = fechaHold;
         this.fechaRelease = fechaRelease;
         this.saldoHold = saldoHold;
+        this.tipo = tipo;
+        this.retencionNegativaId = retencionNegativaId;
     }
 
     private boolean ok = true;

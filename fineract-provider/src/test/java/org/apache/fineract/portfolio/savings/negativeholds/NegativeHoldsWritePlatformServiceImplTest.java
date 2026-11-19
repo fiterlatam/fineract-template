@@ -29,6 +29,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -68,6 +69,12 @@ class NegativeHoldsWritePlatformServiceImplTest {
                 null, null, null, null, null, null);
     }
 
+    /** Respuesta del UPDATE: filas reversadas para el de pares, filas ajustadas para cada ajuste de saldo. */
+    private void mockUpdates(final int reversedRows, final int adjustedRowsEach) {
+        when(this.jdbc.update(anyString(), any(SqlParameterSource.class)))
+                .thenAnswer(inv -> ((String) inv.getArgument(0)).contains("set is_reversed = 1") ? reversedRows : adjustedRowsEach);
+    }
+
     private static GuaranteeAccountSnapshot corregido() {
         return GuaranteeAccountFixture.caso52().replace(4, HOLD, "350", 4, "-200", 6L, true, 0)
                 .replace(6, RELEASE, "350", 6, "350", null, true, 0).build();
@@ -77,7 +84,7 @@ class NegativeHoldsWritePlatformServiceImplTest {
     void corrigeCuandoLosParesCoinciden() {
         when(this.readService.loadSnapshot(SAVINGS_ID, true)).thenReturn(GuaranteeAccountFixture.caso52().build());
         when(this.readService.loadSnapshot(SAVINGS_ID, false)).thenReturn(corregido());
-        when(this.jdbc.update(anyString(), any(SqlParameterSource.class))).thenReturn(2);
+        mockUpdates(2, 1);
         when(this.jdbc.queryForList(anyString(), any(SqlParameterSource.class), eq(Long.class))).thenReturn(List.of());
 
         final CommandProcessingResult result = this.service.fix(command("[{\"holdId\":4,\"releaseId\":6}]"));
@@ -85,9 +92,11 @@ class NegativeHoldsWritePlatformServiceImplTest {
         final Map<String, Object> changes = result.getChanges();
         assertEquals("CORREGIDO", changes.get("resultado"));
         assertEquals(2, changes.get("filasActualizadas"));
-        assertEquals(2, ((List<?>) changes.get("respaldo")).size());
+        // respaldo: las 2 filas del par + la liberación de 200 a la que se ajusta el saldo
+        assertEquals(3, ((List<?>) changes.get("respaldo")).size());
+        assertEquals(1, ((List<?>) changes.get("ajustesSaldo")).size());
         assertEquals(SAVINGS_ID, result.getSavingsId());
-        verify(this.jdbc).update(anyString(), any(SqlParameterSource.class));
+        verify(this.jdbc, times(2)).update(anyString(), any(SqlParameterSource.class));
     }
 
     @Test
@@ -126,7 +135,7 @@ class NegativeHoldsWritePlatformServiceImplTest {
     @Test
     void revierteSiNoSeActualizaronTodasLasFilas() {
         when(this.readService.loadSnapshot(SAVINGS_ID, true)).thenReturn(GuaranteeAccountFixture.caso52().build());
-        when(this.jdbc.update(anyString(), any(SqlParameterSource.class))).thenReturn(1);
+        mockUpdates(1, 1);
 
         final GeneralPlatformDomainRuleException e = assertThrows(GeneralPlatformDomainRuleException.class,
                 () -> this.service.fix(command("[{\"holdId\":4,\"releaseId\":6}]")));
@@ -137,12 +146,44 @@ class NegativeHoldsWritePlatformServiceImplTest {
     @Test
     void revierteSiQuedanNegativos() {
         when(this.readService.loadSnapshot(SAVINGS_ID, true)).thenReturn(GuaranteeAccountFixture.caso52().build());
-        when(this.jdbc.update(anyString(), any(SqlParameterSource.class))).thenReturn(2);
+        mockUpdates(2, 1);
         when(this.jdbc.queryForList(anyString(), any(SqlParameterSource.class), eq(Long.class))).thenReturn(List.of(99L));
 
         final GeneralPlatformDomainRuleException e = assertThrows(GeneralPlatformDomainRuleException.class,
                 () -> this.service.fix(command("[{\"holdId\":4,\"releaseId\":6}]")));
 
         assertTrue(e.getGlobalisationMessageCode().endsWith("still.negative"));
+    }
+
+    @Test
+    void corrigeParCruzadoYAjustaSaldosDeLaRetencionQueSigueActiva() {
+        when(this.readService.loadSnapshot(SAVINGS_ID, true)).thenReturn(GuaranteeAccountFixture.cuenta11724().build());
+        when(this.readService.loadSnapshot(SAVINGS_ID, false))
+                .thenReturn(GuaranteeAccountFixture.cuenta11724().replace(11, HOLD, "400", 8, "120", 15L, true, 0)
+                        .replace(15, RELEASE, "400", 12, "320", null, true, 0).replace(12, HOLD, "0", 9, "520", 13L, false, 0)
+                        .replace(13, RELEASE, "0", 10, "520", null, false, 0).replace(14, HOLD, "200", 11, "320", null, false, 0).build());
+        mockUpdates(2, 1);
+        when(this.jdbc.queryForList(anyString(), any(SqlParameterSource.class), eq(Long.class))).thenReturn(List.of());
+
+        final CommandProcessingResult result = this.service.fix(command("[{\"holdId\":11,\"releaseId\":15}]"));
+
+        final Map<String, Object> changes = result.getChanges();
+        assertEquals("CORREGIDO", changes.get("resultado"));
+        assertEquals(3, ((List<?>) changes.get("ajustesSaldo")).size());
+        assertEquals("CRUZADO", ((Map<?, ?>) ((List<?>) changes.get("pares")).get(0)).get("tipo"));
+        assertEquals(0, java.math.BigDecimal.ZERO.compareTo((java.math.BigDecimal) changes.get("saldoMinDespues")));
+        // 1 UPDATE de pares + 3 de saldos
+        verify(this.jdbc, times(4)).update(anyString(), any(SqlParameterSource.class));
+    }
+
+    @Test
+    void revierteSiNoSeAjustanTodosLosSaldos() {
+        when(this.readService.loadSnapshot(SAVINGS_ID, true)).thenReturn(GuaranteeAccountFixture.cuenta11724().build());
+        mockUpdates(2, 0);
+
+        final GeneralPlatformDomainRuleException e = assertThrows(GeneralPlatformDomainRuleException.class,
+                () -> this.service.fix(command("[{\"holdId\":11,\"releaseId\":15}]")));
+
+        assertEquals("error.msg.negativeholds.unexpected.adjust.count", e.getGlobalisationMessageCode());
     }
 }

@@ -52,6 +52,19 @@ public final class GuaranteeAccountFixture {
                 .hold(4, "350", 4, "-200", 6L).tx(5, RELEASE, "200", 5, "0").tx(6, RELEASE, "350", 6, "350");
     }
 
+    /**
+     * Cuenta 11724 (prod, 19-nov-2026): la garantía A (400) seguía retenida cuando se retuvo B (200) con 120
+     * disponibles; B sigue activa sin liberar (saldo -80) y A se liberó después. Par cruzado a reversar: 11/15. Incluye
+     * la retención de 0 (12) cuyo saldo guardado quedó desfasado.
+     */
+    public static GuaranteeAccountFixture cuenta11724() {
+        return account().tx(1, DEPOSIT, "390", 1, "390").hold(2, "390", 2, "0", 3L).tx(3, RELEASE, "390", 3, "390")
+                .tx(4, WITHDRAWAL, "390", 4, "0").tx(5, DEPOSIT, "390", 5, "390").hold(6, "390", 5, "0", 7L).tx(7, RELEASE, "390", 6, "390")
+                .tx(8, DEPOSIT, "130", 7, "520").hold(9, "520", 7, "0", 10L).tx(10, RELEASE, "520", 8, "520").hold(11, "400", 8, "120", 15L)
+                .hold(12, "0", 9, "0", 13L).tx(13, RELEASE, "0", 10, "120").hold(14, "200", 11, "-80", null)
+                .tx(15, RELEASE, "400", 12, "320");
+    }
+
     public GuaranteeAccountFixture tx(final long id, final int type, final String amount, final int day, final String running) {
         return add(id, type, amount, day, running, null, false, 0);
     }

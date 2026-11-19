@@ -46,6 +46,7 @@ import org.apache.fineract.infrastructure.core.exception.PlatformApiDataValidati
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.portfolio.savings.negativeholds.data.GuaranteeAccountSnapshot;
 import org.apache.fineract.portfolio.savings.negativeholds.data.GuaranteeTransactionRow;
+import org.apache.fineract.portfolio.savings.negativeholds.data.NegativeHoldBalanceAdjustmentData;
 import org.apache.fineract.portfolio.savings.negativeholds.data.NegativeHoldPairData;
 import org.apache.fineract.portfolio.savings.negativeholds.data.NegativeHoldsValidationData;
 import org.slf4j.Logger;
@@ -119,7 +120,10 @@ public class NegativeHoldsWritePlatformServiceImpl implements NegativeHoldsWrite
             ids.add(p.holdId);
             ids.add(p.releaseId);
         });
-        final List<Map<String, Object>> backup = snapshot.getTransactions().stream().filter(t -> ids.contains(t.getId()))
+        final Set<Long> adjustedIds = validation.getAjustesSaldo().stream().map(NegativeHoldBalanceAdjustmentData::getId)
+                .collect(Collectors.toSet());
+        final List<Map<String, Object>> backup = snapshot.getTransactions().stream()
+                .filter(t -> ids.contains(t.getId()) || adjustedIds.contains(t.getId()))
                 .map(NegativeHoldsWritePlatformServiceImpl::backupRow).collect(Collectors.toList());
 
         final int updated = this.namedJdbcTemplate.update(
@@ -129,6 +133,23 @@ public class NegativeHoldsWritePlatformServiceImpl implements NegativeHoldsWrite
         if (updated != ids.size()) {
             throw new GeneralPlatformDomainRuleException("error.msg.negativeholds.unexpected.update.count",
                     "Se esperaban " + ids.size() + " filas actualizadas y fueron " + updated + "; se revierte la transacción", updated);
+        }
+
+        // Movimientos entre la retención y la liberación reversadas: saldo que Fineract recalcularía y sobregiro 0,
+        // para
+        // que el siguiente recálculo no vea un sobregiro distinto al guardado.
+        int adjustedRows = 0;
+        for (final NegativeHoldBalanceAdjustmentData adjustment : validation.getAjustesSaldo()) {
+            adjustedRows += this.namedJdbcTemplate.update(
+                    "update m_savings_account_transaction set running_balance_derived = :saldo, overdraft_amount_derived = 0 "
+                            + "where id = :id and savings_account_id = :savingsId and is_reversed = 0 and is_reversal = 0",
+                    new MapSqlParameterSource("saldo", adjustment.getSaldoDespues()).addValue("id", adjustment.getId())
+                            .addValue("savingsId", savingsId));
+        }
+        if (adjustedRows != validation.getAjustesSaldo().size()) {
+            throw new GeneralPlatformDomainRuleException("error.msg.negativeholds.unexpected.adjust.count", "Se esperaban "
+                    + validation.getAjustesSaldo().size() + " saldos ajustados y fueron " + adjustedRows + "; se revierte la transacción",
+                    adjustedRows);
         }
 
         // Verificación posterior: ningún saldo corrido negativo en movimientos no reversados
@@ -146,12 +167,21 @@ public class NegativeHoldsWritePlatformServiceImpl implements NegativeHoldsWrite
         final Map<String, Object> changes = baseChanges(snapshot, validation, expected);
         changes.put("resultado", "CORREGIDO");
         changes.put("filasActualizadas", updated);
+        changes.put("ajustesSaldo", validation.getAjustesSaldo().stream().map(a -> {
+            final Map<String, Object> m = new LinkedHashMap<>();
+            m.put("id", a.getId());
+            m.put("saldoAntes", a.getSaldoAntes());
+            m.put("saldoDespues", a.getSaldoDespues());
+            m.put("sobregiroAntes", a.getSobregiroAntes());
+            return m;
+        }).collect(Collectors.toList()));
         changes.put("saldoDespues", after.getAccountBalance());
         changes.put("retenidoDespues", after.getAmountOnHold());
         changes.put("saldoMinDespues", after.getTransactions().stream().filter(GuaranteeTransactionRow::isActive)
                 .map(GuaranteeTransactionRow::getRunningBalance).filter(b -> b != null).min(BigDecimal::compareTo).orElse(null));
         changes.put("respaldo", backup);
-        LOG.info("negativeholds fix: cuenta {} cliente {} pares {} filas {}", savingsId, snapshot.getClientAccountNo(), expected, updated);
+        LOG.info("negativeholds fix: cuenta {} cliente {} pares {} filas {} saldos ajustados {}", savingsId, snapshot.getClientAccountNo(),
+                expected, updated, adjustedRows);
         return result(snapshot, changes);
     }
 
@@ -229,6 +259,8 @@ public class NegativeHoldsWritePlatformServiceImpl implements NegativeHoldsWrite
         m.put("fechaHold", p.getFechaHold() == null ? null : p.getFechaHold().toString());
         m.put("fechaRelease", p.getFechaRelease() == null ? null : p.getFechaRelease().toString());
         m.put("saldoHold", p.getSaldoHold());
+        m.put("tipo", p.getTipo());
+        m.put("retencionNegativaId", p.getRetencionNegativaId());
         return m;
     }
 

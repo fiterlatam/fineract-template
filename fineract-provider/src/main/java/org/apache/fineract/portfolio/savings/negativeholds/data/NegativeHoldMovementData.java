@@ -37,10 +37,13 @@ public final class NegativeHoldMovementData {
     private final boolean enPar;
     private final Long releaseId;
     private final long asientos;
+    private final BigDecimal sobregiro;
+    /** Saldo corrido que quedará guardado al corregir (null si la corrección no toca este movimiento). */
+    private final BigDecimal saldoTrasCorregir;
 
     public NegativeHoldMovementData(final Long id, final Integer tipo, final BigDecimal monto, final LocalDate fecha,
             final BigDecimal saldoCorrido, final BigDecimal saldoSimulado, final boolean reversado, final boolean enPar,
-            final Long releaseId, final long asientos) {
+            final Long releaseId, final long asientos, final BigDecimal sobregiro, final BigDecimal saldoTrasCorregir) {
         this.id = id;
         this.tipo = tipo;
         this.monto = monto;
@@ -51,5 +54,7 @@ public final class NegativeHoldMovementData {
         this.enPar = enPar;
         this.releaseId = releaseId;
         this.asientos = asientos;
+        this.sobregiro = sobregiro;
+        this.saldoTrasCorregir = saldoTrasCorregir;
     }
 }

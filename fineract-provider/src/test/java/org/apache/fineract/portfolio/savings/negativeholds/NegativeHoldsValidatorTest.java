@@ -57,6 +57,11 @@ class NegativeHoldsValidatorTest {
         assertEquals(0, BigDecimal.ZERO.compareTo(data.getSaldoMinSimulado()));
         assertTrue(data.getAdvertencias().isEmpty(), data.getAdvertencias().toString());
         assertEquals(6, data.getMovimientos().size());
+        assertEquals(NegativeHoldsApiConstants.TIPO_PAR_PROPIO, pair.getTipo());
+        // La liberación de 200 (5) queda entre la retención y la liberación reversadas: se guarda su saldo recalculado
+        assertEquals(1, data.getAjustesSaldo().size());
+        assertEquals(5L, data.getAjustesSaldo().get(0).getId());
+        assertEquals(0, new BigDecimal("350").compareTo(data.getAjustesSaldo().get(0).getSaldoDespues()));
     }
 
     @Test
@@ -69,12 +74,23 @@ class NegativeHoldsValidatorTest {
 
     @Test
     void negativoDeOtroOrigenNoEsCorregible() {
-        // Retiro entre la retención y su liberación que también quedó negativo en BD
-        final NegativeHoldsValidationData data = validate(GuaranteeAccountFixture.caso52().tx(7, WITHDRAWAL, "100", 4, "-300")
-                .replace(5, RELEASE, "200", 5, "-100", null, false, 0).replace(6, RELEASE, "350", 6, "250", null, false, 0));
+        // Retiro posterior a la liberación (fuera de la ventana del par) que dejó el saldo en -50
+        final NegativeHoldsValidationData data = validate(GuaranteeAccountFixture.caso52().tx(7, WITHDRAWAL, "400", 7, "-50"));
 
         assertFalse(data.isCorregible());
         assertTrue(hasMotivo(data, NegativeHoldsApiConstants.MOTIVO_NEGATIVO_OTRO_ORIGEN), data.getMotivos().toString());
+    }
+
+    @Test
+    void negativoDentroDeLaVentanaSeCorrigeConElPar() {
+        // Retiro entre la retención y su liberación que quedó negativo solo por arrastre de la retención de 350
+        final NegativeHoldsValidationData data = validate(GuaranteeAccountFixture.caso52().tx(7, WITHDRAWAL, "100", 4, "-300")
+                .replace(5, RELEASE, "200", 5, "-100", null, false, 0).replace(6, RELEASE, "350", 6, "250", null, false, 0));
+
+        assertTrue(data.isCorregible(), data.getMotivos().toString());
+        assertEquals(2, data.getAjustesSaldo().size());
+        assertEquals(0, new BigDecimal("50").compareTo(adjustment(data, 7L)));
+        assertEquals(0, new BigDecimal("250").compareTo(adjustment(data, 5L)));
     }
 
     @Test
@@ -143,5 +159,62 @@ class NegativeHoldsValidatorTest {
         assertFalse(data.isCorregible());
         assertEquals(1, data.getMotivos().size());
         assertTrue(hasMotivo(data, NegativeHoldsApiConstants.MOTIVO_NADA_QUE_CORREGIR));
+    }
+
+    @Test
+    void retencionActivaCubiertaPorGarantiaAnteriorEsCorregibleConParCruzado() {
+        final NegativeHoldsValidationData data = validate(GuaranteeAccountFixture.cuenta11724());
+
+        assertTrue(data.isCorregible(), data.getMotivos().toString());
+        assertEquals(1, data.getPares().size());
+        final NegativeHoldPairData pair = data.getPares().get(0);
+        assertEquals(11L, pair.getHoldId());
+        assertEquals(15L, pair.getReleaseId());
+        assertEquals(NegativeHoldsApiConstants.TIPO_PAR_CRUZADO, pair.getTipo());
+        assertEquals(14L, pair.getRetencionNegativaId());
+        assertEquals(0, BigDecimal.ZERO.compareTo(data.getSaldoMinSimulado()));
+        // La retención negativa (14) sigue activa: se le guarda saldo 320; también a la retención y liberación de 0
+        assertEquals(3, data.getAjustesSaldo().size());
+        assertEquals(0, new BigDecimal("320").compareTo(adjustment(data, 14L)));
+        assertEquals(0, new BigDecimal("520").compareTo(adjustment(data, 12L)));
+        assertEquals(0, new BigDecimal("520").compareTo(adjustment(data, 13L)));
+        // La retención negativa no se reversa
+        assertFalse(data.getMovimientos().stream().filter(m -> m.getId() == 14L).findFirst().get().isEnPar());
+    }
+
+    @Test
+    void garantiaAnteriorQueNoAlcanzaNoEsCorregible() {
+        // La garantía anterior es de 50: no cubre el negativo de -80
+        final NegativeHoldsValidationData data = validate(
+                GuaranteeAccountFixture.cuenta11724().replace(11, HOLD, "50", 8, "470", 15L, false, 0)
+                        .replace(15, RELEASE, "50", 12, "320", null, false, 0).replace(14, HOLD, "600", 11, "-80", null, false, 0));
+
+        assertFalse(data.isCorregible());
+        assertTrue(hasMotivo(data, NegativeHoldsApiConstants.MOTIVO_RETENCION_SIN_LIBERAR), data.getMotivos().toString());
+        assertTrue(data.getPares().isEmpty());
+    }
+
+    @Test
+    void garantiaLiberadaAntesDeLaRetencionNegativaNoSirveDeParCruzado() {
+        // La liberación de la garantía de 400 ocurre antes de la retención negativa: no la cubría
+        final NegativeHoldsValidationData data = validate(GuaranteeAccountFixture.cuenta11724()
+                .replace(15, RELEASE, "400", 10, "520", null, false, 0).replace(14, HOLD, "600", 11, "-80", null, false, 0));
+
+        assertFalse(data.isCorregible());
+        assertTrue(hasMotivo(data, NegativeHoldsApiConstants.MOTIVO_RETENCION_SIN_LIBERAR), data.getMotivos().toString());
+    }
+
+    @Test
+    void parCruzadoConAsientosNoSeUsa() {
+        final NegativeHoldsValidationData data = validate(
+                GuaranteeAccountFixture.cuenta11724().replace(11, HOLD, "400", 8, "120", 15L, false, 1));
+
+        assertFalse(data.isCorregible());
+        assertTrue(hasMotivo(data, NegativeHoldsApiConstants.MOTIVO_RETENCION_SIN_LIBERAR), data.getMotivos().toString());
+    }
+
+    private static BigDecimal adjustment(final NegativeHoldsValidationData data, final long id) {
+        return data.getAjustesSaldo().stream().filter(a -> a.getId() == id).findFirst()
+                .orElseThrow(() -> new AssertionError("sin ajuste para " + id)).getSaldoDespues();
     }
 }

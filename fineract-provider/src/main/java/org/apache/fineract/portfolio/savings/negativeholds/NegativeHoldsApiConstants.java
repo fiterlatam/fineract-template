@@ -47,6 +47,11 @@ public final class NegativeHoldsApiConstants {
     public static final String MOTIVO_NEGATIVO_OTRO_ORIGEN = "NEGATIVO_DE_OTRO_ORIGEN";
     public static final String MOTIVO_SIMULACION_NEGATIVA = "SIMULACION_NEGATIVA";
 
+    // Tipo de par: PROPIO = la retención negativa con su propia liberación; CRUZADO = una garantía anterior que seguía
+    // retenida cuando se hizo una retención negativa que aún no se libera, y que se liberó después de ella.
+    public static final String TIPO_PAR_PROPIO = "PROPIO";
+    public static final String TIPO_PAR_CRUZADO = "CRUZADO";
+
     // Advertencias (no bloquean)
     public static final String ADV_SALDOS_NO_COINCIDEN = "SALDOS_GUARDADOS_NO_COINCIDEN_CON_RECALCULO";
     public static final String ADV_SOBREGIRO_REGISTRADO = "SOBREGIRO_REGISTRADO_EN_OTROS_MOVIMIENTOS";

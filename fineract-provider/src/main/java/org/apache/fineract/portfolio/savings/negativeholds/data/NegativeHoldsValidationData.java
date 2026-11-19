@@ -42,6 +42,8 @@ public final class NegativeHoldsValidationData {
     private List<NegativeHoldPairData> pares = new ArrayList<>();
     private BigDecimal saldoMinActual;
     private BigDecimal saldoMinSimulado;
+    /** Movimientos que quedan entre una retención y su liberación reversadas: saldo y sobregiro que se guardarán. */
+    private List<NegativeHoldBalanceAdjustmentData> ajustesSaldo = new ArrayList<>();
     private List<NegativeHoldMovementData> movimientos;
 
     /** Resultado para un número de cliente sin cuenta de Garantías activa. */
