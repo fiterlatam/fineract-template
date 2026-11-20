@@ -18,6 +18,7 @@
  */
 package org.apache.fineract.infrastructure.core.service;
 
+import com.ibm.icu.text.RuleBasedNumberFormat;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -26,10 +27,12 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
+import java.time.format.TextStyle;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.TimeZone;
 import org.apache.fineract.infrastructure.core.data.ApiParameterError;
 import org.apache.fineract.infrastructure.core.domain.FineractPlatformTenant;
@@ -136,4 +139,34 @@ public final class DateUtils {
     public static Date getDateOfTenant() {
         return Date.from(getLocalDateOfTenant().atStartOfDay(getDateTimeZoneOfTenant()).toInstant());
     }
+
+    public static String getDateInLetters(LocalDate date) {
+        if (date == null) return "";
+
+        // Día en letras
+        String dayLetters = numberToLetters(date.getDayOfMonth());
+        if (date.getDayOfMonth() == 1) {
+            dayLetters = "PRIMERO";
+        }
+        // Mes en español
+        String month = date.getMonth().getDisplayName(TextStyle.FULL, new Locale("es", "ES"));
+
+        // Año en letras
+        String yearLetters = numberToLetters(date.getYear());
+
+        // Armar la frase final
+        String result = String.format("%s de %s del año %s", dayLetters, month, yearLetters);
+
+        return result.toUpperCase();
+    }
+
+    public static String numberToLetters(int number) {
+        RuleBasedNumberFormat rbnf = new RuleBasedNumberFormat(new Locale("es"), RuleBasedNumberFormat.SPELLOUT);
+
+        String text = rbnf.format(number);
+        text = text.replaceAll("\\buno\\b", "un");
+
+        return text.toUpperCase();
+    }
+
 }

@@ -25,6 +25,8 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 import lombok.Getter;
+import lombok.Setter;
+import org.apache.fineract.infrastructure.codes.domain.CodeValue;
 import org.apache.fineract.infrastructure.core.domain.AbstractPersistableCustom;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
 import org.apache.fineract.useradministration.domain.AppUser;
@@ -32,7 +34,7 @@ import org.apache.fineract.useradministration.domain.AppUser;
 @Entity
 @Table(name = "m_prequalification_status_log")
 @Getter
-public class PrequalificationStatusLog extends AbstractPersistableCustom {
+public class PrequalificationStatusLog extends AbstractPersistableCustom implements Comparable<PrequalificationStatusLog> {
 
     @ManyToOne
     @JoinColumn(name = "prequalification_id")
@@ -42,6 +44,7 @@ public class PrequalificationStatusLog extends AbstractPersistableCustom {
     @JoinColumn(name = "updatedby_id", nullable = false)
     private AppUser addedBy;
 
+    @Setter
     @Column(name = "from_status", nullable = false)
     private Integer fromStatus;
 
@@ -61,23 +64,54 @@ public class PrequalificationStatusLog extends AbstractPersistableCustom {
     @JoinColumn(name = "assigned_to", nullable = false)
     private AppUser assignedTo;
 
+    @ManyToOne
+    @JoinColumn(name = "reason_code_id")
+    private CodeValue reasonCode;
+
+    // Only when will send it through unit analysis in first phase D
+    @Column(name = "with_exceptions")
+    private Boolean withExceptions;
+
+    @Column(name = "is_exception")
+    private Boolean exception;
+
     protected PrequalificationStatusLog() {
         //
     }
 
     private PrequalificationStatusLog(final AppUser appUser, final Integer fromStatus, final Integer toStatus, final String comments,
-            final PrequalificationGroup group) {
+            final PrequalificationGroup group, final CodeValue reasonCode, final Boolean withExceptions) {
         this.dateCreated = DateUtils.getLocalDateOfTenant();
         this.fromStatus = fromStatus;
         this.toStatus = toStatus;
         this.prequalificationGroup = group;
         this.comments = comments;
         this.addedBy = appUser;
+        this.reasonCode = reasonCode;
+        this.withExceptions = withExceptions;
+    }
+
+    private PrequalificationStatusLog(final AppUser appUser, final Integer fromStatus, final Integer toStatus, final String comments,
+            final PrequalificationGroup group, final CodeValue reasonCode, final Boolean withExceptions, Boolean exception) {
+        this.dateCreated = DateUtils.getLocalDateOfTenant();
+        this.fromStatus = fromStatus;
+        this.toStatus = toStatus;
+        this.prequalificationGroup = group;
+        this.comments = comments;
+        this.addedBy = appUser;
+        this.reasonCode = reasonCode;
+        this.withExceptions = withExceptions;
+        this.exception = exception;
     }
 
     public static PrequalificationStatusLog fromJson(final AppUser appUser, final Integer fromStatus, final Integer toStatus,
-            final String comments, final PrequalificationGroup group) {
-        return new PrequalificationStatusLog(appUser, fromStatus, toStatus, comments, group);
+            final String comments, final PrequalificationGroup group, CodeValue reasonCode, Boolean withExceptions) {
+        return new PrequalificationStatusLog(appUser, fromStatus, toStatus, comments, group, reasonCode, withExceptions);
+    }
+
+    public static PrequalificationStatusLog fromJson(final AppUser appUser, final Integer fromStatus, final Integer toStatus,
+            final String comments, final PrequalificationGroup group, CodeValue reasonCode, Boolean withExceptions, Boolean exception) {
+        return new PrequalificationStatusLog(appUser, fromStatus, toStatus, comments, group, reasonCode, withExceptions, exception);
     }
 
     public void updateAssignedTo(final AppUser assignedTo) {
@@ -87,4 +121,29 @@ public class PrequalificationStatusLog extends AbstractPersistableCustom {
     public void updateSubStatus(final Integer subStatus) {
         this.subStatus = subStatus;
     }
+
+    @Override
+    public int compareTo(PrequalificationStatusLog entry) {
+        return this.getId().compareTo(entry.getId());
+    }
+
+    public PrequalificationStatusLog copy() {
+        PrequalificationStatusLog copy = new PrequalificationStatusLog();
+
+        copy.prequalificationGroup = this.prequalificationGroup;
+        copy.addedBy = this.addedBy;
+        copy.fromStatus = this.fromStatus;
+        copy.toStatus = this.toStatus;
+        copy.subStatus = this.subStatus;
+        copy.comments = this.comments;
+        copy.reasonCode = this.reasonCode;
+        copy.withExceptions = this.withExceptions;
+        copy.exception = this.exception;
+        copy.assignedTo = this.assignedTo;
+
+        copy.dateCreated = DateUtils.getBusinessLocalDate();
+
+        return copy;
+    }
+
 }

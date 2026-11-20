@@ -21,6 +21,7 @@ package org.apache.fineract.organisation.committee.data;
 import java.util.ArrayList;
 import java.util.Collection;
 import org.apache.fineract.infrastructure.codes.data.CodeValueData;
+import org.apache.fineract.organisation.committee.domain.CommitteeApprovalLimits;
 
 /**
  * Immutable data object for committee data.
@@ -32,6 +33,7 @@ public class CommitteeData {
     private final String name;
 
     private Collection<CommitteeUserData> selectedUsers;
+    private Collection<CommitteeApprovalLimits> committeeApprovalLimits;
 
     // template
     private final Collection<CodeValueData> committees;
@@ -66,4 +68,7 @@ public class CommitteeData {
         this.availableUsers = availableUsers;
     }
 
+    public void setCommitteeApprovalLimits(Collection<CommitteeApprovalLimits> committeeApprovalLimits) {
+        this.committeeApprovalLimits = committeeApprovalLimits;
+    }
 }

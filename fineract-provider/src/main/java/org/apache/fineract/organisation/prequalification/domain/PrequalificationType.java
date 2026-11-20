@@ -24,7 +24,7 @@ import lombok.Getter;
 public enum PrequalificationType {
 
     INVALID(0, "prequalification.evaluation.status.invalid"), INDIVIDUAL(1, "prequalification.evaluation.status.individual"), GROUP(2,
-            "prequalification.evaluation.status.group");
+            "prequalification.evaluation.status.group"), PAE(4, "prequalification.evaluation.status.pae");
 
     private final Integer value;
     private final String code;
@@ -38,6 +38,7 @@ public enum PrequalificationType {
         return switch (statusValue) {
             case 1 -> PrequalificationType.INDIVIDUAL;
             case 2 -> PrequalificationType.GROUP;
+            case 4 -> PrequalificationType.PAE;
             default -> PrequalificationType.INVALID;
         };
     }

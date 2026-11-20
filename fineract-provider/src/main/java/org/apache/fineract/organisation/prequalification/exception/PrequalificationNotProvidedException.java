@@ -28,4 +28,8 @@ public class PrequalificationNotProvidedException extends AbstractPlatformResour
     public PrequalificationNotProvidedException() {
         super("error.msg.group.prequalification.is.not.provided", "Prequalification is a mandatory");
     }
+
+    public PrequalificationNotProvidedException(String s, String s1, Long prequalificationId) {
+        super(s, s1, prequalificationId);
+    }
 }

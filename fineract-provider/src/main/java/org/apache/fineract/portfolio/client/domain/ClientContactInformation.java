@@ -23,12 +23,14 @@ import javax.persistence.Entity;
 import javax.persistence.JoinColumn;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
+import lombok.Getter;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.domain.AbstractPersistableCustom;
 import org.apache.fineract.portfolio.client.api.ClientApiConstants;
 
 @Entity
 @Table(name = "m_client_contact_info")
+@Getter
 public class ClientContactInformation extends AbstractPersistableCustom {
 
     @Column(name = "area", nullable = false)
@@ -189,4 +191,48 @@ public class ClientContactInformation extends AbstractPersistableCustom {
         contactInformation.communityYears = communityYears;
         return contactInformation;
     }
+
+    public String getTemplateAddress() {
+        StringBuilder sb = new StringBuilder();
+
+        // Calle / Avenida
+        if (this.street != null && !this.street.isBlank()) {
+            sb.append(this.street).append(" Calle ");
+        } else if (this.avenue != null && !this.avenue.isBlank()) {
+            sb.append(this.avenue).append(" Avenida ");
+        }
+
+        // Número de casa
+        if (this.houseNumber != null && !this.houseNumber.isBlank()) {
+            sb.append("No. ").append(this.houseNumber).append(" ");
+        }
+
+        // Zona
+        if (this.zone != null && !this.zone.isBlank()) {
+            sb.append("Zona ").append(this.zone).append(" ");
+        }
+
+        // Colonia / Sector / Batch / Square (Manzana)
+        if (this.colony != null && !this.colony.isBlank()) {
+            sb.append("Colonia ").append(this.colony).append(" ");
+        } else if (this.sector != null && !this.sector.isBlank()) {
+            sb.append("Sector ").append(this.sector).append(" ");
+        } else if (this.batch != null && !this.batch.isBlank()) {
+            sb.append("Lote ").append(this.batch).append(" ");
+        } else if (this.square != null && !this.square.isBlank()) {
+            sb.append("Manzana ").append(this.square).append(" ");
+        }
+
+        // Municipio + Departamento (siempre obligatorios según tu modelo)
+        if (this.municipalityId != null) {
+            sb.append(this.municipalityId).append(", ");
+        }
+
+        if (this.departmentId != null) {
+            sb.append(this.departmentId);
+        }
+
+        return sb.toString().trim();
+    }
+
 }

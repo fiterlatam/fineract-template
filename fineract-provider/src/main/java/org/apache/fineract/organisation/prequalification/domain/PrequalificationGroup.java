@@ -97,6 +97,9 @@ public class PrequalificationGroup extends AbstractPersistableCustom {
     @OneToMany(mappedBy = "prequalificationGroup", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<PrequalificationGroupMember> members;
 
+    @Column(name = "exception_comments")
+    private String exceptionComments;
+
     @Column(name = "supervision_office_id")
     private Long supervisionOfficeId;
 
@@ -232,6 +235,10 @@ public class PrequalificationGroup extends AbstractPersistableCustom {
         this.comments = comment;
     }
 
+    public void updateExceptionComments(String comment) {
+        this.exceptionComments = comment;
+    }
+
     public Integer getPrequalificationType() {
         return prequalificationType;
     }
@@ -246,6 +253,10 @@ public class PrequalificationGroup extends AbstractPersistableCustom {
 
     public boolean isPrequalificationTypeGroup() {
         return this.prequalificationType.equals(PrequalificationType.GROUP.getValue());
+    }
+
+    public boolean isPrequalificationTypePAE() {
+        return this.prequalificationType.equals(PrequalificationType.PAE.getValue());
     }
 
     public BigDecimal getTotalRequestedAmount() {

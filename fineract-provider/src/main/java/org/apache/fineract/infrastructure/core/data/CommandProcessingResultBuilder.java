@@ -40,12 +40,13 @@ public class CommandProcessingResultBuilder {
     private Map<String, Object> changes;
     private Map<String, Object> creditBureauReportData;
     private Long productId;
+    private String reportToPrint;
     private boolean rollbackTransaction = false;
 
     public CommandProcessingResult build() {
         return CommandProcessingResult.fromDetails(this.commandId, this.officeId, this.groupId, this.clientId, this.loanId, this.savingsId,
                 this.resourceIdentifier, this.entityId, this.gsimId, this.glimId, this.creditBureauReportData, this.transactionId,
-                this.changes, this.productId, this.rollbackTransaction, this.subEntityId);
+                this.changes, this.productId, this.rollbackTransaction, this.subEntityId, reportToPrint);
     }
 
     public CommandProcessingResultBuilder withCommandId(final Long withCommandId) {
@@ -115,6 +116,11 @@ public class CommandProcessingResultBuilder {
 
     public CommandProcessingResultBuilder withGlimId(final Long glimId) {
         this.glimId = glimId;
+        return this;
+    }
+
+    public CommandProcessingResultBuilder withReportToPrint(final String reportToPrint) {
+        this.reportToPrint = reportToPrint;
         return this;
     }
 

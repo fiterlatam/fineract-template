@@ -20,6 +20,7 @@ package org.apache.fineract.portfolio.loanaccount.service;
 
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
+import org.apache.fineract.portfolio.loanaccount.domain.Loan;
 
 public interface LoanApplicationWritePlatformService {
 
@@ -46,4 +47,6 @@ public interface LoanApplicationWritePlatformService {
     CommandProcessingResult disburseLoanByCheques(JsonCommand command);
 
     CommandProcessingResult editLoanFund(JsonCommand command);
+
+    Loan retrieveLoanBy(Long loanId);
 }

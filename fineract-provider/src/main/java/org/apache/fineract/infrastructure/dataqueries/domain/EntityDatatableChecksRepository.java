@@ -36,6 +36,9 @@ public interface EntityDatatableChecksRepository
     @Query("select t from  EntityDatatableChecks t WHERE t.status =:status and t.entity=:entity and t.productId IS NULL ")
     List<EntityDatatableChecks> findByEntityStatusAndNoProduct(@Param("entity") String entity, @Param("status") Long status);
 
+    @Query("select t from  EntityDatatableChecks t WHERE t.status =:status and t.entity=:entity")
+    List<EntityDatatableChecks> findByAllByEntityStatus(@Param("entity") String entity, @Param("status") Long status);
+
     @Query("select t from  EntityDatatableChecks t WHERE t.status =:status "
             + "and t.entity=:entity and t.datatableName = :datatableName AND t.productId = :productId")
     List<EntityDatatableChecks> findByEntityStatusAndDatatableIdAndProductId(@Param("entity") String entityName,
