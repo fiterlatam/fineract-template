@@ -40,6 +40,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -2326,6 +2327,110 @@ public class SavingsAccountWritePlatformServiceJpaRepositoryImpl implements Savi
         }
 
         return CommandProcessingResult.empty();
+    }
+
+    /**
+     * Fixes savings accounts whose running balance goes negative because a hold was registered while an earlier hold
+     * on the same funds was still active (e.g. two guarantee holds on the same day, released much later). The date
+     * of the offending hold is swapped with the date of the release of the earlier hold, so every hold is released
+     * before the next one is taken. Running balances are not recalculated here; run "rebalanceaccount" afterwards.
+     */
+    @Transactional
+    @Override
+    public CommandProcessingResult remediateHoldReleaseDates(Long accountId) {
+        final SavingsAccount account = this.savingAccountRepositoryWrapper.findOneWithNotFoundDetection(accountId);
+        final Map<Long, SavingsAccountTransaction> transactionsById = new HashMap<>();
+        final List<SavingsAccountTransaction> transactions = new ArrayList<>();
+        int holdCount = 0;
+        for (final SavingsAccountTransaction transaction : account.getTransactions()) {
+            transactionsById.put(transaction.getId(), transaction);
+            if (transaction.isNotReversed()) {
+                transactions.add(transaction);
+                if (transaction.isAmountOnHold()) {
+                    holdCount++;
+                }
+            }
+        }
+
+        final List<Map<String, Object>> swappedTransactions = new ArrayList<>();
+        final List<SavingsAccountTransaction> modifiedTransactions = new ArrayList<>();
+        SavingsAccountTransaction[] holdAndRelease;
+        // every swap moves a hold to a later date, so there can't be more swaps than holds
+        while (swappedTransactions.size() < holdCount && (holdAndRelease = findHoldToSwap(transactions, transactionsById)) != null) {
+            final SavingsAccountTransaction hold = holdAndRelease[0];
+            final SavingsAccountTransaction release = holdAndRelease[1];
+            final LocalDate holdDate = hold.getTransactionLocalDate();
+            final LocalDate releaseDate = release.getTransactionLocalDate();
+            hold.updateDateOf(releaseDate);
+            release.updateDateOf(holdDate);
+            modifiedTransactions.add(hold);
+            modifiedTransactions.add(release);
+
+            final Map<String, Object> swap = new LinkedHashMap<>();
+            swap.put("holdTransactionId", hold.getId());
+            swap.put("holdTransactionDate", releaseDate.toString());
+            swap.put("releaseTransactionId", release.getId());
+            swap.put("releaseTransactionDate", holdDate.toString());
+            swappedTransactions.add(swap);
+        }
+
+        if (swappedTransactions.isEmpty()) {
+            throw new GeneralPlatformDomainRuleException("error.msg.savingsaccount.hold.release.dates.nothing.to.remediate",
+                    "Savings account " + accountId + " has no hold transactions to remediate", accountId);
+        }
+        this.savingsAccountTransactionRepository.saveAll(modifiedTransactions);
+
+        final Map<String, Object> changes = new LinkedHashMap<>();
+        changes.put("swappedTransactions", swappedTransactions);
+        return new CommandProcessingResultBuilder().withEntityId(accountId).withOfficeId(account.officeId())
+                .withClientId(account.clientId()).withGroupId(account.groupId()).withSavingsId(accountId).with(changes).build();
+    }
+
+    /**
+     * Walks the transactions in the same order used by the rebalance and returns the first hold that leaves the running
+     * balance negative, together with the release of an earlier hold that was still active at that moment.
+     */
+    private SavingsAccountTransaction[] findHoldToSwap(final List<SavingsAccountTransaction> transactions,
+            final Map<Long, SavingsAccountTransaction> transactionsById) {
+        final Comparator<SavingsAccountTransaction> transactionOrder = Comparator
+                .comparing(SavingsAccountTransaction::getTransactionLocalDate)
+                .thenComparing(SavingsAccountTransaction::getCreatedDate, Comparator.nullsFirst(Comparator.naturalOrder()))
+                .thenComparing(SavingsAccountTransaction::getId);
+        transactions.sort(transactionOrder);
+
+        BigDecimal runningBalance = BigDecimal.ZERO;
+        final List<SavingsAccountTransaction> activeHolds = new ArrayList<>();
+        for (final SavingsAccountTransaction transaction : transactions) {
+            if (transaction.isCredit()) {
+                runningBalance = runningBalance.add(transaction.getAmount());
+            } else if (transaction.isDebit()) {
+                runningBalance = runningBalance.subtract(transaction.getAmount());
+            }
+            if (transaction.isAmountRelease()) {
+                activeHolds.removeIf(hold -> transaction.getId().equals(hold.getReleaseIdOfHoldAmountTransaction()));
+            }
+            if (!transaction.isAmountOnHold()) {
+                continue;
+            }
+            if (runningBalance.signum() < 0) {
+                final LocalDate holdDate = transaction.getTransactionLocalDate();
+                final SavingsAccountTransaction ownRelease = transaction.getReleaseIdOfHoldAmountTransaction() == null ? null
+                        : transactionsById.get(transaction.getReleaseIdOfHoldAmountTransaction());
+                // the hold must still come before its own release after taking the release date of the earlier hold
+                final Optional<SavingsAccountTransaction> release = activeHolds.stream()
+                        .map(hold -> hold.getReleaseIdOfHoldAmountTransaction() == null ? null
+                                : transactionsById.get(hold.getReleaseIdOfHoldAmountTransaction()))
+                        .filter(candidate -> candidate != null && candidate.getTransactionLocalDate().isAfter(holdDate))
+                        .filter(candidate -> ownRelease == null
+                                || !ownRelease.getTransactionLocalDate().isBefore(candidate.getTransactionLocalDate()))
+                        .min(transactionOrder);
+                if (release.isPresent()) {
+                    return new SavingsAccountTransaction[] { transaction, release.get() };
+                }
+            }
+            activeHolds.add(transaction);
+        }
+        return null;
     }
 
 }
